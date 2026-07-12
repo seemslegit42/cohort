@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormsModule } from '@angular/forms';
 import { Appwrite } from './appwrite';
 
 interface CampaignEmail {
@@ -17,7 +17,7 @@ interface CampaignEmail {
   selector: 'app-emails',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, MatIconModule, ReactiveFormsModule],
+  imports: [CommonModule, MatIconModule, ReactiveFormsModule, FormsModule],
   template: `
     <div class="max-w-[1400px] mx-auto space-y-8 animate-fade-in">
       
@@ -63,9 +63,15 @@ interface CampaignEmail {
         <div class="lg:col-span-7 space-y-6">
           <div class="bg-zinc-900/40 backdrop-blur-md border border-zinc-800/80 rounded-2xl p-6 relative overflow-hidden group">
             
-            <div class="flex items-center gap-3 border-b border-zinc-800/60 pb-4 mb-5">
-              <mat-icon class="text-teal-400">rate_review</mat-icon>
-              <h2 class="text-base font-bold text-white font-display tracking-tight">AI Outreach Engine Studio</h2>
+            <div class="flex items-center justify-between border-b border-zinc-800/60 pb-4 mb-5">
+              <div class="flex items-center gap-3">
+                <mat-icon class="text-teal-400">rate_review</mat-icon>
+                <h2 class="text-base font-bold text-white font-display tracking-tight">AI Outreach Engine Studio</h2>
+              </div>
+              <button (click)="openSettings()" class="bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-teal-400 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-2">
+                <mat-icon class="text-sm">settings</mat-icon>
+                SMTP/IMAP Settings
+              </button>
             </div>
 
             <!-- Composer form -->
@@ -218,6 +224,70 @@ interface CampaignEmail {
 
       </div>
 
+      <!-- Settings Modal (Overlay) -->
+      @if (showSettings()) {
+        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div class="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-md overflow-hidden animate-fade-in shadow-2xl shadow-black">
+            <div class="p-5 border-b border-zinc-800 flex justify-between items-center bg-zinc-950/50">
+              <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <mat-icon class="text-teal-400 text-sm">settings_suggest</mat-icon>
+                SMTP/IMAP Server Connection
+              </h3>
+              <button (click)="closeSettings()" class="text-zinc-500 hover:text-white transition-colors">
+                <mat-icon class="text-sm">close</mat-icon>
+              </button>
+            </div>
+            
+            <div class="p-5 space-y-4">
+              <p class="text-[11px] text-zinc-400 leading-relaxed mb-2">Configure standard mail protocols. We fully support integration with self-hosted instances like Nextcloud/ownCloud Mail.</p>
+              <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                  <label for="mail-imap-host" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">IMAP Host</label>
+                  <input id="mail-imap-host" type="text" [(ngModel)]="imapHost" [ngModelOptions]="{standalone: true}" placeholder="imap.example.com" 
+                         class="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-teal-500/40" />
+                </div>
+                <div class="space-y-1">
+                  <label for="mail-imap-port" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">IMAP Port</label>
+                  <input id="mail-imap-port" type="text" [(ngModel)]="imapPort" [ngModelOptions]="{standalone: true}" placeholder="993" 
+                         class="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-teal-500/40" />
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                  <label for="mail-smtp-host" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">SMTP Host</label>
+                  <input id="mail-smtp-host" type="text" [(ngModel)]="smtpHost" [ngModelOptions]="{standalone: true}" placeholder="smtp.example.com" 
+                         class="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-teal-500/40" />
+                </div>
+                <div class="space-y-1">
+                  <label for="mail-smtp-port" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">SMTP Port</label>
+                  <input id="mail-smtp-port" type="text" [(ngModel)]="smtpPort" [ngModelOptions]="{standalone: true}" placeholder="465" 
+                         class="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-teal-500/40" />
+                </div>
+              </div>
+              <div class="space-y-1">
+                <label for="mail-user-addr" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Email Address / Username</label>
+                <input id="mail-user-addr" type="text" [(ngModel)]="mailUser" [ngModelOptions]="{standalone: true}" placeholder="user@example.com" 
+                       class="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-teal-500/40" />
+              </div>
+              <div class="space-y-1">
+                <label for="mail-user-pass" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">App Password</label>
+                <input id="mail-user-pass" type="password" [(ngModel)]="mailPass" [ngModelOptions]="{standalone: true}" placeholder="••••••••••••" 
+                       class="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-teal-500/40" />
+              </div>
+            </div>
+
+            <div class="p-4 border-t border-zinc-800 bg-zinc-950/50 flex justify-end gap-3">
+              <button (click)="closeSettings()" class="px-4 py-2 bg-transparent text-zinc-400 hover:text-white text-xs font-bold transition-colors">
+                Cancel
+              </button>
+              <button (click)="saveSettings()" class="px-5 py-2 bg-teal-500 hover:bg-teal-400 text-zinc-950 rounded-xl text-xs font-bold transition-all shadow-md">
+                Save & Connect
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
     </div>
   `,
   styles: [`
@@ -249,6 +319,14 @@ export class EmailsComponent {
     { id: 'mail-3', recipient: 'Stewart Butterfield', company: 'Slack Technologies', subject: 'Follow up: CRM Database Expansion Timelines', status: 'Sent', sentAt: '1d ago' }
   ]);
 
+  showSettings = signal(false);
+  imapHost = '';
+  imapPort = '';
+  smtpHost = '';
+  smtpPort = '';
+  mailUser = '';
+  mailPass = '';
+
   constructor() {
     this.composeForm = this.fb.group({
       clientName: ['', [Validators.required, Validators.minLength(2)]],
@@ -257,6 +335,21 @@ export class EmailsComponent {
       tone: ['Executive'],
       valueProposition: ['', [Validators.required, Validators.minLength(10)]]
     });
+  }
+
+  openSettings() {
+    this.showSettings.set(true);
+  }
+
+  closeSettings() {
+    this.showSettings.set(false);
+  }
+
+  saveSettings() {
+    setTimeout(() => {
+      alert('Successfully connected to IMAP/SMTP server.');
+      this.closeSettings();
+    }, 800);
   }
 
   onSubjectChange(event: Event) {

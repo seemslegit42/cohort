@@ -54,6 +54,14 @@ export const routes: Routes = [
     loadComponent: () => import('./contacts.component').then(m => m.ContactsComponent)
   },
   {
+    path: 'calendar',
+    loadComponent: () => import('./calendar.component').then(m => m.CalendarComponent)
+  },
+  {
+    path: 'deployment-checklist',
+    loadComponent: () => import('./deployment-checklist.component').then(m => m.DeploymentChecklistComponent)
+  },
+  {
     path: 'settings',
     loadComponent: () => import('./settings.component').then(m => m.SettingsComponent)
   },

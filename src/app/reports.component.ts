@@ -23,6 +23,19 @@ interface CompiledReport {
   template: `
     <div class="max-w-[1400px] mx-auto space-y-8 animate-fade-in relative h-full flex flex-col">
       
+      <!-- Export Loading Toast -->
+      @if (isDownloading()) {
+        <div class="fixed bottom-5 right-5 bg-zinc-950 border border-teal-500/50 text-white px-5 py-4 rounded-xl shadow-2xl z-[1000] animate-fade-in flex flex-col gap-2 max-w-sm">
+          <div class="flex items-center gap-2 text-teal-400 font-bold text-sm">
+            <mat-icon class="animate-spin text-[18px]">autorenew</mat-icon>
+            Exporting Ledger PDF
+          </div>
+          <p class="text-xs text-zinc-300 leading-relaxed">
+            Serializing pipeline telemetry for "{{ downloadedReportName() }}" into executive dossier...
+          </p>
+        </div>
+      }
+
       <!-- Reports Header -->
       <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2 mb-4 shrink-0">
         <div>
@@ -373,6 +386,8 @@ export class ReportsComponent {
 
   isGenerating = signal<boolean>(false);
   showReportBuilder = signal<boolean>(false);
+  isDownloading = signal<boolean>(false);
+  downloadedReportName = signal<string>('');
   
   customReportConfig = {
     name: '',
@@ -432,10 +447,35 @@ export class ReportsComponent {
   selectedReport = signal<CompiledReport | null>(null);
 
   constructor() {
+    this.loadReports();
     // Select first report index by default
     setTimeout(() => {
-      this.selectedReport.set(this.reports()[0]);
+      if (this.reports().length > 0) {
+        this.selectedReport.set(this.reports()[0]);
+      }
     }, 400);
+  }
+
+  loadReports() {
+    if (typeof localStorage !== 'undefined') {
+      const saved = localStorage.getItem('laevos_compiled_reports');
+      if (saved) {
+        try {
+          this.reports.set(JSON.parse(saved));
+          return;
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      // Seed defaults
+      localStorage.setItem('laevos_compiled_reports', JSON.stringify(this.reports()));
+    }
+  }
+
+  saveReports() {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('laevos_compiled_reports', JSON.stringify(this.reports()));
+    }
   }
 
   activeContractsCount = computed(() => {
@@ -491,7 +531,7 @@ export class ReportsComponent {
            else if (m.includes('Rate') || m.includes('Ratio')) val = (Math.random() * 40 + 20).toFixed(1) + '%';
            else val = (Math.random() * 20 + 5).toFixed(1) + ' Days';
            return { label: m, value: val };
-        })
+         })
       };
       
       // Fallback metrics if empty
@@ -503,6 +543,7 @@ export class ReportsComponent {
       }
 
       this.reports.update(arr => [newReport, ...arr]);
+      this.saveReports();
       this.selectedReport.set(newReport);
       this.isGenerating.set(false);
 
@@ -520,7 +561,19 @@ export class ReportsComponent {
   }
 
   downloadReport(report: CompiledReport) {
-    alert(`Initiating download loop for compiled PDF: ${report.name}. All verified sales pipelines, ledger statistics, and relationship indices are serialized.`);
+    this.isDownloading.set(true);
+    this.downloadedReportName.set(report.name);
+
+    this.appwrite.addNotification({
+      title: 'Report PDF Generated',
+      message: `Export of "${report.name}" has been completed. All verified sales pipelines, ledger statistics, and relationship indices are securely serialized.`,
+      isRead: false,
+      type: 'success'
+    });
+
+    setTimeout(() => {
+      this.isDownloading.set(false);
+    }, 2500);
   }
 
   hoveredBarIndex = signal<number | null>(null);

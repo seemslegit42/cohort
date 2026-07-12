@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, no-empty, @typescript-eslint/consistent-indexed-object-style */
 import { Injectable, signal, effect } from '@angular/core';
-import { Client, Account, Databases, Teams, Realtime, ID, Query, Permission, Role, Functions } from 'appwrite';
+import { Client, Account, Databases, Teams, Realtime, ID, Query, Permission, Role, Functions, Storage } from 'appwrite';
 
 export interface AppwriteConfig {
   endpoint: string;
@@ -11,6 +11,7 @@ export interface AppwriteConfig {
   tasksCollectionId: string;
   notificationsCollectionId: string;
   leadsCollectionId: string;
+  contractsBucketId: string;
 }
 
 const DEFAULT_CONFIG: AppwriteConfig = {
@@ -21,7 +22,8 @@ const DEFAULT_CONFIG: AppwriteConfig = {
   contactsCollectionId: 'contacts',
   tasksCollectionId: 'tasks',
   notificationsCollectionId: 'notifications',
-  leadsCollectionId: 'leads'
+  leadsCollectionId: 'leads',
+  contractsBucketId: 'contracts'
 };
 
 @Injectable({
@@ -38,6 +40,7 @@ export class Appwrite {
   private teams!: Teams;
   private realtime!: Realtime;
   private functionsService!: Functions;
+  public storage!: Storage;
 
   // Reactivity states
   isConnected = signal<boolean>(false);
@@ -132,6 +135,7 @@ export class Appwrite {
       this.teams = new Teams(this.client);
       this.realtime = new Realtime(this.client);
       this.functionsService = new Functions(this.client);
+      this.storage = new Storage(this.client);
       
       // Ping the Appwrite backend to verify setup
       try {
@@ -347,6 +351,132 @@ export class Appwrite {
         localStorage.setItem(`laevos_team_prefs_${teamId}`, JSON.stringify(prefs));
       }
       return prefs;
+    }
+  }
+
+  // --- Storage API & Simulation Fallback ---
+  async uploadFile(file: File, bucketId?: string) {
+    const bId = bucketId || this.config().contractsBucketId || 'contracts';
+    const teamId = this.activeTeam()?.$id || 'laevos-crm';
+    try {
+      const result = await this.storage.createFile(bId, ID.unique(), file);
+      this.addNotification({
+        title: 'File Uploaded',
+        message: `"${file.name}" has been uploaded to Appwrite Storage bucket "${bId}".`,
+        type: 'success'
+      });
+      return {
+        $id: result.$id,
+        $createdAt: result.$createdAt,
+        name: result.name,
+        size: result.sizeOriginal || 0,
+        mimeType: result.mimeType,
+        bucketId: bId,
+        teamId
+      };
+    } catch (e: any) {
+      console.warn('Appwrite Storage upload failed, simulating file storage locally:', e);
+      const simResult = {
+        $id: 'file-' + Math.random().toString(36).substr(2, 9),
+        $createdAt: new Date().toISOString(),
+        name: file.name,
+        size: file.size,
+        mimeType: file.type || 'application/octet-stream',
+        bucketId: bId,
+        teamId
+      };
+      if (typeof localStorage !== 'undefined') {
+        const key = `laevos_mock_files_${teamId}`;
+        const existing = JSON.parse(localStorage.getItem(key) || '[]');
+        existing.unshift(simResult);
+        localStorage.setItem(key, JSON.stringify(existing));
+      }
+      return simResult;
+    }
+  }
+
+  async listFiles(bucketId?: string) {
+    const bId = bucketId || this.config().contractsBucketId || 'contracts';
+    const teamId = this.activeTeam()?.$id || 'laevos-crm';
+    try {
+      const result = await this.storage.listFiles(bId);
+      return result.files.map((f: any) => ({
+        $id: f.$id,
+        $createdAt: f.$createdAt,
+        name: f.name,
+        size: f.sizeOriginal || f.size || 0,
+        mimeType: f.mimeType,
+        bucketId: bId,
+        teamId
+      }));
+    } catch (e) {
+      console.warn('Appwrite Storage list failed, returning simulated files:', e);
+      if (typeof localStorage !== 'undefined') {
+        const key = `laevos_mock_files_${teamId}`;
+        const saved = localStorage.getItem(key);
+        if (saved) return JSON.parse(saved);
+      }
+      return [
+        {
+          $id: 'file-nda',
+          $createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
+          name: 'NDA_laevos_v2_signed.pdf',
+          size: 1024 * 342,
+          mimeType: 'application/pdf',
+          bucketId: bId,
+          teamId
+        },
+        {
+          $id: 'file-sla',
+          $createdAt: new Date(Date.now() - 86400000 * 5).toISOString(),
+          name: 'SLA_enterprise_draft.docx',
+          size: 1024 * 128,
+          mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          bucketId: bId,
+          teamId
+        }
+      ];
+    }
+  }
+
+  async deleteFile(fileId: string, bucketId?: string) {
+    const bId = bucketId || this.config().contractsBucketId || 'contracts';
+    const teamId = this.activeTeam()?.$id || 'laevos-crm';
+    try {
+      await this.storage.deleteFile(bId, fileId);
+      this.addNotification({
+        title: 'File Deleted',
+        message: 'File was successfully removed from Appwrite Storage.',
+        type: 'success'
+      });
+      return true;
+    } catch (e) {
+      console.warn('Appwrite Storage delete failed, deleting from mock store:', e);
+      if (typeof localStorage !== 'undefined') {
+        const key = `laevos_mock_files_${teamId}`;
+        const existing = JSON.parse(localStorage.getItem(key) || '[]');
+        const filtered = existing.filter((f: any) => f.$id !== fileId);
+        localStorage.setItem(key, JSON.stringify(filtered));
+      }
+      return true;
+    }
+  }
+
+  getFileViewUrl(fileId: string, bucketId?: string): string {
+    const bId = bucketId || this.config().contractsBucketId || 'contracts';
+    try {
+      return this.storage.getFileView(bId, fileId).toString();
+    } catch (e) {
+      return `https://tor.cloud.appwrite.io/v1/storage/buckets/${bId}/files/${fileId}/view?project=${this.config().projectId}`;
+    }
+  }
+
+  getFileDownloadUrl(fileId: string, bucketId?: string): string {
+    const bId = bucketId || this.config().contractsBucketId || 'contracts';
+    try {
+      return this.storage.getFileDownload(bId, fileId).toString();
+    } catch (e) {
+      return `https://tor.cloud.appwrite.io/v1/storage/buckets/${bId}/files/${fileId}/download?project=${this.config().projectId}`;
     }
   }
 

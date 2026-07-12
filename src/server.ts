@@ -62,6 +62,43 @@ app.post('/api/simulate-edit', async (req, res) => {
   res.json({ success: true });
 });
 
+// Proxy for Nextcloud Calendar API
+app.post('/api/nextcloud/calendar', async (req, res): Promise<void> => {
+  const { url, username, password } = req.body;
+  if (!url || !username || !password) {
+    res.status(400).json({ error: 'Missing credentials' });
+    return;
+  }
+
+  try {
+    const auth = Buffer.from(`${username}:${password}`).toString('base64');
+    
+    // Attempt PROPFIND for calendar
+    const response = await fetch(url, {
+      method: 'PROPFIND',
+      headers: {
+        'Authorization': `Basic ${auth}`,
+        'Depth': '1',
+        'Content-Type': 'application/xml',
+      },
+      body: `<?xml version="1.0" encoding="utf-8" ?>
+        <propfind xmlns="DAV:">
+          <prop>
+            <displayname/>
+          </prop>
+        </propfind>`
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch from Nextcloud: ${response.statusText}`);
+    }
+    const text = await response.text();
+    res.json({ success: true, xml: text });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
 /**
  * Serve static files from /browser
  */

@@ -9,7 +9,7 @@ import { RouterModule } from '@angular/router';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, MatIconModule, RouterModule],
   template: `
-    <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 p-2 bg-zinc-900/80 backdrop-blur-3xl border border-zinc-800/80 rounded-2xl shadow-2xl shadow-black/80 transition-all duration-300 hover:bg-zinc-900/90">
+    <div class="hidden md:flex fixed bottom-6 left-1/2 -translate-x-1/2 z-50 items-center gap-2 p-2 bg-zinc-900/80 backdrop-blur-3xl border border-zinc-800/80 rounded-2xl shadow-2xl shadow-black/80 transition-all duration-300 hover:bg-zinc-900/90">
       
       <!-- Search Input -->
       <div class="relative overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] flex items-center" 

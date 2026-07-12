@@ -2,7 +2,8 @@ import { Component, ChangeDetectionStrategy, inject, OnInit, signal, computed}  
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
-import { DragDropModule, CdkDragDrop } from '@angular/cdk/drag-drop';
+import { DragDropModule } from '@angular/cdk/drag-drop';
+import { KanbanBoardComponent } from './kanban-board.component';
 import { LeadService, Lead } from './lead.service';
 import { Appwrite } from './appwrite';
 
@@ -10,24 +11,24 @@ import { Appwrite } from './appwrite';
   selector: 'app-leads',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule, MatIconModule, DragDropModule],
+  imports: [CommonModule, ReactiveFormsModule, MatIconModule, DragDropModule, KanbanBoardComponent],
   template: `
-    <div class="h-full flex flex-col p-6 animate-fade-in max-w-[1600px] mx-auto">
+    <div class="h-full flex flex-col p-4 md:p-6 animate-fade-in max-w-[1600px] mx-auto">
       
       <!-- Header -->
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 md:mb-6">
         <div>
-          <h1 class="font-display text-3xl font-bold tracking-tight text-white flex items-center gap-3 drop-shadow-md">
-            <div class="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center border border-orange-500/20 shadow-[0_0_15px_rgba(249,115,22,0.15)]">
-              <mat-icon class="text-orange-400 text-[24px]">filter_alt</mat-icon>
+          <h1 class="font-display text-2xl md:text-3xl font-bold tracking-tight text-white flex items-center gap-3 drop-shadow-md">
+            <div class="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-orange-500/10 flex items-center justify-center border border-orange-500/20 shadow-[0_0_15px_rgba(249,115,22,0.15)]">
+              <mat-icon class="text-orange-400 text-[20px] md:text-[24px]">filter_alt</mat-icon>
             </div>
             Leads Pipeline
           </h1>
-          <p class="text-sm text-zinc-400 mt-2">Funnel progression tracking for pre-conversion prospect accounts.</p>
+          <p class="text-xs md:text-sm text-zinc-400 mt-2">Funnel progression tracking for pre-conversion prospect accounts.</p>
         </div>
         
-        <div class="flex items-center gap-3">
-          <div class="bg-zinc-900 border border-zinc-800 rounded-lg p-1 flex items-center gap-1">
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div class="bg-zinc-900 border border-zinc-800 rounded-lg p-1 flex items-center justify-center sm:justify-start gap-1">
             <button (click)="viewMode.set('board')" [class.bg-zinc-800]="viewMode() === 'board'" [class.text-white]="viewMode() === 'board'" class="text-zinc-500 px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1 transition-colors">
               <mat-icon class="text-[16px]">view_column</mat-icon> Board
             </button>
@@ -44,23 +45,23 @@ import { Appwrite } from './appwrite';
       </div>
 
       <!-- Quick Stats -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div class="bg-zinc-900/50 border border-zinc-800/80 rounded-xl p-4 flex flex-col justify-center">
-          <span class="text-[10px] uppercase tracking-widest font-bold text-zinc-500 mb-1">Total Pipeline Value</span>
-          <span class="text-2xl font-mono font-bold text-white">{{ totalPipelineValue() | currency:'USD':'symbol':'1.0-0' }}</span>
+      <div class="grid grid-cols-2 xl:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
+        <div class="bg-zinc-900/50 border border-zinc-800/80 rounded-xl p-3 md:p-4 flex flex-col justify-center">
+          <span class="text-[9px] md:text-[10px] uppercase tracking-wider md:tracking-widest font-bold text-zinc-500 mb-1 line-clamp-1">Total Pipeline Value</span>
+          <span class="text-xl md:text-2xl font-mono font-bold text-white truncate">{{ totalPipelineValue() | currency:'USD':'symbol':'1.0-0' }}</span>
         </div>
-        <div class="bg-zinc-900/50 border border-zinc-800/80 rounded-xl p-4 flex flex-col justify-center">
-          <span class="text-[10px] uppercase tracking-widest font-bold text-zinc-500 mb-1">New Inquiries</span>
-          <span class="text-2xl font-display font-bold text-white">{{ leadsMap()['New'].length }}</span>
+        <div class="bg-zinc-900/50 border border-zinc-800/80 rounded-xl p-3 md:p-4 flex flex-col justify-center">
+          <span class="text-[9px] md:text-[10px] uppercase tracking-wider md:tracking-widest font-bold text-zinc-500 mb-1 line-clamp-1">New Inquiries</span>
+          <span class="text-xl md:text-2xl font-display font-bold text-white">{{ leadsMap()['New']?.length || 0 }}</span>
         </div>
-        <div class="bg-zinc-900/50 border border-zinc-800/80 rounded-xl p-4 flex flex-col justify-center">
-          <span class="text-[10px] uppercase tracking-widest font-bold text-zinc-500 mb-1">Actively Working</span>
-          <span class="text-2xl font-display font-bold text-white">{{ leadsMap()['Contacted'].length + leadsMap()['Qualified'].length }}</span>
+        <div class="bg-zinc-900/50 border border-zinc-800/80 rounded-xl p-3 md:p-4 flex flex-col justify-center">
+          <span class="text-[9px] md:text-[10px] uppercase tracking-wider md:tracking-widest font-bold text-zinc-500 mb-1 line-clamp-1">Actively Working</span>
+          <span class="text-xl md:text-2xl font-display font-bold text-white">{{ (leadsMap()['Contacted']?.length || 0) + (leadsMap()['Qualified']?.length || 0) }}</span>
         </div>
-        <div class="bg-zinc-900/50 border border-zinc-800/80 rounded-xl p-4 flex flex-col justify-center relative overflow-hidden group hover:border-teal-500/30 transition-colors">
+        <div class="bg-zinc-900/50 border border-zinc-800/80 rounded-xl p-3 md:p-4 flex flex-col justify-center relative overflow-hidden group hover:border-teal-500/30 transition-colors">
           <div class="absolute -right-4 -top-4 w-16 h-16 bg-teal-500/10 rounded-full blur-xl group-hover:bg-teal-500/20 transition-all"></div>
-          <span class="text-[10px] uppercase tracking-widest font-bold text-zinc-500 mb-1 relative z-10">Qualified Ratio</span>
-          <span class="text-2xl font-display font-bold text-teal-400 relative z-10">{{ qualifiedRatio() | percent:'1.1-1' }}</span>
+          <span class="text-[9px] md:text-[10px] uppercase tracking-wider md:tracking-widest font-bold text-zinc-500 mb-1 relative z-10 line-clamp-1">Qualified Ratio</span>
+          <span class="text-xl md:text-2xl font-display font-bold text-teal-400 relative z-10">{{ qualifiedRatio() | percent:'1.0-1' }}</span>
         </div>
       </div>
 
@@ -79,54 +80,16 @@ import { Appwrite } from './appwrite';
 
       <div class="flex-1 flex flex-col overflow-hidden">
         @if (viewMode() === 'board') {
-          <!-- Kanban Board View with Drag & Drop -->
-          <div class="flex-1 overflow-x-auto pb-4">
-            <div cdkDropListGroup class="flex gap-6 h-full min-w-max">
-              @for (stage of stages; track stage) {
-                <div 
-                  cdkDropList
-                  [cdkDropListData]="leadsMap()[stage]"
-                  (cdkDropListDropped)="onDrop($event, stage)"
-                  class="flex-shrink-0 w-80 flex flex-col bg-zinc-900/30 rounded-2xl border border-zinc-800/50 overflow-hidden"
-                >
-                  <!-- Column Header -->
-                  <div class="p-4 border-b border-zinc-800/50 flex justify-between items-center bg-zinc-900/80 select-none">
-                    <h3 class="font-bold text-zinc-300 flex items-center gap-2">
-                      <span [class]="getStageColorClass(stage)"></span>
-                      {{ stage === 'Closed' ? 'Closed' : stage }}
-                    </h3>
-                    <span class="bg-zinc-800 text-zinc-400 text-xs font-bold px-2 py-0.5 rounded-md">{{ leadsMap()[stage].length }}</span>
-                  </div>
-                  
-                  <!-- Column Card Container -->
-                  <div class="flex-1 p-3 overflow-y-auto space-y-3 custom-scrollbar min-h-[250px]">
-                    @for (lead of leadsMap()[stage]; track lead.$id) {
-                      <div 
-                        cdkDrag
-                        [cdkDragData]="lead"
-                        class="cursor-grab active:cursor-grabbing"
-                      >
-                        <!-- Drag Placeholder -->
-                        <div *cdkDragPlaceholder class="bg-zinc-950/40 border border-dashed border-zinc-800 rounded-xl h-[120px] transition-all"></div>
-                        
-                        <ng-container *ngTemplateOutlet="leadCard; context: { lead: lead }"></ng-container>
-                      </div>
-                    } @empty {
-                      <!-- Empty Column Placeholder -->
-                      <div class="h-full min-h-[150px] flex flex-col items-center justify-center text-zinc-600 border border-dashed border-zinc-800/30 rounded-xl p-4 text-xs text-center select-none">
-                        <mat-icon class="text-zinc-700 mb-1">drag_indicator</mat-icon>
-                        Drag leads here
-                      </div>
-                    }
-                  </div>
-                </div>
-              }
-            </div>
-          </div>
+          <app-kanban-board
+            [stages]="stages"
+            [leadsMap]="leadsMap()"
+            [cardTemplate]="leadCard"
+            (statusChange)="onStatusChange($event)"
+          ></app-kanban-board>
         } @else {
           <!-- List View -->
-          <div class="flex-1 bg-zinc-900/60 backdrop-blur-xl border border-zinc-800 rounded-2xl overflow-y-auto shadow-2xl relative custom-scrollbar">
-            <table class="w-full text-left border-collapse">
+          <div class="flex-1 bg-zinc-900/60 backdrop-blur-xl border border-zinc-800 rounded-2xl overflow-auto shadow-2xl relative custom-scrollbar">
+            <table class="w-full text-left border-collapse min-w-[800px]">
               <thead class="sticky top-0 z-10">
                 <tr class="bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800">
                   <th class="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-zinc-500">Name & Contact</th>
@@ -336,7 +299,7 @@ import { Appwrite } from './appwrite';
 
       <!-- Deal Chat Slide-out Panel -->
       @if (activeChatLead()) {
-        <div class="fixed inset-y-0 right-0 w-[400px] bg-zinc-950 border-l border-zinc-800/80 shadow-2xl z-[90] flex flex-col animate-slide-in">
+        <div class="fixed inset-y-0 right-0 w-full sm:w-[400px] bg-zinc-950 border-l border-zinc-800/80 shadow-2xl z-[90] flex flex-col animate-slide-in">
           <div class="p-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/50 backdrop-blur-xl">
             <div>
               <h3 class="text-sm font-bold text-white flex items-center gap-2">
@@ -553,29 +516,9 @@ export class LeadsComponent implements OnInit {
     }
   }
 
-  getStageColorClass(stage: string): string {
-    switch (stage) {
-      case 'New':
-        return 'w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]';
-      case 'Contacted':
-        return 'w-2.5 h-2.5 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.5)]';
-      case 'Qualified':
-        return 'w-2.5 h-2.5 rounded-full bg-teal-500 shadow-[0_0_8px_rgba(20,184,166,0.5)]';
-      case 'Closed':
-        return 'w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]';
-      default:
-        return 'w-2.5 h-2.5 rounded-full bg-zinc-500';
-    }
-  }
-
-  async onDrop(event: CdkDragDrop<Lead[]>, targetStage: string) {
-    if (event.previousContainer === event.container) {
-      return;
-    }
-
-    const lead = event.item.data as Lead;
-    if (lead && lead.$id) {
-      this.executeStatusChange(lead, targetStage);
+  onStatusChange(event: { lead: Lead; newStatus: string }) {
+    if (event.lead && event.lead.$id) {
+      this.executeStatusChange(event.lead, event.newStatus);
     }
   }
 

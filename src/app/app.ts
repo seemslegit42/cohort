@@ -27,13 +27,25 @@ import { NotificationsDrawerComponent } from './notifications-drawer.component';
         <div class="absolute top-[20%] left-[40%] w-[40vw] h-[40vw] max-w-[500px] max-h-[500px] rounded-full bg-indigo-600/5 blur-[160px] animate-pulse-pulse mix-blend-screen"></div>
       </div>
 
+      <!-- Mobile Sidebar Overlay -->
+      @if (isSidebarOpen()) {
+        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 lg:hidden" (click)="isSidebarOpen.set(false)" (keydown.enter)="isSidebarOpen.set(false)" tabindex="0" role="button"></div>
+      }
+
       <!-- Main Layout Elements -->
-      <app-sidebar class="w-[260px] flex-shrink-0 border-r border-zinc-800/80 bg-zinc-950/80 backdrop-blur-2xl z-20 hidden lg:block shadow-[4px_0_24px_rgba(0,0,0,0.5)] relative" />
+      <app-sidebar class="w-[260px] flex-shrink-0 border-r border-zinc-800/80 bg-zinc-950/80 backdrop-blur-2xl z-40 lg:z-20 shadow-[4px_0_24px_rgba(0,0,0,0.5)] absolute lg:relative h-full transition-transform duration-300 left-0 top-0"
+                   [class.-translate-x-full]="!isSidebarOpen()"
+                   [class.translate-x-0]="isSidebarOpen()"
+                   [class.lg:translate-x-0]="true"
+                   (menuClick)="isSidebarOpen.set(false)" />
       
-      <main class="flex-1 flex flex-col overflow-hidden relative bg-transparent z-10">
+      <main class="flex-1 flex flex-col overflow-hidden relative bg-transparent z-10 w-full">
         <!-- Top Persistent Header Bar with Brand Identity and Notification Bell -->
-        <header class="h-16 border-b border-zinc-800/60 bg-zinc-950/40 backdrop-blur-md flex items-center justify-between px-6 z-30 select-none flex-shrink-0">
+        <header class="h-16 border-b border-zinc-800/60 bg-zinc-950/40 backdrop-blur-md flex items-center justify-between px-4 lg:px-6 z-30 select-none flex-shrink-0">
           <div class="flex items-center gap-3">
+            <button class="lg:hidden w-10 h-10 rounded-xl bg-zinc-900/50 border border-zinc-800 flex items-center justify-center text-zinc-300 hover:text-white" (click)="isSidebarOpen.set(true)">
+              <mat-icon>menu</mat-icon>
+            </button>
             <div class="font-logo text-lg tracking-tighter text-white flex items-center leading-none lg:hidden">
               <span class="font-light">ΛΞV</span>
               <span class="font-bold text-teal-400">OS</span>
@@ -67,7 +79,7 @@ import { NotificationsDrawerComponent } from './notifications-drawer.component';
 
         <!-- Main Scrollable Route-outlet container -->
         <div class="flex-1 overflow-y-auto custom-scrollbar relative z-10">
-          <div class="p-4 sm:p-6 md:p-8 lg:p-10 relative z-10 w-full min-h-full pb-32">
+          <div class="p-4 sm:p-6 md:p-8 lg:p-10 relative z-10 w-full min-h-full pb-10 md:pb-32">
             <router-outlet></router-outlet>
           </div>
         </div>
@@ -91,6 +103,7 @@ import { NotificationsDrawerComponent } from './notifications-drawer.component';
 export class App implements OnInit {
   appwrite = inject(Appwrite);
 
+  isSidebarOpen = signal<boolean>(false);
   isNotificationDrawerOpen = signal<boolean>(false);
 
   unreadCount = computed(() => {

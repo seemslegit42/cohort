@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterModule } from '@angular/router';
@@ -31,7 +31,7 @@ import { Appwrite } from './appwrite';
       </div>
 
       <!-- Navigation -->
-      <nav class="flex-1 overflow-y-auto px-3 space-y-1 pb-6 custom-scrollbar">
+      <nav class="flex-1 overflow-y-auto px-3 space-y-1 pb-6 custom-scrollbar" (click)="onNavClick()" (keydown.enter)="onNavClick()" tabindex="0" role="navigation">
         <div class="text-xs font-semibold text-zinc-600 uppercase tracking-wider mb-3 px-3 mt-4">Main</div>
         <a routerLink="/" routerLinkActive="bg-zinc-900/60 text-white shadow-sm border border-zinc-800" [routerLinkActiveOptions]="{exact: true}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-zinc-300 hover:text-white hover:bg-zinc-900 transition-all">
           <mat-icon class="text-[20px] w-5 h-5 text-teal-400">space_dashboard</mat-icon>
@@ -52,9 +52,17 @@ import { Appwrite } from './appwrite';
           <mat-icon class="text-[20px] w-5 h-5">description</mat-icon>
           <span class="font-medium text-sm">Notes</span>
         </a>
-        <a routerLink="/emails" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all">
+        <a routerLink="/emails" routerLinkActive="bg-zinc-900/60 text-white shadow-sm border border-zinc-800" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all">
           <mat-icon class="text-[20px] w-5 h-5">email</mat-icon>
           <span class="font-medium text-sm">Emails</span>
+        </a>
+        <a routerLink="/calendar" routerLinkActive="bg-zinc-900/60 text-white shadow-sm border border-zinc-800" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all">
+          <mat-icon class="text-[20px] w-5 h-5">event</mat-icon>
+          <span class="font-medium text-sm">Calendar</span>
+        </a>
+        <a routerLink="/deployment-checklist" routerLinkActive="bg-zinc-900/60 text-white shadow-sm border border-zinc-800" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all">
+          <mat-icon class="text-[20px] w-5 h-5">fact_check</mat-icon>
+          <span class="font-medium text-sm">Deployment</span>
         </a>
 
         <div class="text-xs font-semibold text-zinc-600 uppercase tracking-wider mb-3 px-3 mt-8">Analytics</div>
@@ -133,4 +141,9 @@ import { Appwrite } from './appwrite';
 })
 export class SidebarComponent {
   appwrite = inject(Appwrite);
+  menuClick = output<void>();
+
+  onNavClick() {
+    this.menuClick.emit();
+  }
 }
