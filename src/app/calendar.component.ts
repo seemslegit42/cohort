@@ -1,7 +1,8 @@
-import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { FormsModule } from '@angular/forms';
+import { Appwrite } from './appwrite';
 
 @Component({
   selector: 'app-calendar',
@@ -49,8 +50,8 @@ import { FormsModule } from '@angular/forms';
         </div>
 
         <div class="space-y-4">
-          @for (event of events(); track event.id) {
-            <div class="bg-zinc-950/60 border border-zinc-850 p-4 rounded-xl flex items-start sm:items-center gap-4 flex-col sm:flex-row hover:bg-zinc-900/60 transition-colors cursor-pointer">
+          @for (event of events(); track event.$id) {
+            <div class="bg-zinc-950/60 border border-zinc-850 p-4 rounded-xl flex items-start sm:items-center gap-4 flex-col sm:flex-row hover:bg-zinc-900/60 transition-colors cursor-pointer group">
               <div class="w-12 h-12 rounded-lg bg-teal-500/10 border border-teal-500/20 flex flex-col items-center justify-center flex-shrink-0">
                 <span class="text-[10px] text-teal-400 font-bold uppercase">{{ event.month }}</span>
                 <span class="text-sm font-display font-bold text-white">{{ event.day }}</span>
@@ -64,12 +65,14 @@ import { FormsModule } from '@angular/forms';
                   <mat-icon class="text-[14px]">group</mat-icon> {{ event.contact }}
                 </p>
               </div>
-
               <div class="flex items-center gap-2">
                 <span class="px-2.5 py-1 rounded text-[10px] font-bold tracking-wider uppercase border"
                       [ngClass]="getTypeClasses(event.type)">
                   {{ event.type }}
                 </span>
+                <button (click)="deleteEvent(event.$id); $event.stopPropagation()" class="w-8 h-8 rounded-lg hover:bg-rose-500/20 text-zinc-500 hover:text-rose-400 flex items-center justify-center transition-colors opacity-0 group-hover:opacity-100">
+                  <mat-icon class="text-[16px]">delete</mat-icon>
+                </button>
               </div>
             </div>
           } @empty {
@@ -202,11 +205,9 @@ import { FormsModule } from '@angular/forms';
   `]
 })
 export class CalendarComponent {
-  events = signal([
-    { id: '1', title: 'Enterprise SLA Negotiation', month: 'Jul', day: '15', time: '10:00 AM', contact: 'Microsoft Corp', type: 'Meeting' },
-    { id: '2', title: 'Q3 Product Demo', month: 'Jul', day: '18', time: '2:30 PM', contact: 'Salesforce Inc', type: 'Demo' },
-    { id: '3', title: 'Contract Renewal Sync', month: 'Jul', day: '21', time: '11:15 AM', contact: 'Acme Corp', type: 'Follow-Up' }
-  ]);
+  appwrite = inject(Appwrite);
+  
+  events = this.appwrite.events;
 
   showSettings = signal(false);
   serverUrl = '';
@@ -259,7 +260,7 @@ export class CalendarComponent {
     this.showAddEvent.set(false);
   }
 
-  saveEvent() {
+  async saveEvent() {
     if (!this.newEventTitle || !this.newEventDate) {
       alert('Please fill out the event title and date.');
       return;
@@ -279,7 +280,6 @@ export class CalendarComponent {
     }
 
     const newEvent = {
-      id: Date.now().toString(),
       title: this.newEventTitle,
       month: months[dateObj.getMonth()],
       day: (dateObj.getDate() + 1).toString(), // naive timezone fix for demo
@@ -288,7 +288,11 @@ export class CalendarComponent {
       type: this.newEventType
     };
 
-    this.events.update(list => [...list, newEvent].sort((a, b) => parseInt(a.day) - parseInt(b.day)));
+    await this.appwrite.addEvent(newEvent);
     this.closeAddEvent();
+  }
+
+  async deleteEvent(id: string) {
+    await this.appwrite.deleteEvent(id);
   }
 }

@@ -56,8 +56,12 @@ export class Appwrite {
   contracts = signal<any[]>([]);
   contacts = signal<any[]>([]);
   tasks = signal<any[]>([]);
+  notes = signal<any[]>([]);
   notifications = signal<any[]>([]);
   chatMessages = signal<any[]>([]);
+  events = signal<any[]>([]);
+  emails = signal<any[]>([]);
+  workflows = signal<any[]>([]);
   activeEditors = signal<Record<string, any[]>>({}); // Record ID -> Array of User info
 
   // Realtime listeners map to keep track
@@ -465,18 +469,18 @@ export class Appwrite {
   getFileViewUrl(fileId: string, bucketId?: string): string {
     const bId = bucketId || this.config().contractsBucketId || 'contracts';
     try {
-      return this.storage.getFileView(bId, fileId).toString();
+       return this.storage.getFileView(bId, fileId).toString();
     } catch (e) {
-      return `https://tor.cloud.appwrite.io/v1/storage/buckets/${bId}/files/${fileId}/view?project=${this.config().projectId}`;
+       return `https://tor.cloud.appwrite.io/v1/storage/buckets/${bId}/files/${fileId}/view?project=${this.config().projectId}`;
     }
   }
 
   getFileDownloadUrl(fileId: string, bucketId?: string): string {
     const bId = bucketId || this.config().contractsBucketId || 'contracts';
     try {
-      return this.storage.getFileDownload(bId, fileId).toString();
+       return this.storage.getFileDownload(bId, fileId).toString();
     } catch (e) {
-      return `https://tor.cloud.appwrite.io/v1/storage/buckets/${bId}/files/${fileId}/download?project=${this.config().projectId}`;
+       return `https://tor.cloud.appwrite.io/v1/storage/buckets/${bId}/files/${fileId}/download?project=${this.config().projectId}`;
     }
   }
 
@@ -678,6 +682,19 @@ export class Appwrite {
 
   // --- Database API CRUD with Team-based Permissions ---
   async fetchInitialData() {
+    if (typeof window === 'undefined') {
+      this.contracts.set(this.getDefaultMockValues('contracts'));
+      this.contacts.set(this.getDefaultMockValues('contacts'));
+      this.tasks.set(this.getDefaultMockValues('tasks'));
+      this.notes.set(this.getDefaultMockValues('notes'));
+      this.notifications.set(this.getDefaultMockValues('notifications'));
+      this.chatMessages.set([]);
+      this.events.set(this.getDefaultMockValues('events'));
+      this.emails.set(this.getDefaultMockValues('emails'));
+      this.workflows.set(this.getDefaultMockValues('workflows'));
+      return;
+    }
+
     const conf = this.config();
     const activeT = this.activeTeam();
     const teamId = activeT?.$id || 'laevos-crm';
@@ -699,9 +716,13 @@ export class Appwrite {
       queryCollection('contracts', this.contracts.set.bind(this.contracts)),
       queryCollection('contacts', this.contacts.set.bind(this.contacts)),
       queryCollection('tasks', this.tasks.set.bind(this.tasks)),
+      queryCollection('notes', this.notes.set.bind(this.notes)),
       queryCollection('notifications', this.notifications.set.bind(this.notifications)),
       queryCollection('leads', () => undefined), // Just for cache, but we don't have leads signal in appwrite.ts right now
-      queryCollection('chatMessages', this.chatMessages.set.bind(this.chatMessages))
+      queryCollection('chatMessages', this.chatMessages.set.bind(this.chatMessages)),
+      queryCollection('events', this.events.set.bind(this.events)),
+      queryCollection('emails', this.emails.set.bind(this.emails)),
+      queryCollection('workflows', this.workflows.set.bind(this.workflows))
     ]);
   }
 
@@ -802,6 +823,40 @@ export class Appwrite {
     }
   }
 
+  async updateContact(documentId: string, updates: any) {
+    try {
+      if (documentId.startsWith('mock-')) {
+        this.contacts.update(arr => arr.map(doc => doc.$id === documentId ? { ...doc, ...updates } : doc));
+        return { $id: documentId, ...updates };
+      }
+      const response = await fetch(`/api/contacts/${documentId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      });
+      if (!response.ok) throw new Error('Failed to update contact');
+      const updated = (await response.json()).item;
+      this.contacts.update(arr => arr.map(doc => doc.$id === documentId ? updated : doc));
+      return updated;
+    } catch (e: any) {
+      console.warn('Falling back local update:', e);
+      this.contacts.update(arr => arr.map(doc => doc.$id === documentId ? { ...doc, ...updates } : doc));
+      return { $id: documentId, ...updates };
+    }
+  }
+
+  async deleteContact(documentId: string) {
+    try {
+      if (!documentId.startsWith('mock-')) {
+        await fetch(`/api/contacts/${documentId}`, { method: 'DELETE' });
+      }
+    } catch (e) {
+      console.warn('Failed cloud delete, fallback local delete:', e);
+    } finally {
+      this.contacts.update(arr => arr.filter(doc => doc.$id !== documentId));
+    }
+  }
+
   async addTask(data: any) {
     const team = this.activeTeam();
     const teamId = team?.$id || 'laevos-crm';
@@ -823,6 +878,93 @@ export class Appwrite {
     }
   }
 
+  async updateTask(documentId: string, updates: any) {
+    try {
+      if (documentId.startsWith('mock-')) {
+        this.tasks.update(arr => arr.map(doc => doc.$id === documentId ? { ...doc, ...updates } : doc));
+        return { $id: documentId, ...updates };
+      }
+      const response = await fetch(`/api/tasks/${documentId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      });
+      if (!response.ok) throw new Error('Failed to update task');
+      const updated = (await response.json()).item;
+      this.tasks.update(arr => arr.map(doc => doc.$id === documentId ? updated : doc));
+      return updated;
+    } catch (e: any) {
+      this.tasks.update(arr => arr.map(doc => doc.$id === documentId ? { ...doc, ...updates } : doc));
+      return { $id: documentId, ...updates };
+    }
+  }
+
+  async deleteTask(documentId: string) {
+    try {
+      if (!documentId.startsWith('mock-')) {
+        await fetch(`/api/tasks/${documentId}`, { method: 'DELETE' });
+      }
+    } catch (e) {
+      console.warn('Failed cloud delete, fallback local delete:', e);
+    } finally {
+      this.tasks.update(arr => arr.filter(doc => doc.$id !== documentId));
+    }
+  }
+
+  async addNote(data: any) {
+    const team = this.activeTeam();
+    const teamId = team?.$id || 'laevos-crm';
+    try {
+      const response = await fetch('/api/notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...data, teamId })
+      });
+      if (!response.ok) throw new Error('Failed to create note');
+      const doc = (await response.json()).item;
+      this.notes.update(arr => [doc, ...arr]);
+      return doc;
+    } catch (e: any) {
+      console.warn('Falling back local note:', e);
+      const mockDoc = { $id: `mock-n-${Date.now()}`, ...data, teamId, date: 'Just now' };
+      this.notes.update(arr => [mockDoc, ...arr]);
+      return mockDoc;
+    }
+  }
+
+  async updateNote(documentId: string, updates: any) {
+    try {
+      if (documentId.startsWith('mock-')) {
+        this.notes.update(arr => arr.map(doc => doc.$id === documentId ? { ...doc, ...updates } : doc));
+        return { $id: documentId, ...updates };
+      }
+      const response = await fetch(`/api/notes/${documentId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      });
+      if (!response.ok) throw new Error('Failed to update note');
+      const updated = (await response.json()).item;
+      this.notes.update(arr => arr.map(doc => doc.$id === documentId ? updated : doc));
+      return updated;
+    } catch (e: any) {
+      this.notes.update(arr => arr.map(doc => doc.$id === documentId ? { ...doc, ...updates } : doc));
+      return { $id: documentId, ...updates };
+    }
+  }
+
+  async deleteNote(documentId: string) {
+    try {
+      if (!documentId.startsWith('mock-')) {
+        await fetch(`/api/notes/${documentId}`, { method: 'DELETE' });
+      }
+    } catch (e) {
+      console.warn('Failed cloud delete, fallback local delete:', e);
+    } finally {
+      this.notes.update(arr => arr.filter(doc => doc.$id !== documentId));
+    }
+  }
+
   async toggleTaskCompleted(documentId: string, completed: boolean) {
     try {
       if (documentId.startsWith('mock-')) {
@@ -841,6 +983,106 @@ export class Appwrite {
     } catch (e) {
       this.tasks.update(arr => arr.map(doc => doc.$id === documentId ? { ...doc, completed } : doc));
       return { $id: documentId, completed };
+    }
+  }
+
+  async addEmail(data: any) {
+    const teamId = this.activeTeam()?.$id || 'laevos-crm';
+    try {
+      const response = await fetch('/api/emails', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...data, teamId })
+      });
+      if (response.ok) {
+        const doc = (await response.json()).item;
+        this.emails.update(arr => [doc, ...arr]);
+        return doc;
+      }
+      throw new Error('Failed to create email');
+    } catch (e) {
+      console.warn('Falling back local email:', e);
+      const mockDoc = { $id: `mock-em-${Date.now()}`, ...data, teamId };
+      this.emails.update(arr => [mockDoc, ...arr]);
+      return mockDoc;
+    }
+  }
+
+  async deleteEmail(documentId: string) {
+    try {
+      if (!documentId.startsWith('mock-') && !documentId.startsWith('mail-')) {
+        await fetch(`/api/emails/${documentId}`, { method: 'DELETE' });
+      }
+    } catch (e) {
+      console.warn('Fallback delete email:', e);
+    } finally {
+      this.emails.update(arr => arr.filter(doc => doc.$id !== documentId));
+    }
+  }
+
+  async addEvent(data: any) {
+    const team = this.activeTeam();
+    const teamId = team?.$id || 'laevos-crm';
+    try {
+      const response = await fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...data, teamId })
+      });
+      if (!response.ok) throw new Error('Failed to create event');
+      const doc = (await response.json()).item;
+      this.events.update(arr => [doc, ...arr].sort((a, b) => parseInt(a.day || '0') - parseInt(b.day || '0')));
+      return doc;
+    } catch (e: any) {
+      console.warn('Falling back local event:', e);
+      const mockDoc = { $id: `mock-e-${Date.now()}`, ...data, teamId };
+      this.events.update(arr => [mockDoc, ...arr].sort((a, b) => parseInt(a.day || '0') - parseInt(b.day || '0')));
+      return mockDoc;
+    }
+  }
+
+  async deleteEvent(documentId: string) {
+    try {
+      if (!documentId.startsWith('mock-')) {
+        await fetch(`/api/events/${documentId}`, { method: 'DELETE' });
+      }
+    } catch (e) {
+      console.warn('Failed cloud delete, fallback local delete:', e);
+    } finally {
+      this.events.update(arr => arr.filter(doc => doc.$id !== documentId));
+    }
+  }
+
+  async markNotificationRead(documentId: string) {
+    try {
+      if (documentId.startsWith('mock-')) {
+        this.notifications.update(arr => arr.map(n => n.$id === documentId ? { ...n, isRead: true } : n));
+        return { $id: documentId, isRead: true };
+      }
+      const response = await fetch(`/api/notifications/${documentId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isRead: true })
+      });
+      if (response.ok) {
+        this.notifications.update(arr => arr.map(n => n.$id === documentId ? { ...n, isRead: true } : n));
+      }
+      return { $id: documentId, isRead: true };
+    } catch (e) {
+      this.notifications.update(arr => arr.map(n => n.$id === documentId ? { ...n, isRead: true } : n));
+      return { $id: documentId, isRead: true };
+    }
+  }
+
+  async deleteNotification(documentId: string) {
+    try {
+      if (!documentId.startsWith('mock-')) {
+        await fetch(`/api/notifications/${documentId}`, { method: 'DELETE' });
+      }
+    } catch (e) {
+      console.warn('Failed cloud delete, fallback local delete:', e);
+    } finally {
+      this.notifications.update(arr => arr.filter(n => n.$id !== documentId));
     }
   }
 
@@ -1049,6 +1291,27 @@ export class Appwrite {
         { $id: 'mock-c2', name: 'Marc Benioff', email: 'marc@salesforce.com', phone: '+1 415 901 7000', company: 'Salesforce', teamId },
         { $id: 'mock-c3', name: 'Stewart Butterfield', email: 'stewart@slack.com', phone: '+1 415 555 1212', company: 'Slack', teamId }
       ];
+    } else if (collectionId === 'notes') {
+      return [
+        {
+          $id: 'mock-n1',
+          title: 'Salesforce Account Renewal Strategy',
+          content: 'Key decision makers: Sarah Jenkins (CTO), Mike Ross (VP Sales).\n\nThe renewal is up in 45 days.',
+          date: 'Today, 9:41 AM',
+          tags: ['Salesforce', 'Strategy'],
+          color: 'border-t-rose-500 text-rose-500',
+          teamId
+        },
+        {
+          $id: 'mock-n2',
+          title: 'UI Component Feedback',
+          content: 'The new dashboard layout looks phenomenal. The CRM stats need to have real-time webhook updates.',
+          date: 'Yesterday, 4:20 PM',
+          tags: ['Feedback', 'UI/UX'],
+          color: 'border-t-teal-500 text-teal-500',
+          teamId
+        }
+      ];
     } else if (collectionId === 'tasks') {
       return [
         { $id: 'mock-t1', title: 'Prepare sales forecast presentation', completed: false, priority: 'High', teamId },
@@ -1059,6 +1322,24 @@ export class Appwrite {
       return [
         { $id: 'mock-n1', title: 'New Deal Registered', message: 'Microsoft Corp signed license master contract.', isRead: false, type: 'success', timestamp: new Date().toISOString() },
         { $id: 'mock-n2', title: 'SLA Renewal Warning', message: 'Acme SLA expires in 22 days.', isRead: false, type: 'warning', timestamp: new Date().toISOString() }
+      ];
+    } else if (collectionId === 'events') {
+      return [
+        { $id: 'mock-e1', title: 'Enterprise SLA Negotiation', month: 'Jul', day: '15', time: '10:00 AM', contact: 'Microsoft Corp', type: 'Meeting' },
+        { $id: 'mock-e2', title: 'Q3 Product Demo', month: 'Jul', day: '18', time: '2:30 PM', contact: 'Salesforce Inc', type: 'Demo' },
+        { $id: 'mock-e3', title: 'Contract Renewal Sync', month: 'Jul', day: '21', time: '11:15 AM', contact: 'Acme Corp', type: 'Follow-Up' }
+      ];
+    } else if (collectionId === 'emails') {
+      return [
+        { $id: 'mail-1', recipient: 'Bill Gates', company: 'Microsoft Corp', subject: 'Strategic Cloud Portal Proposal - ΛΞVOS Workspace', status: 'Replied', sentAt: '2h ago' },
+        { $id: 'mail-2', recipient: 'Marc Benioff', company: 'Salesforce Inc', subject: 'SLA Migration Framework Analysis for Salesforce', status: 'Delivered', sentAt: '12h ago' },
+        { $id: 'mail-3', recipient: 'Stewart Butterfield', company: 'Slack Technologies', subject: 'Follow up: CRM Database Expansion Timelines', status: 'Sent', sentAt: '1d ago' }
+      ];
+    } else if (collectionId === 'workflows') {
+      return [
+        { $id: 'mock-w1', name: 'New Enterprise Lead Qualification', description: 'Automatically scores and assigns leads >$10k to Senior AE.', status: 'Active', triggers: 142, successRate: 98, lastRun: '2 mins ago', icon: 'auto_awesome', colorClass: 'text-purple-400 bg-purple-500/10 border-purple-500/20' },
+        { $id: 'mock-w2', name: 'Contract Signature Follow-up', description: 'Sends 3-day reminder if SLA remains unsigned in DocuSign.', status: 'Active', triggers: 45, successRate: 100, lastRun: '1 hour ago', icon: 'draw', colorClass: 'text-teal-400 bg-teal-500/10 border-teal-500/20' },
+        { $id: 'mock-w3', name: 'Churn Risk Alerting', description: 'Notifies CS channel when login frequency drops 40%.', status: 'Paused', triggers: 0, successRate: 0, lastRun: 'N/A', icon: 'warning', colorClass: 'text-rose-400 bg-rose-500/10 border-rose-500/20' }
       ];
     }
     return [];

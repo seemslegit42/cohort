@@ -7,16 +7,114 @@ import {
 import express from 'express';
 import { join } from 'node:path';
 import { db } from './server/db';
-
+import { GoogleGenAI } from '@google/genai';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
 const app = express();
 app.use(express.json());
 
+// Initialize Google Gen AI client with User-Agent and key
+const aiApiKey = process.env['GEMINI_API_KEY'];
+let ai: GoogleGenAI | null = null;
+if (aiApiKey) {
+  try {
+    ai = new GoogleGenAI({
+      apiKey: aiApiKey,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build'
+        }
+      }
+    });
+    console.log('[ΛΞVOS server] GoogleGenAI successfully initialized.');
+  } catch (err) {
+    console.error('[ΛΞVOS server] Failed to initialize GoogleGenAI client:', err);
+  }
+} else {
+  console.warn('[ΛΞVOS server] GEMINI_API_KEY environment variable is not set. AI features will fallback to simulated responses.');
+}
+
+// AI Low-Latency Endpoint (gemini-3.1-flash-lite)
+app.post('/api/gemini/generate-lite', async (req, res) => {
+  const { prompt, systemInstruction } = req.body;
+  if (!prompt) {
+    res.status(400).json({ error: 'Missing prompt' });
+    return;
+  }
+
+  if (!ai) {
+    console.warn('GEMINI_API_KEY not configured, using smart fallback.');
+    res.json({
+      text: `[Fallback Response (API Key Not Set)]\n\nBased on your prompt "${prompt}", here is a generated sales asset:\n\nSubject: Partnering to optimize performance\n\nDear Partner,\n\nI hope you are doing well. I wanted to reach out regarding how we can streamline your team's current workspace operations. By integrating modern CRM pipeline workflows, you can eliminate manual tracking, increase response speed by 40%, and achieve greater alignment across all sectors.\n\nLet's schedule a brief 5-minute call next week to explore how this can benefit your organization.\n\nBest regards,\nSales Representative\nΛΞVOS Team`
+    });
+    return;
+  }
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.1-flash-lite',
+      contents: prompt,
+      config: systemInstruction ? { systemInstruction } : undefined
+    });
+    res.json({ text: response.text || '' });
+  } catch (error) {
+    console.error('Error in generate-lite API:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Gemini Generation Failed';
+    res.status(500).json({ error: errorMessage });
+  }
+});
+
+// AI Search Grounding Endpoint (gemini-3.5-flash with googleSearch)
+app.post('/api/gemini/generate-search', async (req, res) => {
+  const { prompt, systemInstruction } = req.body;
+  if (!prompt) {
+    res.status(400).json({ error: 'Missing prompt' });
+    return;
+  }
+
+  if (!ai) {
+    console.warn('GEMINI_API_KEY not configured, using grounded fallback.');
+    res.json({
+      text: `[Fallback Grounded Response (API Key Not Set)]\n\nStark Industries is a global conglomerate headquartered in Los Angeles, California. Known for advanced engineering, logistics, and defense solutions, they have recently pivoted toward clean energy systems and cyber-security telemetry. Current industry trends show a 14% increase in procurement of enterprise CRM and workflow automations among tech and defense contractors to meet compliance requirements.\n\nSource: Unified Sector Intel Report (Simulated Grounding)`,
+      citations: [
+        { title: 'Stark Industries Market Cap & Pivots', uri: 'https://en.wikipedia.org/wiki/Stark_Industries' },
+        { title: 'Global Defense Telemetry Modernization Trends', uri: 'https://example.com/defense-tech-crm' }
+      ]
+    });
+    return;
+  }
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.5-flash',
+      contents: prompt,
+      config: {
+        systemInstruction: systemInstruction || undefined,
+        tools: [{ googleSearch: {} }]
+      }
+    });
+
+    const text = response.text || '';
+    const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
+    const citations = chunks
+      .filter((chunk: { web?: { title?: string; uri?: string } }) => chunk.web?.uri)
+      .map((chunk: { web?: { title?: string; uri?: string } }) => ({
+        title: chunk.web?.title || 'Source Citation',
+        uri: chunk.web?.uri || ''
+      }));
+
+    res.json({ text, citations });
+  } catch (error) {
+    console.error('Error in generate-search API:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Gemini Grounded Search Failed';
+    res.status(500).json({ error: errorMessage });
+  }
+});
+
 const angularApp = new AngularNodeAppEngine();
 
-const collections = ['leads', 'contracts', 'contacts', 'tasks', 'notifications', 'chatMessages'];
+const collections = ['leads', 'contracts', 'contacts', 'tasks', 'notifications', 'chatMessages', 'notes', 'events', 'emails', 'workflows'];
 collections.forEach((collection) => {
   const table = db[collection as keyof typeof db];
   

@@ -6,12 +6,13 @@ import { client } from '../lib/appwrite';
 import { Appwrite } from './appwrite';
 import { MatIconModule } from '@angular/material/icon';
 import { NotificationsDrawerComponent } from './notifications-drawer.component';
+import { AICopilotDrawerComponent } from './ai-copilot-drawer.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [SidebarComponent, DockComponent, RouterOutlet, MatIconModule, NotificationsDrawerComponent],
+  imports: [SidebarComponent, DockComponent, RouterOutlet, MatIconModule, NotificationsDrawerComponent, AICopilotDrawerComponent],
   template: `
     <div class="flex h-screen w-full bg-[#07070a] text-zinc-100 font-sans overflow-hidden selection:bg-teal-500/30 selection:text-teal-200 relative">
       <!-- The Breathing Canvas: Iridescent Aurora Background (Purple, Green, Aqua Triad) -->
@@ -62,6 +63,14 @@ import { NotificationsDrawerComponent } from './notifications-drawer.component';
               <span>SENTINEL CORE ONLINE</span>
             </div>
 
+            <!-- AI Copilot Button -->
+            <button 
+              (click)="isAICopilotOpen.set(true)"
+              class="relative w-10 h-10 rounded-xl bg-purple-550/10 hover:bg-purple-900/20 border border-purple-500/35 hover:border-purple-400 flex items-center justify-center transition-all text-purple-400 hover:text-white cursor-pointer group shadow-[0_0_12px_rgba(168,85,247,0.15)]"
+              title="Open AI Sentinel Copilot">
+              <mat-icon class="text-[20px] animate-pulse">auto_awesome</mat-icon>
+            </button>
+
             <!-- Bell Icon Button -->
             <button 
               (click)="isNotificationDrawerOpen.set(true)"
@@ -91,6 +100,11 @@ import { NotificationsDrawerComponent } from './notifications-drawer.component';
       <app-notifications-drawer 
         [isOpen]="isNotificationDrawerOpen()" 
         (drawerClose)="isNotificationDrawerOpen.set(false)" />
+
+      <!-- AI Sentinel Copilot Drawer Component -->
+      <app-ai-copilot-drawer 
+        [isOpen]="isAICopilotOpen()" 
+        (drawerClose)="isAICopilotOpen.set(false)" />
     </div>
   `,
   styles: [`
@@ -105,6 +119,7 @@ export class App implements OnInit {
 
   isSidebarOpen = signal<boolean>(false);
   isNotificationDrawerOpen = signal<boolean>(false);
+  isAICopilotOpen = signal<boolean>(false);
 
   unreadCount = computed(() => {
     return this.appwrite.notifications().filter(n => !n.isRead).length;
@@ -115,7 +130,15 @@ export class App implements OnInit {
       console.log("[ΛΞVOS App] Verifying Appwrite backend communication...");
       const clientObj = client as unknown as Record<string, unknown>;
       if (typeof clientObj['ping'] === 'function') {
-        (clientObj['ping'] as () => void)();
+        const pingFn = clientObj['ping'] as () => unknown;
+        const res = pingFn();
+        if (res && typeof (res as Record<string, unknown>)['catch'] === 'function') {
+          const catchFn = (res as Record<string, unknown>)['catch'] as (err: unknown) => void;
+          catchFn((err: unknown) => {
+            const errStr = err instanceof Error ? err.message : String(err);
+            console.warn("Appwrite backend verification failed:", errStr);
+          });
+        }
       }
     } catch (e) {
       console.log("Auto-ping triggered asynchronously:", e);

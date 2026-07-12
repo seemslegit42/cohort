@@ -393,28 +393,27 @@ export class NotificationsDrawerComponent {
     this.activeTab.set(tab);
   }
 
-  markAsRead(id: string) {
+  async markAsRead(id: string) {
     this.playCrystallineChime();
-    this.appwrite.notifications.update(arr => 
-      arr.map(n => n.$id === id ? { ...n, isRead: true } : n)
-    );
+    await this.appwrite.markNotificationRead(id);
   }
 
-  deleteNotification(id: string) {
+  async deleteNotification(id: string) {
     this.playCrystallineChime();
-    this.appwrite.notifications.update(arr => arr.filter(n => n.$id !== id));
+    await this.appwrite.deleteNotification(id);
   }
 
-  acknowledgeAll() {
+  async acknowledgeAll() {
     this.playSuccessHarmonic();
-    this.appwrite.notifications.update(arr => 
-      arr.map(n => ({ ...n, isRead: true }))
-    );
+    const allIds = this.notifications().filter(n => !n.isRead).map(n => n.$id);
+    for (const id of allIds) {
+      await this.appwrite.markNotificationRead(id);
+    }
   }
 
-  completeTask(id: string) {
+  async completeTask(id: string) {
     this.playSuccessHarmonic();
-    this.appwrite.toggleTaskCompleted(id, true);
+    await this.appwrite.toggleTaskCompleted(id, true);
   }
 
   contactLead(lead: Lead) {

@@ -565,10 +565,7 @@ export class ContactsComponent {
 
   async deleteContactRecord(id: string) {
     if (confirm('Are you certain you wish to purge this relationship record from the system?')) {
-      const index = this.appwrite.contacts().findIndex(c => c.$id === id);
-      if (index > -1) {
-        this.appwrite.contacts.update(arr => arr.filter(c => c.$id !== id));
-      }
+      await this.appwrite.deleteContact(id);
       if (this.selectedContact()?.$id === id) {
         this.selectedContact.set(null);
       }

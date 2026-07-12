@@ -97,8 +97,8 @@ function createTable<T>(tableId: string) {
           Query.orderDesc('$createdAt')
         ]);
         return response.documents.map(mapFromAppwrite<T>);
-      } catch {
-        console.error(`Error listing ${tableId}:`);
+      } catch (err) {
+        console.error(`Error listing ${tableId}:`, err);
         return [];
       }
     },
@@ -139,5 +139,9 @@ export const db = {
   contacts: createTable<any>('contacts'),
   tasks: createTable<any>('tasks'),
   notifications: createTable<any>('notifications'),
-  chatMessages: createTable<any>('chatMessages')
+  chatMessages: createTable<any>('chatMessages'),
+  notes: createTable<any>('notes'),
+  events: createTable<any>('events'),
+  emails: createTable<any>('emails'),
+  workflows: createTable<any>('workflows')
 };

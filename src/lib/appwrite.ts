@@ -12,12 +12,14 @@ try {
   console.log("Pinging Appwrite server...");
   const clientObj = client as unknown as Record<string, unknown>;
   if (typeof clientObj['ping'] === 'function') {
-    (clientObj['ping'] as () => void)();
-  } else {
-    // If typings or JS environment has a fallback
-    const pingFn = clientObj['ping'];
-    if (pingFn && typeof pingFn === 'function') {
-      (pingFn as () => void)();
+    const pingFn = clientObj['ping'] as () => unknown;
+    const res = pingFn();
+    if (res && typeof (res as Record<string, unknown>)['catch'] === 'function') {
+      const catchFn = (res as Record<string, unknown>)['catch'] as (err: unknown) => void;
+      catchFn((err: unknown) => {
+        const errStr = err instanceof Error ? err.message : String(err);
+        console.warn("Appwrite ping failed:", errStr);
+      });
     }
   }
 } catch (e) {

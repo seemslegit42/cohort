@@ -10,6 +10,9 @@ export interface Lead {
   source: string;
   status: string; // 'New', 'Contacted', 'Qualified', 'Closed'
   value: number;
+  industry?: string;
+  region?: string;
+  aiInsights?: string;
 }
 
 @Injectable({
@@ -23,6 +26,15 @@ export class LeadService {
   error = signal<string | null>(null);
 
   async loadLeads() {
+    if (typeof window === 'undefined') {
+      this.leads.set([
+        { $id: '1', name: 'John Doe', email: 'john@example.com', source: 'Website', status: 'New', value: 5000 },
+        { $id: '2', name: 'Jane Smith', email: 'jane@example.com', source: 'Referral', status: 'Contacted', value: 12000 },
+        { $id: '3', name: 'Acme Corp', email: 'info@acme.com', source: 'Cold Call', status: 'Qualified', value: 45000 },
+      ]);
+      return;
+    }
+    
     this.loading.set(true);
     this.error.set(null);
     try {

@@ -5,7 +5,7 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormsModule } 
 import { Appwrite } from './appwrite';
 
 interface CampaignEmail {
-  id: string;
+  $id: string;
   recipient: string;
   company: string;
   subject: string;
@@ -184,7 +184,7 @@ interface CampaignEmail {
 
             <!-- List inside Outbox -->
             <div class="flex-1 space-y-3 overflow-y-auto max-h-[460px] pr-1">
-              @for (mail of campaignEmails(); track mail.id) {
+              @for (mail of campaignEmails(); track mail.$id) {
                 <div class="bg-zinc-950/40 border border-zinc-850 p-3.5 rounded-xl flex items-start gap-3 hover:bg-zinc-900/60 transition-colors">
                   <div class="w-8 h-8 rounded-lg bg-teal-500/10 border border-teal-500/20 text-teal-400 flex items-center justify-center font-bold text-xs uppercase flex-shrink-0">
                     {{ mail.recipient.charAt(0) }}
@@ -313,11 +313,7 @@ export class EmailsComponent {
   localBody = '';
 
   // Campaign log history
-  campaignEmails = signal<CampaignEmail[]>([
-    { id: 'mail-1', recipient: 'Bill Gates', company: 'Microsoft Corp', subject: 'Strategic Cloud Portal Proposal - ΛΞVOS Workspace', status: 'Replied', sentAt: '2h ago' },
-    { id: 'mail-2', recipient: 'Marc Benioff', company: 'Salesforce Inc', subject: 'SLA Migration Framework Analysis for Salesforce', status: 'Delivered', sentAt: '12h ago' },
-    { id: 'mail-3', recipient: 'Stewart Butterfield', company: 'Slack Technologies', subject: 'Follow up: CRM Database Expansion Timelines', status: 'Sent', sentAt: '1d ago' }
-  ]);
+  campaignEmails = this.appwrite.emails as import('@angular/core').Signal<CampaignEmail[]>;
 
   showSettings = signal(false);
   imapHost = '';
@@ -423,11 +419,10 @@ export class EmailsComponent {
     this.isProcessing.set(false);
   }
 
-  dispatchOutbox() {
+  async dispatchOutbox() {
     const entry = this.composeForm.value;
     
-    const newMail: CampaignEmail = {
-      id: 'mail-' + Date.now(),
+    const newMail = {
       recipient: entry.clientName,
       company: entry.companyName,
       subject: this.localSubject,
@@ -435,7 +430,7 @@ export class EmailsComponent {
       sentAt: 'Just now'
     };
 
-    this.campaignEmails.update(arr => [newMail, ...arr]);
+    await this.appwrite.addEmail(newMail);
 
     // Push standard alert notification in Appwrite
     this.appwrite.addNotification({
