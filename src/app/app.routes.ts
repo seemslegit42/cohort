@@ -68,5 +68,9 @@ export const routes: Routes = [
   {
     path: 'systems',
     loadComponent: () => import('./systems.component').then(m => m.SystemsComponent)
+  },
+  {
+    path: 'newsletter',
+    loadComponent: () => import('./newsletter.component').then(m => m.NewsletterComponent)
   }
 ];

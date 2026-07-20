@@ -86,6 +86,10 @@ import { Appwrite } from './appwrite';
           <mat-icon class="text-[20px] w-5 h-5">account_tree</mat-icon>
           <span class="font-medium text-sm">Workflows</span>
         </a>
+        <a routerLink="/newsletter" routerLinkActive="bg-zinc-900/60 text-white shadow-sm border border-zinc-800" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all">
+          <mat-icon class="text-[20px] w-5 h-5 text-purple-400">mark_email_read</mat-icon>
+          <span class="font-medium text-sm">Newsletter</span>
+        </a>
 
         <div class="text-xs font-semibold text-zinc-600 uppercase tracking-wider mb-3 px-3 mt-8">Records</div>
         <a routerLink="/clients" routerLinkActive="bg-zinc-900/60 text-white shadow-sm border border-zinc-800" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all">

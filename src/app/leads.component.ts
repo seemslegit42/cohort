@@ -27,17 +27,36 @@ import { Appwrite } from './appwrite';
           <p class="text-xs md:text-sm text-zinc-400 mt-2">Funnel progression tracking for pre-conversion prospect accounts.</p>
         </div>
         
-        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          <div class="bg-zinc-900 border border-zinc-800 rounded-lg p-1 flex items-center justify-center sm:justify-start gap-1">
-            <button (click)="viewMode.set('board')" [class.bg-zinc-800]="viewMode() === 'board'" [class.text-white]="viewMode() === 'board'" class="text-zinc-500 px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1 transition-colors">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-3 flex-wrap">
+          <!-- Status Filter Dropdown -->
+          <div class="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-zinc-300">
+            <mat-icon class="text-zinc-500 text-[18px]">filter_list</mat-icon>
+            <select (change)="onStatusFilterChange($event)" class="bg-transparent text-xs font-semibold text-zinc-200 focus:outline-none cursor-pointer">
+              <option value="All" class="bg-zinc-950 text-zinc-200">All Stages</option>
+              <option value="New" class="bg-zinc-950 text-zinc-200">New</option>
+              <option value="Contacted" class="bg-zinc-950 text-zinc-200">Contacted</option>
+              <option value="Qualified" class="bg-zinc-950 text-zinc-200">Qualified</option>
+              <option value="Closed" class="bg-zinc-950 text-zinc-200">Closed / Lost</option>
+            </select>
+          </div>
+
+          <!-- Export CSV Button -->
+          <button (click)="exportToCSV()" class="bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 font-semibold px-4 py-2 rounded-xl text-xs transition-colors flex items-center gap-2 shadow-sm">
+            <mat-icon class="text-[18px]">file_download</mat-icon>
+            Export CSV
+          </button>
+
+          <!-- View Mode Toggle -->
+          <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-1 flex items-center justify-center sm:justify-start gap-1">
+            <button (click)="viewMode.set('board')" [class.bg-zinc-800]="viewMode() === 'board'" [class.text-white]="viewMode() === 'board'" class="text-zinc-500 px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors">
               <mat-icon class="text-[16px]">view_column</mat-icon> Board
             </button>
-            <button (click)="viewMode.set('list')" [class.bg-zinc-800]="viewMode() === 'list'" [class.text-white]="viewMode() === 'list'" class="text-zinc-500 px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1 transition-colors">
+            <button (click)="viewMode.set('list')" [class.bg-zinc-800]="viewMode() === 'list'" [class.text-white]="viewMode() === 'list'" class="text-zinc-500 px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors">
               <mat-icon class="text-[16px]">table_rows</mat-icon> List
             </button>
           </div>
           
-          <button (click)="openAddModal()" class="bg-orange-500 hover:bg-orange-400 text-zinc-950 font-bold px-4 py-2 rounded-xl text-sm transition-colors shadow-[0_0_15px_rgba(249,115,22,0.2)] flex items-center gap-2">
+          <button (click)="openAddModal()" class="bg-orange-500 hover:bg-orange-400 text-zinc-950 font-bold px-4 py-2 rounded-xl text-xs transition-colors shadow-[0_0_15px_rgba(249,115,22,0.2)] flex items-center gap-2">
             <mat-icon class="text-[18px]">add</mat-icon>
             New Lead
           </button>
@@ -100,7 +119,7 @@ import { Appwrite } from './appwrite';
                 </tr>
               </thead>
               <tbody class="divide-y divide-zinc-800/50 text-sm">
-                @for (lead of leadService.leads(); track lead.$id) {
+                @for (lead of filteredLeads(); track lead.$id) {
                   <tr class="hover:bg-zinc-800/30 transition-colors group">
                     <td class="px-6 py-4 border-zinc-800/50 align-top">
                       <div class="font-bold text-white mb-1 flex items-center gap-2">
@@ -462,6 +481,8 @@ export class LeadsComponent implements OnInit {
   isSubmitting = signal<boolean>(false);
   editingId = signal<string | null>(null);
   enrichingLeads = signal<Record<string, boolean>>({});
+  
+  selectedStatusFilter = signal<string>('All');
 
   activeChatLead = signal<Lead | null>(null);
   
@@ -485,6 +506,13 @@ export class LeadsComponent implements OnInit {
     return this.leadService.leads().reduce((sum, lead) => sum + (lead.value || 0), 0);
   });
 
+  filteredLeads = computed(() => {
+    const leads = this.leadService.leads();
+    const filter = this.selectedStatusFilter();
+    if (filter === 'All') return leads;
+    return leads.filter(l => l.status === filter || (filter === 'Closed' && l.status === 'Lost'));
+  });
+
   qualifiedRatio = computed(() => {
     const leads = this.leadService.leads();
     if (leads.length === 0) return 0;
@@ -495,7 +523,7 @@ export class LeadsComponent implements OnInit {
   stages: ('New' | 'Contacted' | 'Qualified' | 'Closed')[] = ['New', 'Contacted', 'Qualified', 'Closed'];
 
   leadsMap = computed(() => {
-    const leads = this.leadService.leads();
+    const leads = this.filteredLeads();
     return {
       'New': leads.filter(l => l.status === 'New'),
       'Contacted': leads.filter(l => l.status === 'Contacted'),
@@ -503,6 +531,66 @@ export class LeadsComponent implements OnInit {
       'Closed': leads.filter(l => l.status === 'Closed' || l.status === 'Lost')
     };
   });
+
+  onStatusFilterChange(event: Event) {
+    const target = event.target as HTMLSelectElement;
+    this.selectedStatusFilter.set(target.value);
+  }
+
+  exportToCSV() {
+    const leads = this.filteredLeads();
+    if (leads.length === 0) {
+      this.appwrite.addNotification({
+        title: 'Export Failed',
+        message: 'There are no leads in the current view to export.',
+        isRead: false,
+        type: 'info'
+      });
+      return;
+    }
+
+    // Build CSV Headers & Rows
+    const headers = ['Name', 'Email', 'Phone', 'Source', 'Status', 'Estimated Value (USD)', 'Industry', 'Region', 'AI Insights'];
+    const rows = leads.map(lead => [
+      lead.name || '',
+      lead.email || '',
+      lead.phone || '',
+      lead.source || '',
+      lead.status || '',
+      lead.value !== undefined ? lead.value.toString() : '0',
+      lead.industry || '',
+      lead.region || '',
+      lead.aiInsights || ''
+    ]);
+
+    // Format and Escape Special Characters
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(val => `"${val.replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+
+    try {
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `leads_export_${new Date().toISOString().slice(0, 10)}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      this.appwrite.addNotification({
+        title: 'Leads Exported',
+        message: `Successfully exported ${leads.length} leads to CSV format.`,
+        isRead: false,
+        type: 'success'
+      });
+    } catch (err) {
+      console.error('Failed to export CSV:', err);
+      alert('Failed to export CSV. Please try again.');
+    }
+  }
 
   ngOnInit() {
     this.leadService.loadLeads();
