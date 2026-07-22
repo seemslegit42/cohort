@@ -13,6 +13,9 @@ export interface Lead {
   industry?: string;
   region?: string;
   aiInsights?: string;
+  priority?: 'High' | 'Medium' | 'Low' | string;
+  expectedCloseDate?: string;
+  createdAt?: string;
 }
 
 @Injectable({
@@ -25,13 +28,20 @@ export class LeadService {
   loading = signal<boolean>(false);
   error = signal<string | null>(null);
 
+  private defaultMockLeads: Lead[] = [
+    { $id: '1', name: 'John Doe', email: 'john@example.com', phone: '+1 555-0192', source: 'Website', status: 'New', value: 8500, priority: 'High', expectedCloseDate: '2026-08-15', industry: 'SaaS', region: 'North America', createdAt: '2026-07-01' },
+    { $id: '2', name: 'Jane Smith', email: 'jane@example.com', phone: '+1 555-0144', source: 'Referral', status: 'Contacted', value: 24000, priority: 'Medium', expectedCloseDate: '2026-08-28', industry: 'FinTech', region: 'Europe', createdAt: '2026-07-05' },
+    { $id: '3', name: 'Acme Corp', email: 'info@acme.com', phone: '+1 555-0188', source: 'Cold Call', status: 'Qualified', value: 65000, priority: 'High', expectedCloseDate: '2026-09-10', industry: 'Logistics', region: 'North America', aiInsights: 'High intent enterprise client looking for cloud-native deployment.', createdAt: '2026-07-10' },
+    { $id: '4', name: 'Nexus Innovations', email: 'contact@nexus.io', phone: '+1 555-0172', source: 'Inbound', status: 'Qualified', value: 42000, priority: 'High', expectedCloseDate: '2026-08-20', industry: 'Healthcare', region: 'APAC', createdAt: '2026-07-12' },
+    { $id: '5', name: 'Starlight Retail', email: 'buy@starlight.com', phone: '+1 555-0119', source: 'Website', status: 'New', value: 12500, priority: 'Low', expectedCloseDate: '2026-09-30', industry: 'E-Commerce', region: 'North America', createdAt: '2026-07-15' },
+    { $id: '6', name: 'Apex Media', email: 'sales@apexmedia.net', phone: '+1 555-0163', source: 'LinkedIn', status: 'Closed', value: 38000, priority: 'Medium', expectedCloseDate: '2026-07-18', industry: 'Media', region: 'Europe', createdAt: '2026-06-20' },
+    { $id: '7', name: 'Vanguard Systems', email: 'tech@vanguard.org', phone: '+1 555-0105', source: 'Partner', status: 'Contacted', value: 55000, priority: 'High', expectedCloseDate: '2026-08-05', industry: 'Cyber Security', region: 'North America', createdAt: '2026-07-08' },
+    { $id: '8', name: 'Aether BioLab', email: 'info@aetherbio.com', phone: '+1 555-0131', source: 'Event', status: 'Closed', value: 95000, priority: 'High', expectedCloseDate: '2026-07-14', industry: 'Bio-Tech', region: 'APAC', createdAt: '2026-06-15' }
+  ];
+
   async loadLeads() {
     if (typeof window === 'undefined') {
-      this.leads.set([
-        { $id: '1', name: 'John Doe', email: 'john@example.com', source: 'Website', status: 'New', value: 5000 },
-        { $id: '2', name: 'Jane Smith', email: 'jane@example.com', source: 'Referral', status: 'Contacted', value: 12000 },
-        { $id: '3', name: 'Acme Corp', email: 'info@acme.com', source: 'Cold Call', status: 'Qualified', value: 45000 },
-      ]);
+      this.leads.set(this.defaultMockLeads);
       return;
     }
     
@@ -43,26 +53,23 @@ export class LeadService {
         throw new Error('Failed to fetch leads');
       }
       const data = await response.json();
-      const items = data.items || [];
-      this.leads.set(items);
+      const items: Lead[] = data.items || [];
       
-      // If no leads returned from backend, use fallback/mock values
       if (items.length === 0) {
-        this.leads.set([
-           { $id: '1', name: 'John Doe', email: 'john@example.com', source: 'Website', status: 'New', value: 5000 },
-           { $id: '2', name: 'Jane Smith', email: 'jane@example.com', source: 'Referral', status: 'Contacted', value: 12000 },
-           { $id: '3', name: 'Acme Corp', email: 'info@acme.com', source: 'Cold Call', status: 'Qualified', value: 45000 },
-        ]);
+        this.leads.set(this.defaultMockLeads);
+      } else {
+        // Merge optional missing properties with defaults if missing
+        const merged = items.map(item => ({
+          ...item,
+          priority: item.priority || 'Medium',
+          expectedCloseDate: item.expectedCloseDate || '2026-08-30'
+        }));
+        this.leads.set(merged);
       }
     } catch (e: any) {
       console.warn('Failed to load leads from backend, using fallbacks:', e);
-      // Fallback for UI if API fails, but don't set user-facing error signal to prevent disruptive error banners
       if (this.leads().length === 0) {
-        this.leads.set([
-           { $id: '1', name: 'John Doe', email: 'john@example.com', source: 'Website', status: 'New', value: 5000 },
-           { $id: '2', name: 'Jane Smith', email: 'jane@example.com', source: 'Referral', status: 'Contacted', value: 12000 },
-           { $id: '3', name: 'Acme Corp', email: 'info@acme.com', source: 'Cold Call', status: 'Qualified', value: 45000 },
-        ]);
+        this.leads.set(this.defaultMockLeads);
       }
     } finally {
       this.loading.set(false);

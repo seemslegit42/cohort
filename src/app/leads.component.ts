@@ -84,6 +84,99 @@ import { Appwrite } from './appwrite';
         </div>
       </div>
 
+      <!-- Filter & Controls Bar -->
+      <div class="bg-zinc-900/80 backdrop-blur-xl border border-zinc-800 rounded-2xl p-4 mb-6 shadow-xl space-y-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          
+          <!-- Search Input -->
+          <div class="relative col-span-1 sm:col-span-2 md:col-span-2">
+            <mat-icon class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-[18px]">search</mat-icon>
+            <input 
+              type="text" 
+              [value]="searchQuery()" 
+              (input)="searchQuery.set($any($event.target).value)" 
+              placeholder="Search lead name, email, region..." 
+              class="w-full bg-zinc-950 border border-zinc-800 rounded-xl pl-9 pr-8 py-2 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-orange-500/50 transition-colors"
+            />
+            @if (searchQuery()) {
+              <button (click)="searchQuery.set('')" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white">
+                <mat-icon class="text-[16px]">cancel</mat-icon>
+              </button>
+            }
+          </div>
+
+          <!-- Priority Filter -->
+          <div class="flex items-center gap-1.5 bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-1.5">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Priority:</span>
+            <select [value]="selectedPriorityFilter()" (change)="selectedPriorityFilter.set($any($event.target).value)" class="bg-transparent text-xs font-semibold text-zinc-200 focus:outline-none cursor-pointer w-full">
+              <option value="All" class="bg-zinc-950 text-zinc-200">All Priorities</option>
+              <option value="High" class="bg-zinc-950 text-rose-400 font-bold">High</option>
+              <option value="Medium" class="bg-zinc-950 text-amber-400 font-bold">Medium</option>
+              <option value="Low" class="bg-zinc-950 text-zinc-400 font-bold">Low</option>
+            </select>
+          </div>
+
+          <!-- Source Channel Filter -->
+          <div class="flex items-center gap-1.5 bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-1.5">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Source:</span>
+            <select [value]="selectedSourceFilter()" (change)="selectedSourceFilter.set($any($event.target).value)" class="bg-transparent text-xs font-semibold text-zinc-200 focus:outline-none cursor-pointer w-full">
+              <option value="All" class="bg-zinc-950 text-zinc-200">All Sources</option>
+              <option value="Website" class="bg-zinc-950 text-zinc-200">Website</option>
+              <option value="Referral" class="bg-zinc-950 text-zinc-200">Referral</option>
+              <option value="Cold Call" class="bg-zinc-950 text-zinc-200">Cold Call</option>
+              <option value="Inbound" class="bg-zinc-950 text-zinc-200">Inbound</option>
+              <option value="LinkedIn" class="bg-zinc-950 text-zinc-200">LinkedIn</option>
+              <option value="Partner" class="bg-zinc-950 text-zinc-200">Partner</option>
+              <option value="Event" class="bg-zinc-950 text-zinc-200">Event</option>
+            </select>
+          </div>
+
+          <!-- Expected Close Date Filter -->
+          <div class="flex items-center gap-1.5 bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-1.5">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Close Date:</span>
+            <select [value]="selectedDateFilter()" (change)="selectedDateFilter.set($any($event.target).value)" class="bg-transparent text-xs font-semibold text-zinc-200 focus:outline-none cursor-pointer w-full">
+              <option value="All" class="bg-zinc-950 text-zinc-200">All Dates</option>
+              <option value="this_month" class="bg-zinc-950 text-zinc-200">Closing This Month</option>
+              <option value="next_month" class="bg-zinc-950 text-zinc-200">Closing Next Month</option>
+              <option value="overdue" class="bg-zinc-950 text-rose-400 font-bold">Overdue / Past Target</option>
+              <option value="has_date" class="bg-zinc-950 text-zinc-200">Has Target Date</option>
+            </select>
+          </div>
+
+          <!-- Sort Order Selector -->
+          <div class="flex items-center gap-1.5 bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-1.5">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Sort:</span>
+            <select [value]="selectedSortBy()" (change)="selectedSortBy.set($any($event.target).value)" class="bg-transparent text-xs font-semibold text-zinc-200 focus:outline-none cursor-pointer w-full">
+              <option value="newest" class="bg-zinc-950 text-zinc-200">Newest Created</option>
+              <option value="oldest" class="bg-zinc-950 text-zinc-200">Oldest Created</option>
+              <option value="value_desc" class="bg-zinc-950 text-orange-400 font-bold">Value: High to Low</option>
+              <option value="value_asc" class="bg-zinc-950 text-zinc-200">Value: Low to High</option>
+              <option value="priority" class="bg-zinc-950 text-rose-400 font-bold">Priority: High to Low</option>
+              <option value="close_date" class="bg-zinc-950 text-zinc-200">Target Close Date</option>
+            </select>
+          </div>
+
+        </div>
+
+        <!-- Filter Status Bar & Clear Button -->
+        <div class="flex items-center justify-between text-xs text-zinc-400 border-t border-zinc-800/60 pt-2 px-1">
+          <div class="flex items-center gap-2">
+            <span class="font-medium">
+              Showing <span class="text-white font-bold">{{ filteredLeads().length }}</span> of <span class="text-zinc-300 font-bold">{{ leadService.leads().length }}</span> leads
+            </span>
+            @if (hasActiveFilters()) {
+              <span class="inline-block w-1.5 h-1.5 rounded-full bg-orange-400 animate-ping"></span>
+            }
+          </div>
+
+          @if (hasActiveFilters()) {
+            <button (click)="clearFilters()" class="text-orange-400 hover:text-orange-300 font-bold text-xs flex items-center gap-1 transition-colors">
+              <mat-icon class="text-[14px]">restart_alt</mat-icon> Clear All Filters
+            </button>
+          }
+        </div>
+      </div>
+
       <!-- Loading / Error states -->
       @if (leadService.loading() && leadService.leads().length === 0) {
         <div class="py-12 flex justify-center items-center flex-1">
@@ -108,12 +201,13 @@ import { Appwrite } from './appwrite';
         } @else {
           <!-- List View -->
           <div class="flex-1 bg-zinc-900/60 backdrop-blur-xl border border-zinc-800 rounded-2xl overflow-auto shadow-2xl relative custom-scrollbar">
-            <table class="w-full text-left border-collapse min-w-[800px]">
+            <table class="w-full text-left border-collapse min-w-[900px]">
               <thead class="sticky top-0 z-10">
                 <tr class="bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800">
                   <th class="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-zinc-500">Name & Contact</th>
-                  <th class="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-zinc-500">Source Channel</th>
-                  <th class="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-zinc-500">Est. Opportunity Value</th>
+                  <th class="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-zinc-500">Priority & Source</th>
+                  <th class="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-zinc-500">Est. Value</th>
+                  <th class="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-zinc-500">Target Close</th>
                   <th class="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-zinc-500">Pipeline Stage</th>
                   <th class="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-zinc-500 text-right">Actions</th>
                 </tr>
@@ -145,16 +239,35 @@ import { Appwrite } from './appwrite';
                       </div>
                     </td>
                     <td class="px-6 py-4 border-zinc-800/50 align-top">
-                      <span class="bg-zinc-800/50 border border-zinc-700/50 text-zinc-300 px-2 py-1 rounded-lg text-xs font-medium">{{ lead.source }}</span>
+                      <div class="flex items-center gap-1.5 mb-1.5">
+                        <span [ngClass]="{
+                          'bg-rose-500/10 text-rose-400 border-rose-500/30': lead.priority === 'High',
+                          'bg-amber-500/10 text-amber-400 border-amber-500/30': lead.priority === 'Medium',
+                          'bg-zinc-800 text-zinc-400 border-zinc-700': lead.priority === 'Low' || !lead.priority
+                        }" class="px-2 py-0.5 rounded text-[10px] font-bold uppercase border">
+                          {{ lead.priority || 'Medium' }}
+                        </span>
+                        <span class="bg-zinc-800/60 border border-zinc-700/50 text-zinc-300 px-2 py-0.5 rounded text-[10px] font-medium">{{ lead.source }}</span>
+                      </div>
                       @if (lead.industry || lead.region) {
-                        <div class="text-[10px] text-zinc-500 font-mono mt-1.5 space-y-0.5">
-                          <div>Ind: <span class="text-zinc-400 font-semibold">{{ lead.industry }}</span></div>
-                          <div>Loc: <span class="text-zinc-400 font-semibold">{{ lead.region }}</span></div>
+                        <div class="text-[10px] text-zinc-500 font-mono space-y-0.5">
+                          <div>Ind: <span class="text-zinc-400 font-semibold">{{ lead.industry || 'General' }}</span></div>
+                          <div>Loc: <span class="text-zinc-400 font-semibold">{{ lead.region || 'Global' }}</span></div>
                         </div>
                       }
                     </td>
                     <td class="px-6 py-4 border-zinc-800/50 align-top">
                       <span class="text-orange-400 font-mono font-bold">{{ lead.value | currency:'USD':'symbol':'1.0-0' }}</span>
+                    </td>
+                    <td class="px-6 py-4 border-zinc-800/50 align-top text-xs">
+                      @if (lead.expectedCloseDate) {
+                        <span class="text-zinc-300 font-mono flex items-center gap-1">
+                          <mat-icon class="text-[14px] text-zinc-500">event</mat-icon>
+                          {{ lead.expectedCloseDate }}
+                        </span>
+                      } @else {
+                        <span class="text-zinc-600 font-mono italic">Not set</span>
+                      }
                     </td>
                     <td class="px-6 py-4 border-zinc-800/50 align-top">
                       <select (change)="updateStatus(lead, $event)" [value]="lead.status === 'Lost' ? 'Closed' : lead.status" class="bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-1.5 text-xs font-semibold text-zinc-200 focus:outline-none focus:border-orange-500/50 cursor-pointer transition-colors hover:border-zinc-600">
@@ -184,8 +297,8 @@ import { Appwrite } from './appwrite';
                   </tr>
                 } @empty {
                   <tr>
-                    <td colspan="5" class="px-6 py-12 text-center text-zinc-500 border-zinc-800/50 text-sm">
-                      No leads found. Create a new lead to get started.
+                    <td colspan="6" class="px-6 py-12 text-center text-zinc-500 border-zinc-800/50 text-sm">
+                      No matching leads found for current search/filters.
                     </td>
                   </tr>
                 }
@@ -242,10 +355,15 @@ import { Appwrite } from './appwrite';
                  <mat-icon class="text-[12px] opacity-70">phone</mat-icon> {{ lead.phone }}
               </div>
             }
+            @if (lead.expectedCloseDate) {
+              <div class="flex items-center gap-1 text-[10px] text-zinc-400 font-mono">
+                 <mat-icon class="text-[12px] text-zinc-500">event</mat-icon> Target: <span class="text-zinc-300 font-semibold">{{ lead.expectedCloseDate }}</span>
+              </div>
+            }
             @if (lead.industry || lead.region) {
               <div class="flex items-center justify-between text-[10px] text-zinc-500 font-mono mt-1 border-t border-zinc-800/40 pt-1">
-                <span>Ind: <span class="text-zinc-300 font-semibold">{{ lead.industry }}</span></span>
-                <span>Loc: <span class="text-zinc-300 font-semibold">{{ lead.region }}</span></span>
+                <span>Ind: <span class="text-zinc-300 font-semibold">{{ lead.industry || 'General' }}</span></span>
+                <span>Loc: <span class="text-zinc-300 font-semibold">{{ lead.region || 'Global' }}</span></span>
               </div>
             }
             @if (lead.aiInsights) {
@@ -261,7 +379,16 @@ import { Appwrite } from './appwrite';
 
           <div class="pt-3 border-t border-zinc-800/80 flex items-center justify-between mt-1">
             <span class="text-orange-400 font-mono font-bold text-xs">{{ lead.value | currency:'USD':'symbol':'1.0-0' }}</span>
-            <span class="bg-zinc-800 text-zinc-300 text-[10px] font-bold px-1.5 py-0.5 rounded">{{ lead.source }}</span>
+            <div class="flex items-center gap-1.5">
+              <span [ngClass]="{
+                'bg-rose-500/10 text-rose-400 border-rose-500/30': lead.priority === 'High',
+                'bg-amber-500/10 text-amber-400 border-amber-500/30': lead.priority === 'Medium',
+                'bg-zinc-800 text-zinc-400 border-zinc-700': lead.priority === 'Low' || !lead.priority
+              }" class="text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase">
+                {{ lead.priority || 'Medium' }}
+              </span>
+              <span class="bg-zinc-800 text-zinc-300 text-[10px] font-bold px-1.5 py-0.5 rounded">{{ lead.source }}</span>
+            </div>
           </div>
 
           <!-- Quick status mover -->
@@ -323,6 +450,21 @@ import { Appwrite } from './appwrite';
 
               <div class="grid grid-cols-2 gap-3">
                 <div class="space-y-1">
+                  <label for="leadPriority" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Priority</label>
+                  <select id="leadPriority" formControlName="priority" class="w-full bg-zinc-950/80 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-zinc-200 focus:outline-none focus:border-orange-500/50 transition-colors">
+                    <option value="High" class="text-rose-400 font-bold">High Priority</option>
+                    <option value="Medium" class="text-amber-400 font-bold">Medium Priority</option>
+                    <option value="Low" class="text-zinc-400">Low Priority</option>
+                  </select>
+                </div>
+                <div class="space-y-1">
+                  <label for="leadCloseDate" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Expected Close Date</label>
+                  <input id="leadCloseDate" type="date" formControlName="expectedCloseDate" class="w-full bg-zinc-950/80 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-orange-500/50 transition-colors" />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div class="space-y-1">
                   <label for="leadSource" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Source Channel</label>
                   <input id="leadSource" type="text" formControlName="source" placeholder="Website, Referral, Event..." class="w-full bg-zinc-950/80 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-white placeholder-zinc-700 focus:outline-none focus:border-orange-500/50 transition-colors" />
                 </div>
@@ -334,6 +476,17 @@ import { Appwrite } from './appwrite';
                     <option value="Qualified">Sales Qualified</option>
                     <option value="Closed">Closed</option>
                   </select>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div class="space-y-1">
+                  <label for="leadIndustry" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Industry</label>
+                  <input id="leadIndustry" type="text" formControlName="industry" placeholder="SaaS, FinTech..." class="w-full bg-zinc-950/80 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-white placeholder-zinc-700 focus:outline-none focus:border-orange-500/50 transition-colors" />
+                </div>
+                <div class="space-y-1">
+                  <label for="leadRegion" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Region</label>
+                  <input id="leadRegion" type="text" formControlName="region" placeholder="North America, Europe..." class="w-full bg-zinc-950/80 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-white placeholder-zinc-700 focus:outline-none focus:border-orange-500/50 transition-colors" />
                 </div>
               </div>
 
@@ -482,7 +635,13 @@ export class LeadsComponent implements OnInit {
   editingId = signal<string | null>(null);
   enrichingLeads = signal<Record<string, boolean>>({});
   
+  // Filter & Search signals
+  searchQuery = signal<string>('');
   selectedStatusFilter = signal<string>('All');
+  selectedPriorityFilter = signal<string>('All');
+  selectedSourceFilter = signal<string>('All');
+  selectedDateFilter = signal<string>('All');
+  selectedSortBy = signal<string>('newest');
 
   activeChatLead = signal<Lead | null>(null);
   
@@ -498,7 +657,11 @@ export class LeadsComponent implements OnInit {
     phone: [''],
     source: ['', Validators.required],
     status: ['New', Validators.required],
-    value: [0, Validators.required]
+    priority: ['Medium', Validators.required],
+    value: [0, Validators.required],
+    expectedCloseDate: [''],
+    industry: [''],
+    region: ['']
   });
 
   // Derived computations for stats and columns
@@ -506,12 +669,106 @@ export class LeadsComponent implements OnInit {
     return this.leadService.leads().reduce((sum, lead) => sum + (lead.value || 0), 0);
   });
 
-  filteredLeads = computed(() => {
-    const leads = this.leadService.leads();
-    const filter = this.selectedStatusFilter();
-    if (filter === 'All') return leads;
-    return leads.filter(l => l.status === filter || (filter === 'Closed' && l.status === 'Lost'));
+  hasActiveFilters = computed(() => {
+    return this.searchQuery().trim() !== '' ||
+      this.selectedStatusFilter() !== 'All' ||
+      this.selectedPriorityFilter() !== 'All' ||
+      this.selectedSourceFilter() !== 'All' ||
+      this.selectedDateFilter() !== 'All' ||
+      this.selectedSortBy() !== 'newest';
   });
+
+  filteredLeads = computed(() => {
+    let leads = [...this.leadService.leads()];
+    const query = this.searchQuery().toLowerCase().trim();
+    const status = this.selectedStatusFilter();
+    const priority = this.selectedPriorityFilter();
+    const source = this.selectedSourceFilter();
+    const dateFilter = this.selectedDateFilter();
+    const sortBy = this.selectedSortBy();
+
+    // Search query filter
+    if (query) {
+      leads = leads.filter(l => 
+        (l.name && l.name.toLowerCase().includes(query)) ||
+        (l.email && l.email.toLowerCase().includes(query)) ||
+        (l.phone && l.phone.toLowerCase().includes(query)) ||
+        (l.industry && l.industry.toLowerCase().includes(query)) ||
+        (l.region && l.region.toLowerCase().includes(query)) ||
+        (l.source && l.source.toLowerCase().includes(query))
+      );
+    }
+
+    // Status filter
+    if (status !== 'All') {
+      leads = leads.filter(l => l.status === status || (status === 'Closed' && l.status === 'Lost'));
+    }
+
+    // Priority filter
+    if (priority !== 'All') {
+      leads = leads.filter(l => (l.priority || 'Medium') === priority);
+    }
+
+    // Source filter
+    if (source !== 'All') {
+      leads = leads.filter(l => l.source === source);
+    }
+
+    // Expected Close Date filter
+    if (dateFilter !== 'All') {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const currentMonthStr = new Date().toISOString().slice(0, 7); // YYYY-MM
+      
+      const nextMonthDate = new Date();
+      nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
+      const nextMonthStr = nextMonthDate.toISOString().slice(0, 7);
+
+      if (dateFilter === 'this_month') {
+        leads = leads.filter(l => l.expectedCloseDate && l.expectedCloseDate.startsWith(currentMonthStr));
+      } else if (dateFilter === 'next_month') {
+        leads = leads.filter(l => l.expectedCloseDate && l.expectedCloseDate.startsWith(nextMonthStr));
+      } else if (dateFilter === 'overdue') {
+        leads = leads.filter(l => l.expectedCloseDate && l.expectedCloseDate < todayStr && l.status !== 'Closed');
+      } else if (dateFilter === 'has_date') {
+        leads = leads.filter(l => !!l.expectedCloseDate);
+      }
+    }
+
+    // Sorting
+    leads.sort((a, b) => {
+      if (sortBy === 'value_desc') {
+        return (b.value || 0) - (a.value || 0);
+      }
+      if (sortBy === 'value_asc') {
+        return (a.value || 0) - (b.value || 0);
+      }
+      if (sortBy === 'priority') {
+        const pMap: Record<string, number> = { High: 3, Medium: 2, Low: 1 };
+        return (pMap[b.priority || 'Medium'] || 0) - (pMap[a.priority || 'Medium'] || 0);
+      }
+      if (sortBy === 'close_date') {
+        if (!a.expectedCloseDate) return 1;
+        if (!b.expectedCloseDate) return -1;
+        return a.expectedCloseDate.localeCompare(b.expectedCloseDate);
+      }
+      if (sortBy === 'oldest') {
+        return (a.createdAt || '0').localeCompare(b.createdAt || '0');
+      }
+      // default: newest
+      return (b.createdAt || '9').localeCompare(a.createdAt || '9');
+    });
+
+    return leads;
+  });
+
+  clearFilters() {
+    this.searchQuery.set('');
+    this.selectedStatusFilter.set('All');
+    this.selectedPriorityFilter.set('All');
+    this.selectedSourceFilter.set('All');
+    this.selectedDateFilter.set('All');
+    this.selectedSortBy.set('newest');
+  }
 
   qualifiedRatio = computed(() => {
     const leads = this.leadService.leads();
@@ -550,17 +807,20 @@ export class LeadsComponent implements OnInit {
     }
 
     // Build CSV Headers & Rows
-    const headers = ['Name', 'Email', 'Phone', 'Source', 'Status', 'Estimated Value (USD)', 'Industry', 'Region', 'AI Insights'];
+    const headers = ['Name', 'Email', 'Phone', 'Source', 'Status', 'Priority', 'Estimated Value (USD)', 'Expected Close Date', 'Industry', 'Region', 'AI Insights', 'Created At'];
     const rows = leads.map(lead => [
       lead.name || '',
       lead.email || '',
       lead.phone || '',
       lead.source || '',
       lead.status || '',
+      lead.priority || 'Medium',
       lead.value !== undefined ? lead.value.toString() : '0',
+      lead.expectedCloseDate || '',
       lead.industry || '',
       lead.region || '',
-      lead.aiInsights || ''
+      lead.aiInsights || '',
+      lead.createdAt || ''
     ]);
 
     // Format and Escape Special Characters
@@ -598,7 +858,13 @@ export class LeadsComponent implements OnInit {
 
   openAddModal() {
     this.editingId.set(null);
-    this.leadForm.reset({ status: 'New', value: 0 });
+    this.leadForm.reset({ 
+      status: 'New', 
+      priority: 'Medium',
+      value: 0,
+      source: 'Website',
+      expectedCloseDate: new Date(Date.now() + 30*24*60*60*1000).toISOString().slice(0, 10)
+    });
     this.showModal.set(true);
   }
 
@@ -615,7 +881,11 @@ export class LeadsComponent implements OnInit {
       phone: lead.phone,
       source: lead.source,
       status: lead.status,
-      value: lead.value
+      priority: lead.priority || 'Medium',
+      value: lead.value,
+      expectedCloseDate: lead.expectedCloseDate || '',
+      industry: lead.industry || '',
+      region: lead.region || ''
     });
     this.showModal.set(true);
   }

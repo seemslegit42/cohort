@@ -203,7 +203,10 @@ export interface ContactRecord {
                  <a href="tel:{{userRec.phone}}" class="flex-1 bg-zinc-900 hover:bg-teal-500/10 hover:text-teal-400 hover:border-teal-500/30 text-zinc-300 border border-zinc-800 rounded-xl py-2 text-xs font-bold transition-all flex items-center justify-center gap-2">
                     <mat-icon class="text-[16px]">phone</mat-icon> Call
                  </a>
-                 <button (click)="deleteContactRecord(userRec.$id)" class="w-10 bg-zinc-900 hover:bg-rose-500/10 hover:text-rose-400 hover:border-rose-500/30 text-zinc-400 border border-zinc-800 rounded-xl flex items-center justify-center transition-all shrink-0">
+                 <button (click)="openEditModal(userRec)" class="w-10 bg-zinc-900 hover:bg-teal-500/10 hover:text-teal-400 hover:border-teal-500/30 text-zinc-400 border border-zinc-800 rounded-xl flex items-center justify-center transition-all shrink-0" title="Edit Profile">
+                    <mat-icon class="text-[16px]">edit</mat-icon>
+                 </button>
+                 <button (click)="deleteContactRecord(userRec.$id)" class="w-10 bg-zinc-900 hover:bg-rose-500/10 hover:text-rose-400 hover:border-rose-500/30 text-zinc-400 border border-zinc-800 rounded-xl flex items-center justify-center transition-all shrink-0" title="Delete Profile">
                     <mat-icon class="text-[16px]">delete</mat-icon>
                  </button>
               </div>
@@ -340,8 +343,8 @@ export interface ContactRecord {
 
             <div class="relative z-10">
               <h3 class="text-xl font-bold text-white font-display tracking-wide flex items-center gap-2">
-                <mat-icon class="text-teal-400 text-[24px]">person_add_alt</mat-icon>
-                Bind New Identity
+                <mat-icon class="text-teal-400 text-[24px]">{{ editingContact() ? 'edit' : 'person_add_alt' }}</mat-icon>
+                {{ editingContact() ? 'Update Relationship Profile' : 'Bind New Identity' }}
               </h3>
               <p class="text-[11px] text-zinc-400 mt-1">Populate relationship data context to expand tracking networks instantly.</p>
             </div>
@@ -397,7 +400,7 @@ export interface ContactRecord {
                   Abort
                 </button>
                 <button type="submit" [disabled]="contactForm.invalid" class="px-6 py-2 bg-teal-500 hover:bg-teal-400 disabled:opacity-50 text-zinc-950 font-bold rounded-xl text-xs transition-colors shadow-lg flex items-center gap-2">
-                  <mat-icon class="text-[16px]">save</mat-icon> Inject Profile
+                  <mat-icon class="text-[16px]">save</mat-icon> {{ editingContact() ? 'Save Profile Changes' : 'Inject Profile' }}
                 </button>
               </div>
             </form>
@@ -451,6 +454,7 @@ export class ContactsComponent {
   aiDraft = signal<string>('');
   isGenerating = signal<boolean>(false);
   showAddModal = signal<boolean>(false);
+  editingContact = signal<ContactRecord | null>(null);
 
   contactForm!: FormGroup;
 
@@ -541,26 +545,45 @@ export class ContactsComponent {
   }
 
   openAddModal() {
+    this.editingContact.set(null);
     this.initForm();
+    this.showAddModal.set(true);
+  }
+
+  openEditModal(contact: ContactRecord) {
+    this.editingContact.set(contact);
+    this.contactForm = this.fb.group({
+      name: [contact.name || '', [Validators.required, Validators.minLength(2)]],
+      email: [contact.email || '', [Validators.email]],
+      phone: [contact.phone || ''],
+      company: [contact.company || '', [Validators.required]],
+      status: [contact.status || 'Lead'],
+      dealValue: [contact.dealValue || 15000, [Validators.min(0)]]
+    });
     this.showAddModal.set(true);
   }
 
   closeAddModal() {
     this.showAddModal.set(false);
+    this.editingContact.set(null);
   }
 
   async submitContactForm() {
     if (this.contactForm.invalid) return;
     const data = this.contactForm.value;
     
-    await this.appwrite.addContact(data);
-    this.closeAddModal();
-    
-    // Auto-select newly created contact
-    const list = this.appwrite.contacts();
-    if (list && list.length > 0) {
-      this.selectedContact.set(list[0]);
+    const editing = this.editingContact();
+    if (editing) {
+      await this.appwrite.updateContact(editing.$id, data);
+      this.selectedContact.set({ ...editing, ...data });
+    } else {
+      await this.appwrite.addContact(data);
+      const list = this.appwrite.contacts();
+      if (list && list.length > 0) {
+        this.selectedContact.set(list[0]);
+      }
     }
+    this.closeAddModal();
   }
 
   async deleteContactRecord(id: string) {

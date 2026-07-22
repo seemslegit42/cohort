@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, computed, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { KpiCardComponent } from './kpi-card.component';
 import { ChartCardComponent } from './chart-card.component';
@@ -10,7 +10,7 @@ import { ContractSuiteComponent } from './contract-suite.component';
 import { AgentInsights } from './agent-insights';
 import { Appwrite } from './appwrite';
 import { NextcloudCalendarService, CalendarEvent } from './nextcloud-calendar.service';
-import { LeadService } from './lead.service';
+import { LeadService, Lead } from './lead.service';
 
 export interface DashboardWidget {
   id: string;
@@ -28,6 +28,7 @@ export interface DashboardWidget {
     CommonModule, 
     MatIconModule, 
     FormsModule, 
+    ReactiveFormsModule,
     RouterLink, 
     KpiCardComponent, 
     ChartCardComponent, 
@@ -309,6 +310,119 @@ export interface DashboardWidget {
         }
       </div>
 
+      <!-- Floating Action Button (Quick Add Lead) -->
+      <div class="fixed bottom-6 right-6 z-50">
+        <button 
+          (click)="openQuickAddModal()" 
+          class="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-zinc-950 font-bold px-5 py-3 rounded-full shadow-[0_0_25px_rgba(249,115,22,0.4)] hover:shadow-[0_0_35px_rgba(249,115,22,0.6)] hover:scale-105 active:scale-95 transition-all flex items-center gap-2.5 group cursor-pointer border border-orange-300/30">
+          <div class="w-7 h-7 rounded-full bg-zinc-950/20 flex items-center justify-center">
+            <mat-icon class="text-[20px] transition-transform group-hover:rotate-90">add</mat-icon>
+          </div>
+          <span class="text-xs tracking-wide font-display uppercase font-extrabold">Quick Add Lead</span>
+        </button>
+      </div>
+
+      <!-- Quick Add Lead Modal -->
+      @if (showQuickAddModal()) {
+        <div class="fixed inset-0 bg-zinc-950/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <div class="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-lg w-full p-6 space-y-5 relative shadow-2xl animate-fade-in overflow-hidden">
+            <div class="absolute -left-20 -top-20 w-56 h-56 bg-orange-500/10 blur-3xl rounded-full pointer-events-none"></div>
+            
+            <button (click)="closeQuickAddModal()" class="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors z-10">
+              <mat-icon>close</mat-icon>
+            </button>
+
+            <div class="flex items-center gap-3 relative z-10">
+              <div class="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400">
+                <mat-icon class="text-[22px]">person_add</mat-icon>
+              </div>
+              <div>
+                <h2 class="text-xl font-display font-bold text-white">Quick Add Prospect</h2>
+                <p class="text-xs text-zinc-400">Capture a new lead directly into your CRM pipeline</p>
+              </div>
+            </div>
+
+            <form [formGroup]="quickAddForm" (ngSubmit)="submitQuickAdd()" class="space-y-4 relative z-10">
+              <div class="space-y-1">
+                <label for="qaName" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Lead Name *</label>
+                <input id="qaName" type="text" formControlName="name" placeholder="E.g., Sarah Connor" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-white placeholder-zinc-700 focus:outline-none focus:border-orange-500/50 transition-colors" />
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div class="space-y-1">
+                  <label for="qaEmail" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Email Address *</label>
+                  <input id="qaEmail" type="email" formControlName="email" placeholder="sarah@cyberdyne.com" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-white placeholder-zinc-700 focus:outline-none focus:border-orange-500/50 transition-colors" />
+                </div>
+                <div class="space-y-1">
+                  <label for="qaPhone" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Phone Number</label>
+                  <input id="qaPhone" type="text" formControlName="phone" placeholder="+1 555-0199" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-white placeholder-zinc-700 focus:outline-none focus:border-orange-500/50 transition-colors" />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div class="space-y-1">
+                  <label for="qaPriority" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Priority</label>
+                  <select id="qaPriority" formControlName="priority" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-zinc-200 focus:outline-none focus:border-orange-500/50">
+                    <option value="High" class="text-rose-400 font-bold">High Priority</option>
+                    <option value="Medium" class="text-amber-400 font-bold">Medium Priority</option>
+                    <option value="Low" class="text-zinc-400">Low Priority</option>
+                  </select>
+                </div>
+                <div class="space-y-1">
+                  <label for="qaCloseDate" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Expected Close Date</label>
+                  <input id="qaCloseDate" type="date" formControlName="expectedCloseDate" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-orange-500/50" />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div class="space-y-1">
+                  <label for="qaSource" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Source Channel</label>
+                  <select id="qaSource" formControlName="source" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-zinc-200 focus:outline-none focus:border-orange-500/50">
+                    <option value="Website">Website</option>
+                    <option value="Referral">Referral</option>
+                    <option value="Cold Call">Cold Call</option>
+                    <option value="Inbound">Inbound</option>
+                    <option value="LinkedIn">LinkedIn</option>
+                    <option value="Partner">Partner</option>
+                    <option value="Event">Event</option>
+                  </select>
+                </div>
+                <div class="space-y-1">
+                  <label for="qaStatus" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Pipeline Stage</label>
+                  <select id="qaStatus" formControlName="status" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-zinc-200 focus:outline-none focus:border-orange-500/50">
+                    <option value="New">New Inbound</option>
+                    <option value="Contacted">Currently Engaged</option>
+                    <option value="Qualified">Sales Qualified</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div class="space-y-1">
+                  <label for="qaValue" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Est. Opportunity Value ($)</label>
+                  <input id="qaValue" type="number" formControlName="value" placeholder="25000" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-orange-400 font-mono font-bold focus:outline-none focus:border-orange-500/50" />
+                </div>
+                <div class="space-y-1">
+                  <label for="qaIndustry" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Industry</label>
+                  <input id="qaIndustry" type="text" formControlName="industry" placeholder="Technology" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-white placeholder-zinc-700 focus:outline-none focus:border-orange-500/50" />
+                </div>
+              </div>
+
+              <div class="pt-4 flex items-center justify-end gap-3">
+                <button type="button" (click)="closeQuickAddModal()" class="px-4 py-2 text-xs font-bold text-zinc-400 hover:text-white transition-colors">Cancel</button>
+                <button type="submit" [disabled]="!quickAddForm.valid || isSubmittingQuickAdd()" class="bg-orange-500 hover:bg-orange-400 disabled:opacity-50 text-zinc-950 font-bold px-5 py-2.5 rounded-xl text-xs transition-colors shadow-lg flex items-center gap-2">
+                  @if (isSubmittingQuickAdd()) {
+                    <mat-icon class="animate-spin text-[16px]">autorenew</mat-icon> Saving...
+                  } @else {
+                    <mat-icon class="text-[16px]">check</mat-icon> Save Lead
+                  }
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      }
+
     </div>
   `,
   styles: [`
@@ -325,9 +439,26 @@ export class DashboardComponent implements OnInit {
   appwrite = inject(Appwrite);
   calendarService = inject(NextcloudCalendarService);
   leadService = inject(LeadService);
+  private fb = inject(FormBuilder);
   
   isEditing = signal<boolean>(false);
   calendarEvents = signal<CalendarEvent[]>([]);
+
+  // Quick Add Modal state
+  showQuickAddModal = signal<boolean>(false);
+  isSubmittingQuickAdd = signal<boolean>(false);
+
+  quickAddForm: FormGroup = this.fb.group({
+    name: ['', Validators.required],
+    email: ['', [Validators.required, Validators.email]],
+    phone: [''],
+    source: ['Website', Validators.required],
+    status: ['New', Validators.required],
+    priority: ['Medium', Validators.required],
+    value: [15000, Validators.required],
+    expectedCloseDate: [new Date(Date.now() + 30*24*60*60*1000).toISOString().slice(0, 10)],
+    industry: ['Technology']
+  });
 
   // Quick report state
   quickReportName = 'Q3 Sales Forecast Audit';
@@ -528,5 +659,48 @@ export class DashboardComponent implements OnInit {
       document.body.appendChild(notifyBox);
       setTimeout(() => notifyBox.remove(), 6000);
     }, 1500);
+  }
+
+  openQuickAddModal() {
+    this.quickAddForm.reset({
+      name: '',
+      email: '',
+      phone: '',
+      source: 'Website',
+      status: 'New',
+      priority: 'High',
+      value: 15000,
+      expectedCloseDate: new Date(Date.now() + 30*24*60*60*1000).toISOString().slice(0, 10),
+      industry: 'Technology'
+    });
+    this.showQuickAddModal.set(true);
+  }
+
+  closeQuickAddModal() {
+    this.showQuickAddModal.set(false);
+  }
+
+  async submitQuickAdd() {
+    if (this.quickAddForm.invalid) return;
+
+    this.isSubmittingQuickAdd.set(true);
+    try {
+      const data: Lead = this.quickAddForm.value;
+      await this.leadService.createLead(data);
+
+      this.appwrite.addNotification({
+        title: 'Lead Captured',
+        message: `New prospect "${data.name}" added to pipeline with ${data.priority || 'Medium'} priority.`,
+        isRead: false,
+        type: 'success'
+      });
+
+      this.closeQuickAddModal();
+    } catch (e) {
+      console.error('Failed to quick add lead:', e);
+      alert('Failed to save lead. Please try again.');
+    } finally {
+      this.isSubmittingQuickAdd.set(false);
+    }
   }
 }
