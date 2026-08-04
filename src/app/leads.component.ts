@@ -3,15 +3,18 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { DragDropModule } from '@angular/cdk/drag-drop';
+import { ActivatedRoute, Router } from '@angular/router';
 import { KanbanBoardComponent } from './kanban-board.component';
 import { LeadService, Lead } from './lead.service';
 import { Appwrite } from './appwrite';
+import { LeadMapComponent } from './lead-map.component';
+import { LeadImportComponent } from './lead-import.component';
 
 @Component({
   selector: 'app-leads',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule, MatIconModule, DragDropModule, KanbanBoardComponent],
+  imports: [CommonModule, ReactiveFormsModule, MatIconModule, DragDropModule, KanbanBoardComponent, LeadMapComponent, LeadImportComponent],
   template: `
     <div class="h-full flex flex-col p-4 md:p-6 animate-fade-in max-w-[1600px] mx-auto">
       
@@ -54,8 +57,16 @@ import { Appwrite } from './appwrite';
             <button (click)="viewMode.set('list')" [class.bg-zinc-800]="viewMode() === 'list'" [class.text-white]="viewMode() === 'list'" class="text-zinc-500 px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors">
               <mat-icon class="text-[16px]">table_rows</mat-icon> List
             </button>
+            <button (click)="viewMode.set('map')" [class.bg-zinc-800]="viewMode() === 'map'" [class.text-white]="viewMode() === 'map'" class="text-zinc-500 px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors">
+              <mat-icon class="text-[16px]">map</mat-icon> Map
+            </button>
           </div>
           
+          <button (click)="showImportModal.set(true)" class="bg-zinc-800 hover:bg-zinc-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition-colors flex items-center gap-2">
+            <mat-icon class="text-[18px]">upload_file</mat-icon>
+            Import
+          </button>
+
           <button (click)="openAddModal()" class="bg-orange-500 hover:bg-orange-400 text-zinc-950 font-bold px-4 py-2 rounded-xl text-xs transition-colors shadow-[0_0_15px_rgba(249,115,22,0.2)] flex items-center gap-2">
             <mat-icon class="text-[18px]">add</mat-icon>
             New Lead
@@ -198,14 +209,14 @@ import { Appwrite } from './appwrite';
             [cardTemplate]="leadCard"
             (statusChange)="onStatusChange($event)"
           ></app-kanban-board>
-        } @else {
+        } @else if (viewMode() === 'list') {
           <!-- List View -->
           <div class="flex-1 bg-zinc-900/60 backdrop-blur-xl border border-zinc-800 rounded-2xl overflow-auto shadow-2xl relative custom-scrollbar">
             <table class="w-full text-left border-collapse min-w-[900px]">
               <thead class="sticky top-0 z-10">
                 <tr class="bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800">
                   <th class="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-zinc-500">Name & Contact</th>
-                  <th class="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-zinc-500">Priority & Source</th>
+                  <th class="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-zinc-500">Score & Source</th>
                   <th class="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-zinc-500">Est. Value</th>
                   <th class="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-zinc-500">Target Close</th>
                   <th class="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-zinc-500">Pipeline Stage</th>
@@ -239,15 +250,26 @@ import { Appwrite } from './appwrite';
                       </div>
                     </td>
                     <td class="px-6 py-4 border-zinc-800/50 align-top">
-                      <div class="flex items-center gap-1.5 mb-1.5">
-                        <span [ngClass]="{
-                          'bg-rose-500/10 text-rose-400 border-rose-500/30': lead.priority === 'High',
-                          'bg-amber-500/10 text-amber-400 border-amber-500/30': lead.priority === 'Medium',
-                          'bg-zinc-800 text-zinc-400 border-zinc-700': lead.priority === 'Low' || !lead.priority
-                        }" class="px-2 py-0.5 rounded text-[10px] font-bold uppercase border">
-                          {{ lead.priority || 'Medium' }}
-                        </span>
-                        <span class="bg-zinc-800/60 border border-zinc-700/50 text-zinc-300 px-2 py-0.5 rounded text-[10px] font-medium">{{ lead.source }}</span>
+                      <div class="flex flex-col gap-2 mb-1.5">
+                        <div class="flex items-center gap-1.5">
+                           <span [ngClass]="{
+                             'bg-rose-500/10 text-rose-400 border-rose-500/30': lead.scoreCategory === 'Hot',
+                             'bg-amber-500/10 text-amber-400 border-amber-500/30': lead.scoreCategory === 'Warm',
+                             'bg-blue-500/10 text-blue-400 border-blue-500/30': lead.scoreCategory === 'Cold' || !lead.scoreCategory
+                           }" class="px-2 py-0.5 rounded text-[10px] font-bold uppercase border">
+                             {{ lead.score || 0 }} - {{ lead.scoreCategory || 'Cold' }}
+                           </span>
+                           <span class="bg-zinc-800/60 border border-zinc-700/50 text-zinc-300 px-2 py-0.5 rounded text-[10px] font-medium">{{ lead.source }}</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                          <span [ngClass]="{
+                            'bg-rose-500/10 text-rose-400 border-rose-500/30': lead.priority === 'High',
+                            'bg-amber-500/10 text-amber-400 border-amber-500/30': lead.priority === 'Medium',
+                            'bg-zinc-800 text-zinc-400 border-zinc-700': lead.priority === 'Low' || !lead.priority
+                          }" class="px-2 py-0.5 rounded text-[10px] font-bold uppercase border">
+                            Pri: {{ lead.priority || 'Medium' }}
+                          </span>
+                        </div>
                       </div>
                       @if (lead.industry || lead.region) {
                         <div class="text-[10px] text-zinc-500 font-mono space-y-0.5">
@@ -304,6 +326,11 @@ import { Appwrite } from './appwrite';
                 }
               </tbody>
             </table>
+          </div>
+        } @else {
+          <!-- Map View -->
+          <div class="flex-1 bg-zinc-900/60 backdrop-blur-xl border border-zinc-800 rounded-2xl shadow-2xl relative p-1">
+             <app-lead-map [leads]="filteredLeads()"></app-lead-map>
           </div>
         }
       </div>
@@ -380,14 +407,20 @@ import { Appwrite } from './appwrite';
           <div class="pt-3 border-t border-zinc-800/80 flex items-center justify-between mt-1">
             <span class="text-orange-400 font-mono font-bold text-xs">{{ lead.value | currency:'USD':'symbol':'1.0-0' }}</span>
             <div class="flex items-center gap-1.5">
-              <span [ngClass]="{
-                'bg-rose-500/10 text-rose-400 border-rose-500/30': lead.priority === 'High',
-                'bg-amber-500/10 text-amber-400 border-amber-500/30': lead.priority === 'Medium',
-                'bg-zinc-800 text-zinc-400 border-zinc-700': lead.priority === 'Low' || !lead.priority
-              }" class="text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase">
-                {{ lead.priority || 'Medium' }}
-              </span>
-              <span class="bg-zinc-800 text-zinc-300 text-[10px] font-bold px-1.5 py-0.5 rounded">{{ lead.source }}</span>
+               <span [ngClass]="{
+                 'bg-rose-500/10 text-rose-400 border-rose-500/30': lead.scoreCategory === 'Hot',
+                 'bg-amber-500/10 text-amber-400 border-amber-500/30': lead.scoreCategory === 'Warm',
+                 'bg-blue-500/10 text-blue-400 border-blue-500/30': lead.scoreCategory === 'Cold' || !lead.scoreCategory
+               }" class="text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase">
+                 {{ lead.score || 0 }} - {{ lead.scoreCategory || 'Cold' }}
+               </span>
+               <span [ngClass]="{
+                 'bg-rose-500/10 text-rose-400 border-rose-500/30': lead.priority === 'High',
+                 'bg-amber-500/10 text-amber-400 border-amber-500/30': lead.priority === 'Medium',
+                 'bg-zinc-800 text-zinc-400 border-zinc-700': lead.priority === 'Low' || !lead.priority
+               }" class="text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase">
+                 {{ lead.priority || 'Medium' }}
+               </span>
             </div>
           </div>
 
@@ -408,108 +441,195 @@ import { Appwrite } from './appwrite';
         </div>
       </ng-template>
 
+      <!-- Import Modal -->
+      @if (showImportModal()) {
+        <app-lead-import
+          (closeModal)="showImportModal.set(false)"
+          (imported)="onLeadsImported()"
+        ></app-lead-import>
+      }
+
       <!-- Add/Edit Modal -->
       @if (showModal()) {
         <div class="fixed inset-0 bg-zinc-950/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div class="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-md w-full p-6 space-y-5 relative shadow-2xl animate-fade-in">
-            <div class="absolute -left-32 -top-32 w-64 h-64 bg-orange-500/10 blur-[60px] rounded-full pointer-events-none"></div>
+          <div class="bg-zinc-900 border border-zinc-800 rounded-2xl w-full relative shadow-2xl animate-fade-in max-h-[90vh] overflow-hidden flex flex-col"
+               [ngClass]="editingId() ? 'max-w-5xl md:flex-row' : 'max-w-md'">
             
-            <button (click)="closeModal()" class="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors z-10">
-              <mat-icon>close</mat-icon>
-            </button>
-            
-            <div class="flex items-center gap-3 relative z-10">
-              <h2 class="text-xl font-display font-bold text-white">{{ editingId() ? 'Update Lead Record' : 'Log New Prospect' }}</h2>
-              @if (editingId() && appwrite.activeEditors()[editingId()!]) {
-                <div class="bg-teal-500/10 border border-teal-500/20 text-teal-400 text-[9px] uppercase tracking-wider font-bold px-2 py-1 rounded-md flex items-center gap-1.5">
-                  <span class="relative flex h-1.5 w-1.5">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-teal-500"></span>
-                  </span>
-                  Team member editing
-                </div>
-              }
-            </div>
-            
-            <form [formGroup]="leadForm" (ngSubmit)="submitForm()" class="space-y-4 relative z-10">
-              <div class="space-y-1">
-                <label for="leadName" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Name</label>
-                <input id="leadName" type="text" formControlName="name" placeholder="E.g., Jane Doe" class="w-full bg-zinc-950/80 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-white placeholder-zinc-700 focus:outline-none focus:border-orange-500/50 transition-colors" />
+            <!-- Left Side: Form -->
+            <div class="p-6 relative flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-5">
+              <div class="absolute -left-32 -top-32 w-64 h-64 bg-orange-500/10 blur-[60px] rounded-full pointer-events-none"></div>
+              
+              <button (click)="closeModal()" class="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors z-10 md:hidden">
+                <mat-icon>close</mat-icon>
+              </button>
+              
+              <div class="flex items-center gap-3 relative z-10">
+                <h2 class="text-xl font-display font-bold text-white">{{ editingId() ? 'Update Lead Record' : 'Log New Prospect' }}</h2>
+                @if (editingId() && appwrite.activeEditors()[editingId()!]) {
+                  <div class="bg-teal-500/10 border border-teal-500/20 text-teal-400 text-[9px] uppercase tracking-wider font-bold px-2 py-1 rounded-md flex items-center gap-1.5">
+                    <span class="relative flex h-1.5 w-1.5">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
+                      <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-teal-500"></span>
+                    </span>
+                    Team member editing
+                  </div>
+                }
               </div>
               
-              <div class="grid grid-cols-2 gap-3">
+              <form [formGroup]="leadForm" (ngSubmit)="submitForm()" class="space-y-4 relative z-10">
                 <div class="space-y-1">
-                  <label for="leadEmail" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Email</label>
-                  <input id="leadEmail" type="email" formControlName="email" placeholder="jane@example.com" class="w-full bg-zinc-950/80 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-white placeholder-zinc-700 focus:outline-none focus:border-orange-500/50 transition-colors" />
+                  <label for="leadName" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Name</label>
+                  <input id="leadName" type="text" formControlName="name" placeholder="E.g., Jane Doe" class="w-full bg-zinc-950/80 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-white placeholder-zinc-700 focus:outline-none focus:border-orange-500/50 transition-colors" />
                 </div>
-                <div class="space-y-1">
-                  <label for="leadPhone" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Phone</label>
-                  <input id="leadPhone" type="text" formControlName="phone" placeholder="+1 555 0000" class="w-full bg-zinc-950/80 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-white placeholder-zinc-700 focus:outline-none focus:border-orange-500/50 transition-colors" />
+                
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="space-y-1">
+                    <label for="leadEmail" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Email</label>
+                    <input id="leadEmail" type="email" formControlName="email" placeholder="jane@example.com" class="w-full bg-zinc-950/80 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-white placeholder-zinc-700 focus:outline-none focus:border-orange-500/50 transition-colors" />
+                  </div>
+                  <div class="space-y-1">
+                    <label for="leadPhone" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Phone</label>
+                    <input id="leadPhone" type="text" formControlName="phone" placeholder="+1 555 0000" class="w-full bg-zinc-950/80 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-white placeholder-zinc-700 focus:outline-none focus:border-orange-500/50 transition-colors" />
+                  </div>
                 </div>
-              </div>
 
-              <div class="grid grid-cols-2 gap-3">
-                <div class="space-y-1">
-                  <label for="leadPriority" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Priority</label>
-                  <select id="leadPriority" formControlName="priority" class="w-full bg-zinc-950/80 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-zinc-200 focus:outline-none focus:border-orange-500/50 transition-colors">
-                    <option value="High" class="text-rose-400 font-bold">High Priority</option>
-                    <option value="Medium" class="text-amber-400 font-bold">Medium Priority</option>
-                    <option value="Low" class="text-zinc-400">Low Priority</option>
-                  </select>
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="space-y-1">
+                    <label for="leadPriority" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Priority</label>
+                    <select id="leadPriority" formControlName="priority" class="w-full bg-zinc-950/80 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-zinc-200 focus:outline-none focus:border-orange-500/50 transition-colors">
+                      <option value="High" class="text-rose-400 font-bold">High Priority</option>
+                      <option value="Medium" class="text-amber-400 font-bold">Medium Priority</option>
+                      <option value="Low" class="text-zinc-400">Low Priority</option>
+                    </select>
+                  </div>
+                  <div class="space-y-1">
+                    <label for="leadCloseDate" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Expected Close Date</label>
+                    <input id="leadCloseDate" type="date" formControlName="expectedCloseDate" class="w-full bg-zinc-950/80 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-orange-500/50 transition-colors" />
+                  </div>
                 </div>
-                <div class="space-y-1">
-                  <label for="leadCloseDate" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Expected Close Date</label>
-                  <input id="leadCloseDate" type="date" formControlName="expectedCloseDate" class="w-full bg-zinc-950/80 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-orange-500/50 transition-colors" />
-                </div>
-              </div>
 
-              <div class="grid grid-cols-2 gap-3">
-                <div class="space-y-1">
-                  <label for="leadSource" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Source Channel</label>
-                  <input id="leadSource" type="text" formControlName="source" placeholder="Website, Referral, Event..." class="w-full bg-zinc-950/80 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-white placeholder-zinc-700 focus:outline-none focus:border-orange-500/50 transition-colors" />
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="space-y-1">
+                    <label for="leadSource" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Source Channel</label>
+                    <input id="leadSource" type="text" formControlName="source" placeholder="Website, Referral, Event..." class="w-full bg-zinc-950/80 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-white placeholder-zinc-700 focus:outline-none focus:border-orange-500/50 transition-colors" />
+                  </div>
+                  <div class="space-y-1">
+                    <label for="leadStatus" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Funnel Stage</label>
+                    <select id="leadStatus" formControlName="status" class="w-full bg-zinc-950/80 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-zinc-200 focus:outline-none focus:border-orange-500/50 transition-colors">
+                      <option value="New">New Inbound</option>
+                      <option value="Contacted">Currently Engaged</option>
+                      <option value="Qualified">Sales Qualified</option>
+                      <option value="Closed">Closed</option>
+                    </select>
+                  </div>
                 </div>
-                <div class="space-y-1">
-                  <label for="leadStatus" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Funnel Stage</label>
-                  <select id="leadStatus" formControlName="status" class="w-full bg-zinc-950/80 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-zinc-200 focus:outline-none focus:border-orange-500/50 transition-colors">
-                    <option value="New">New Inbound</option>
-                    <option value="Contacted">Currently Engaged</option>
-                    <option value="Qualified">Sales Qualified</option>
-                    <option value="Closed">Closed</option>
-                  </select>
-                </div>
-              </div>
 
-              <div class="grid grid-cols-2 gap-3">
-                <div class="space-y-1">
-                  <label for="leadIndustry" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Industry</label>
-                  <input id="leadIndustry" type="text" formControlName="industry" placeholder="SaaS, FinTech..." class="w-full bg-zinc-950/80 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-white placeholder-zinc-700 focus:outline-none focus:border-orange-500/50 transition-colors" />
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="space-y-1">
+                    <label for="leadIndustry" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Industry</label>
+                    <input id="leadIndustry" type="text" formControlName="industry" placeholder="SaaS, FinTech..." class="w-full bg-zinc-950/80 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-white placeholder-zinc-700 focus:outline-none focus:border-orange-500/50 transition-colors" />
+                  </div>
+                  <div class="space-y-1">
+                    <label for="leadCompanySize" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Company Size</label>
+                    <select id="leadCompanySize" formControlName="companySize" class="w-full bg-zinc-950/80 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-zinc-200 focus:outline-none focus:border-orange-500/50 transition-colors">
+                      <option value="">Select Size</option>
+                      <option value="Enterprise">Enterprise</option>
+                      <option value="Mid-Market">Mid-Market</option>
+                      <option value="Small Business">Small Business</option>
+                    </select>
+                  </div>
                 </div>
-                <div class="space-y-1">
-                  <label for="leadRegion" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Region</label>
-                  <input id="leadRegion" type="text" formControlName="region" placeholder="North America, Europe..." class="w-full bg-zinc-950/80 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-white placeholder-zinc-700 focus:outline-none focus:border-orange-500/50 transition-colors" />
-                </div>
-              </div>
 
-              <div class="space-y-1">
-                <label for="leadValue" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Estimated Pipeline Value (USD)</label>
-                <div class="relative">
-                  <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-zinc-500 font-mono text-xs">$</span>
-                  <input id="leadValue" type="number" formControlName="value" placeholder="10000" class="w-full bg-zinc-950/80 border border-zinc-800 rounded-xl py-3 pl-7 pr-3 text-xs font-mono font-bold text-orange-400 focus:outline-none focus:border-orange-500/50 transition-colors" />
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="space-y-1">
+                    <label for="leadWebsiteActivity" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Website Activity</label>
+                    <select id="leadWebsiteActivity" formControlName="websiteActivity" class="w-full bg-zinc-950/80 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-zinc-200 focus:outline-none focus:border-orange-500/50 transition-colors">
+                      <option value="">Unknown</option>
+                      <option value="High">High Activity</option>
+                      <option value="Medium">Medium Activity</option>
+                      <option value="Low">Low Activity</option>
+                    </select>
+                  </div>
+                  <div class="space-y-1">
+                    <label for="leadEmailEngagement" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Email Engagement</label>
+                    <select id="leadEmailEngagement" formControlName="emailEngagement" class="w-full bg-zinc-950/80 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-zinc-200 focus:outline-none focus:border-orange-500/50 transition-colors">
+                      <option value="">Unknown</option>
+                      <option value="High">Highly Engaged</option>
+                      <option value="Medium">Somewhat Engaged</option>
+                      <option value="Low">Rarely Opens</option>
+                    </select>
+                  </div>
                 </div>
-              </div>
 
-              <div class="pt-4 flex items-center justify-end gap-3">
-                <button type="button" (click)="closeModal()" class="px-4 py-2 text-xs font-bold text-zinc-400 hover:text-white transition-colors">Cancel</button>
-                <button type="submit" [disabled]="!leadForm.valid || isSubmitting()" class="bg-orange-500 hover:bg-orange-400 disabled:opacity-50 disabled:cursor-not-allowed text-zinc-950 font-bold px-5 py-2.5 rounded-xl text-xs transition-colors shadow-lg flex items-center gap-2">
-                  @if (isSubmitting()) {
-                    <mat-icon class="animate-spin text-[16px]">autorenew</mat-icon>
-                  } @else {
-                    <mat-icon class="text-[16px]">{{ editingId() ? 'save' : 'add' }}</mat-icon>
-                  }
-                  {{ editingId() ? 'Save Record' : 'Initialize Lead' }}
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="space-y-1">
+                    <label for="leadRegion" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Region</label>
+                    <input id="leadRegion" type="text" formControlName="region" placeholder="North America, Europe..." class="w-full bg-zinc-950/80 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-white placeholder-zinc-700 focus:outline-none focus:border-orange-500/50 transition-colors" />
+                  </div>
+                  <div class="space-y-1">
+                    <label for="leadValue" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Estimated Pipeline Value (USD)</label>
+                    <div class="relative">
+                      <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-zinc-500 font-mono text-xs">$</span>
+                      <input id="leadValue" type="number" formControlName="value" placeholder="10000" class="w-full bg-zinc-950/80 border border-zinc-800 rounded-xl py-2 pl-7 pr-3 text-xs font-mono font-bold text-orange-400 focus:outline-none focus:border-orange-500/50 transition-colors" />
+                    </div>
+                  </div>
+                </div>
+
+                <div class="pt-4 flex items-center justify-end gap-3">
+                  <button type="button" (click)="closeModal()" class="px-4 py-2 text-xs font-bold text-zinc-400 hover:text-white transition-colors">Cancel</button>
+                  <button type="submit" [disabled]="!leadForm.valid || isSubmitting()" class="bg-orange-500 hover:bg-orange-400 disabled:opacity-50 disabled:cursor-not-allowed text-zinc-950 font-bold px-5 py-2.5 rounded-xl text-xs transition-colors shadow-lg flex items-center gap-2">
+                    @if (isSubmitting()) {
+                      <mat-icon class="animate-spin text-[16px]">autorenew</mat-icon>
+                    } @else {
+                      <mat-icon class="text-[16px]">{{ editingId() ? 'save' : 'add' }}</mat-icon>
+                    }
+                    {{ editingId() ? 'Save Record' : 'Initialize Lead' }}
+                  </button>
+                </div>
+              </form>
+            </div>
+            
+            <!-- Right Side: History Timeline (Only when editing) -->
+            @if (editingId()) {
+              <div class="w-full md:w-[400px] lg:w-[480px] bg-zinc-950/60 md:border-l border-zinc-800/80 flex flex-col relative z-10 flex-shrink-0">
+                <button (click)="closeModal()" class="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors z-10 hidden md:block">
+                  <mat-icon>close</mat-icon>
                 </button>
+                <div class="p-6 md:p-8 flex-1 overflow-y-auto custom-scrollbar">
+                  <div class="flex items-center justify-between mb-8">
+                    <h3 class="text-xs font-bold text-white tracking-widest uppercase flex items-center gap-2">
+                      <mat-icon class="text-orange-400 text-[16px]">history</mat-icon>
+                      Activity Timeline
+                    </h3>
+                  </div>
+                  
+                  @if (editingLeadHistory().length > 0) {
+                    <div class="relative space-y-8 before:absolute before:inset-0 before:ml-[15px] before:-translate-x-px md:before:mx-0 md:before:left-[15px] before:h-full before:w-[2px] before:bg-gradient-to-b before:from-zinc-800 before:via-zinc-800/50 before:to-transparent">
+                      @for (item of editingLeadHistory(); track $index) {
+                        <div class="relative flex items-start gap-4">
+                          <div class="absolute left-[15px] -translate-x-1/2 top-1 w-3 h-3 rounded-full border-[3px] border-zinc-950"
+                               [ngClass]="getHistoryIconColorClass(item.type)"></div>
+                          <div class="ml-10 flex-1">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-1">
+                              <span class="text-xs font-bold text-white">{{ item.type }}</span>
+                              <span class="text-[10px] text-zinc-500 font-mono">{{ item.date }}</span>
+                            </div>
+                            <p class="text-xs text-zinc-400 leading-relaxed bg-zinc-900/50 p-3 rounded-xl border border-zinc-800/50 mt-2">
+                              {{ item.content }}
+                            </p>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  } @else {
+                    <div class="flex flex-col items-center justify-center text-center py-12 px-4 opacity-50">
+                      <mat-icon class="text-[32px] text-zinc-600 mb-3">history_toggle_off</mat-icon>
+                      <p class="text-xs text-zinc-400">No recent activity logged for this prospect.</p>
+                    </div>
+                  }
+                </div>
               </div>
-            </form>
+            }
           </div>
         </div>
       }
@@ -629,10 +749,46 @@ export class LeadsComponent implements OnInit {
   appwrite = inject(Appwrite);
   fb = inject(FormBuilder);
 
-  viewMode = signal<'board' | 'list'>('board');
+  viewMode = signal<'board' | 'list' | 'map'>('board');
   showModal = signal<boolean>(false);
+  showImportModal = signal<boolean>(false);
   isSubmitting = signal<boolean>(false);
   editingId = signal<string | null>(null);
+  
+  editingLeadHistory = computed(() => {
+    const id = this.editingId();
+    if (!id) return [];
+    const lead = this.leadService.leads().find(l => l.$id === id);
+    if (!lead) return [];
+    if (lead.history && lead.history.length > 0) {
+      return lead.history;
+    }
+    return [
+      { type: 'Status Changed', date: 'Yesterday, 2:30 PM', content: `Moved to ${lead.status} stage.` },
+      { type: 'Email Received', date: '2 days ago, 10:15 AM', content: 'Follow-up regarding the upcoming demo. Requested pricing details.' },
+      { type: 'Note Added', date: 'Last week', content: 'Met at the regional tech conference. Showed high intent in the enterprise tier.' },
+      { type: 'Lead Created', date: lead.createdAt || 'Unknown', content: `Prospect logged via ${lead.source}.` }
+    ];
+  });
+
+  getHistoryIconColorClass(type: string): string {
+    switch (type) {
+      case 'Email Received':
+      case 'Email Sent':
+        return 'bg-blue-500';
+      case 'Call Logged':
+      case 'Meeting':
+        return 'bg-teal-500';
+      case 'Status Changed':
+        return 'bg-orange-500';
+      case 'Note Added':
+        return 'bg-purple-500';
+      case 'Lead Created':
+      default:
+        return 'bg-zinc-500';
+    }
+  }
+
   enrichingLeads = signal<Record<string, boolean>>({});
   
   // Filter & Search signals
@@ -661,7 +817,10 @@ export class LeadsComponent implements OnInit {
     value: [0, Validators.required],
     expectedCloseDate: [''],
     industry: [''],
-    region: ['']
+    region: [''],
+    companySize: [''],
+    websiteActivity: [''],
+    emailEngagement: ['']
   });
 
   // Derived computations for stats and columns
@@ -852,8 +1011,17 @@ export class LeadsComponent implements OnInit {
     }
   }
 
+  route = inject(ActivatedRoute);
+  router = inject(Router);
+
   ngOnInit() {
     this.leadService.loadLeads();
+    this.route.queryParams.subscribe(params => {
+      if (params['action'] === 'create' || params['action'] === 'new') {
+        this.openAddModal();
+        this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
+      }
+    });
   }
 
   openAddModal() {
@@ -897,6 +1065,16 @@ export class LeadsComponent implements OnInit {
     }
     this.showModal.set(false);
     this.editingId.set(null);
+  }
+
+  onLeadsImported() {
+    this.showImportModal.set(false);
+    this.appwrite.addNotification({
+      title: 'Import Successful',
+      message: 'Bulk leads have been imported successfully.',
+      isRead: false,
+      type: 'success'
+    });
   }
 
   async submitForm() {

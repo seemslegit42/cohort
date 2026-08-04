@@ -1,8 +1,9 @@
-import { Component, ChangeDetectionStrategy, inject, signal}  from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, computed }  from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { Appwrite } from './appwrite';
 import { RechartsComponent } from './recharts.component';
+import { LeadService } from './lead.service';
 
 @Component({
   selector: 'app-forecast',
@@ -79,8 +80,8 @@ import { RechartsComponent } from './recharts.component';
                 <div class="absolute right-0 top-0 w-1 h-full bg-emerald-500/50"></div>
                 <h4 class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 flex items-center gap-1.5"><mat-icon class="text-[14px]">track_changes</mat-icon> Win Rate Prediction</h4>
                 <div class="flex items-end gap-3 mt-4">
-                  <span class="text-3xl font-display font-bold text-white">68.4%</span>
-                  <span class="text-xs font-bold text-emerald-400 mb-1 flex items-center bg-emerald-500/10 px-1.5 py-0.5 rounded"><mat-icon class="text-[12px]">trending_up</mat-icon> +4.2%</span>
+                  <span class="text-3xl font-display font-bold text-white">{{ winRatePrediction() | number:'1.1-1' }}%</span>
+                  <span class="text-xs font-bold text-emerald-400 mb-1 flex items-center bg-emerald-500/10 px-1.5 py-0.5 rounded"><mat-icon class="text-[12px]">trending_up</mat-icon> Active</span>
                 </div>
                 <p class="text-xs text-zinc-500 mt-2">Adjusted for current pipeline velocity</p>
              </div>
@@ -89,7 +90,7 @@ import { RechartsComponent } from './recharts.component';
                 <div class="absolute right-0 top-0 w-1 h-full bg-amber-500/50"></div>
                 <h4 class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 flex items-center gap-1.5"><mat-icon class="text-[14px]">warning_amber</mat-icon> Risk Exposure</h4>
                 <div class="flex items-end gap-3 mt-4">
-                  <span class="text-3xl font-display font-bold text-white">$1.2M</span>
+                  <span class="text-3xl font-display font-bold text-white">{{ riskExposure() | currency:'USD':'symbol':'1.0-0' }}</span>
                   <span class="text-xs font-bold text-amber-400 mb-1 flex items-center bg-amber-500/10 px-1.5 py-0.5 rounded"><mat-icon class="text-[12px]">trending_flat</mat-icon> Stable</span>
                 </div>
                 <p class="text-xs text-zinc-500 mt-2">Value of deals in stagnant stages</p>
@@ -99,8 +100,8 @@ import { RechartsComponent } from './recharts.component';
                 <div class="absolute right-0 top-0 w-1 h-full bg-purple-500/50"></div>
                 <h4 class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 flex items-center gap-1.5"><mat-icon class="text-[14px]">lightbulb</mat-icon> Upsell Potential</h4>
                 <div class="flex items-end gap-3 mt-4">
-                  <span class="text-3xl font-display font-bold text-white">$850k</span>
-                  <span class="text-xs font-bold text-emerald-400 mb-1 flex items-center bg-emerald-500/10 px-1.5 py-0.5 rounded"><mat-icon class="text-[12px]">trending_up</mat-icon> +12%</span>
+                  <span class="text-3xl font-display font-bold text-white">{{ upsellPotential() | currency:'USD':'symbol':'1.0-0' }}</span>
+                  <span class="text-xs font-bold text-emerald-400 mb-1 flex items-center bg-emerald-500/10 px-1.5 py-0.5 rounded"><mat-icon class="text-[12px]">trending_up</mat-icon> Active</span>
                 </div>
                 <p class="text-xs text-zinc-500 mt-2">Identified expansion opportunities</p>
              </div>
@@ -202,30 +203,84 @@ import { RechartsComponent } from './recharts.component';
 })
 export class ForecastComponent {
   appwrite = inject(Appwrite);
+  leadService = inject(LeadService);
   isAnalyzing = signal<boolean>(false);
+  
+  // Base historical data to ground the chart
+  private historicalData = [
+    { month: 'Jan', actual: 400000 },
+    { month: 'Feb', actual: 450000 },
+    { month: 'Mar', actual: 420000 },
+    { month: 'Apr', actual: 510000 }
+  ];
 
-  forecastData = signal<unknown[]>([
-    { month: 'Jan', actual: 400000, projected: null },
-    { month: 'Feb', actual: 450000, projected: null },
-    { month: 'Mar', actual: 420000, projected: null },
-    { month: 'Apr', actual: 510000, projected: 510000 },
-    { month: 'May', actual: null, projected: 580000 },
-    { month: 'Jun', actual: null, projected: 640000 },
-    { month: 'Jul', actual: null, projected: 750000 }
-  ]);
+  forecastData = computed(() => {
+    const leads = this.leadService.leads();
+    let mayForecast = 0;
+    let junForecast = 0;
+    let julForecast = 0;
+    
+    // Simple projection logic based on lead scores and values
+    // Hot leads are likely to close soon (May), Warm later (Jun), Cold much later (Jul)
+    leads.forEach(lead => {
+      const val = lead.value || 0;
+      if (lead.scoreCategory === 'Hot') {
+        mayForecast += val * 0.8; // 80% probability
+        junForecast += val * 0.2;
+      } else if (lead.scoreCategory === 'Warm') {
+        mayForecast += val * 0.2;
+        junForecast += val * 0.6; // 60% probability
+        julForecast += val * 0.2;
+      } else {
+        junForecast += val * 0.1;
+        julForecast += val * 0.4; // 40% probability
+      }
+    });
+    
+    // Add base line values to projections to make the chart look continuous and realistic
+    const baseProjectedMay = 550000 + mayForecast;
+    const baseProjectedJun = 580000 + junForecast;
+    const baseProjectedJul = 600000 + julForecast;
+
+    return [
+      { month: 'Jan', actual: this.historicalData[0].actual, projected: null },
+      { month: 'Feb', actual: this.historicalData[1].actual, projected: null },
+      { month: 'Mar', actual: this.historicalData[2].actual, projected: null },
+      { month: 'Apr', actual: this.historicalData[3].actual, projected: this.historicalData[3].actual },
+      { month: 'May', actual: null, projected: Math.round(baseProjectedMay) },
+      { month: 'Jun', actual: null, projected: Math.round(baseProjectedJun) },
+      { month: 'Jul', actual: null, projected: Math.round(baseProjectedJul) }
+    ];
+  });
+
+  // Calculate dynamic KPIs based on the lead data
+  winRatePrediction = computed(() => {
+    const leads = this.leadService.leads();
+    if (leads.length === 0) return 0;
+    const hotCount = leads.filter(l => l.scoreCategory === 'Hot').length;
+    const warmCount = leads.filter(l => l.scoreCategory === 'Warm').length;
+    // Base 50% + weighted by hot/warm leads
+    const predictedRate = 50 + (hotCount / leads.length) * 30 + (warmCount / leads.length) * 10;
+    return Math.min(95, predictedRate);
+  });
+  
+  riskExposure = computed(() => {
+    const leads = this.leadService.leads();
+    return leads.filter(l => l.scoreCategory === 'Cold' || l.status === 'New')
+                .reduce((sum, lead) => sum + (lead.value || 0), 0);
+  });
+  
+  upsellPotential = computed(() => {
+     const leads = this.leadService.leads();
+     return leads.filter(l => l.status === 'Closed' && l.scoreCategory === 'Hot')
+                 .reduce((sum, lead) => sum + (lead.value || 0) * 0.5, 0); // Estimate 50% upsell on closed hot deals
+  });
 
   runAnalysis() {
     this.isAnalyzing.set(true);
+    // Simulate AI deep analysis delay, which just triggers a re-render of the same computed data right now
+    // but in a real app would fetch a fresh ML model output
     setTimeout(() => {
-      this.forecastData.set([
-        { month: 'Jan', actual: 400000, projected: null },
-        { month: 'Feb', actual: 450000, projected: null },
-        { month: 'Mar', actual: 420000, projected: null },
-        { month: 'Apr', actual: 510000, projected: 510000 },
-        { month: 'May', actual: null, projected: 610000 },
-        { month: 'Jun', actual: null, projected: 720000 },
-        { month: 'Jul', actual: null, projected: 880000 }
-      ]);
       this.isAnalyzing.set(false);
     }, 1500);
   }

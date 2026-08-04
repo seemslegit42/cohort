@@ -24,6 +24,10 @@ import { Appwrite } from './appwrite';
         </div>
 
         <div class="flex gap-3">
+          <button (click)="copyBookingLink()" class="bg-purple-500/10 border border-purple-500/30 hover:bg-purple-500/20 text-purple-400 px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2">
+            <mat-icon class="text-sm">link</mat-icon>
+            Copy Booking Link
+          </button>
           <button (click)="openSettings()" class="bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-zinc-300 px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2">
             <mat-icon class="text-sm">cloud_sync</mat-icon>
             CalDAV Settings
@@ -220,6 +224,16 @@ export class CalendarComponent {
   newEventTime = '';
   newEventContact = '';
   newEventType = 'Meeting';
+
+  copyBookingLink() {
+    const url = window.location.origin + '/scheduler';
+    navigator.clipboard.writeText(url).then(() => {
+      alert('Booking link copied to clipboard:\n' + url);
+    }).catch(err => {
+      console.error('Failed to copy: ', err);
+      alert('Failed to copy booking link. The link is: ' + url);
+    });
+  }
 
   getTypeClasses(type: string): string {
     switch (type) {

@@ -1,6 +1,6 @@
 {
   "name": "ΛΞVOS CRM",
-  "description": "A production-ready CRM and Sales Agent dashboard featuring analytics, records, and agent insights.",
+  "description": "Enterprise workspace CRM with full CRUD management for leads, tasks, deals, and knowledge notes, featuring Recharts analytics, quick add floating dock, and CSV exports.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

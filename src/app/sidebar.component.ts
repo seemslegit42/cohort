@@ -56,6 +56,10 @@ import { Appwrite } from './appwrite';
           <mat-icon class="text-[20px] w-5 h-5">email</mat-icon>
           <span class="font-medium text-sm">Emails</span>
         </a>
+        <a routerLink="/campaigns" routerLinkActive="bg-zinc-900/60 text-white shadow-sm border border-zinc-800" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all">
+          <mat-icon class="text-[20px] w-5 h-5 text-indigo-400">campaign</mat-icon>
+          <span class="font-medium text-sm">Campaigns</span>
+        </a>
         <a routerLink="/calendar" routerLinkActive="bg-zinc-900/60 text-white shadow-sm border border-zinc-800" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all">
           <mat-icon class="text-[20px] w-5 h-5">event</mat-icon>
           <span class="font-medium text-sm">Calendar</span>

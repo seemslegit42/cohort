@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, signal, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
+import { RechartsComponent } from './recharts.component';
 
 export interface ChartPoint {
   month: string;
@@ -25,7 +26,7 @@ export interface LiveEvent {
   selector: 'app-chart-card',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, MatIconModule],
+  imports: [CommonModule, MatIconModule, RechartsComponent],
   template: `
     <div class="bg-zinc-900/40 backdrop-blur-xl border border-zinc-800/80 rounded-2xl p-6 h-full flex flex-col relative overflow-hidden group hover:border-zinc-700/80 transition-colors duration-300">
       
@@ -37,8 +38,14 @@ export interface LiveEvent {
       <div class="flex flex-col sm:flex-row sm:items-start justify-between mb-6 gap-4 z-10 relative">
         <div>
           <div class="flex items-center gap-2 mb-1.5">
-            <h3 class="text-xs font-bold text-zinc-400 uppercase tracking-widest font-display">Revenue Velocity Engine</h3>
-            @if (activeMode() === 'live') {
+            <h3 class="text-xs font-bold text-zinc-400 uppercase tracking-widest font-display">
+              {{ activeMode() === '30d' ? '30-Day Daily Sales Performance' : 'Revenue Velocity Engine' }}
+            </h3>
+            @if (activeMode() === '30d') {
+              <span class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-400 text-[9px] font-bold uppercase border border-teal-500/20">
+                <mat-icon class="text-[11px] w-3 h-3">show_chart</mat-icon> Recharts Line Chart
+              </span>
+            } @else if (activeMode() === 'live') {
               <span class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[9px] font-bold uppercase border border-emerald-500/20 animate-pulse">
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Live Stream
               </span>
@@ -50,7 +57,9 @@ export interface LiveEvent {
           </div>
           
           <div class="flex items-center gap-3">
-            @if (activeMode() === '12m') {
+            @if (activeMode() === '30d') {
+              <span class="text-4xl font-display font-bold text-white tracking-tight drop-shadow-md">$773,200</span>
+            } @else if (activeMode() === '12m') {
               <span class="text-4xl font-display font-bold text-white tracking-tight drop-shadow-md">$1,856,231</span>
             } @else {
               <span 
@@ -63,7 +72,12 @@ export interface LiveEvent {
           </div>
           
           <div class="flex items-center gap-2 mt-2 text-xs">
-            @if (activeMode() === '12m') {
+            @if (activeMode() === '30d') {
+              <span class="text-teal-400 font-semibold flex items-center gap-0.5">
+                <mat-icon class="text-[14px] w-3.5 h-3.5">trending_up</mat-icon> +18.4%
+              </span>
+              <span class="text-zinc-500 font-medium">vs prior 30 days &bull; Avg: $25,773/day</span>
+            } @else if (activeMode() === '12m') {
               <span class="text-teal-400 font-semibold flex items-center gap-0.5">
                 <mat-icon class="text-[14px] w-3.5 h-3.5">arrow_upward</mat-icon> +12.2%
               </span>
@@ -78,24 +92,30 @@ export interface LiveEvent {
         </div>
         
         <!-- Controls -->
-        <div class="flex gap-2 bg-zinc-950/50 p-1 rounded-xl border border-zinc-800/60 shadow-inner z-20">
+        <div class="flex gap-1.5 bg-zinc-950/50 p-1 rounded-xl border border-zinc-800/60 shadow-inner z-20">
+          <button 
+            (click)="setMode('30d')"
+            [ngClass]="activeMode() === '30d' ? 'bg-zinc-800 text-teal-400 border border-teal-500/30 shadow-sm font-bold' : 'text-zinc-400 hover:text-zinc-200'"
+            class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1">
+            <mat-icon class="text-[14px] w-3.5 h-3.5">timeline</mat-icon> 30 Days
+          </button>
           <button 
             (click)="setMode('12m')"
-            [ngClass]="activeMode() === '12m' ? 'bg-zinc-800 text-white border border-zinc-700 shadow-sm' : 'text-zinc-400 hover:text-zinc-200'"
-            class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all">
+            [ngClass]="activeMode() === '12m' ? 'bg-zinc-800 text-white border border-zinc-700 shadow-sm font-bold' : 'text-zinc-400 hover:text-zinc-200'"
+            class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all">
             12 Months
           </button>
           <button 
             (click)="setMode('live')"
-            [ngClass]="activeMode() === 'live' ? 'bg-zinc-800 text-teal-400 border border-teal-500/20 shadow-sm' : 'text-zinc-400 hover:text-teal-400'"
-            class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5">
+            [ngClass]="activeMode() === 'live' ? 'bg-zinc-800 text-teal-400 border border-teal-500/20 shadow-sm font-bold' : 'text-zinc-400 hover:text-teal-400'"
+            class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5">
             @if (activeMode() === 'live') {
               <span class="relative flex h-1.5 w-1.5">
                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
                 <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-teal-500"></span>
               </span>
             }
-            B.E.E.P. Live Feed
+            Live Feed
           </button>
         </div>
       </div>
@@ -103,8 +123,22 @@ export interface LiveEvent {
       <!-- Chart Content Box -->
       <div class="flex-1 relative w-full h-[220px] sm:h-[260px] z-10 overflow-hidden mt-2 select-none">
         
-        <!-- SVG Chart Representation -->
-        <svg viewBox="0 0 800 220" preserveAspectRatio="none" class="w-full h-full overflow-visible">
+        <!-- 30 Days Recharts Line Chart View -->
+        @if (activeMode() === '30d') {
+          <div class="w-full h-full animate-fade-in">
+            <app-recharts 
+              type="line" 
+              [data]="thirtyDaySalesData" 
+              xAxisKey="day" 
+              [series]="thirtyDaySeries" 
+              height="100%">
+            </app-recharts>
+          </div>
+        }
+        
+        <!-- SVG Chart Representation (For 12m & Live modes) -->
+        @if (activeMode() !== '30d') {
+          <svg viewBox="0 0 800 220" preserveAspectRatio="none" class="w-full h-full overflow-visible">
           <!-- Grid Lines -->
           <g class="text-zinc-800/40" stroke="currentColor" stroke-width="1" stroke-dasharray="4,6">
             <line x1="0" y1="20" x2="800" y2="20" />
@@ -339,6 +373,7 @@ export interface LiveEvent {
             }
           </div>
         }
+        }
       </div>
 
       <!-- Real-time B.E.E.P. Activity Terminal/Logger Log scrolling container -->
@@ -403,9 +438,48 @@ export interface LiveEvent {
   `]
 })
 export class ChartCardComponent implements OnInit, OnDestroy {
-  activeMode = signal<'12m' | 'live'>('12m');
+  activeMode = signal<'30d' | '12m' | 'live'>('30d');
   hoveredIndex = signal<number | null>(8);
   liveHoveredIndex = signal<number | null>(null);
+
+  // 30-Day Daily Sales Performance Trend (Recharts Line Chart)
+  thirtyDaySalesData = [
+    { day: 'Jul 01', sales: 14200, target: 18000 },
+    { day: 'Jul 02', sales: 18500, target: 18000 },
+    { day: 'Jul 03', sales: 12100, target: 18000 },
+    { day: 'Jul 04', sales: 19400, target: 18000 },
+    { day: 'Jul 05', sales: 21300, target: 18000 },
+    { day: 'Jul 06', sales: 16800, target: 18000 },
+    { day: 'Jul 07', sales: 24500, target: 18000 },
+    { day: 'Jul 08', sales: 19200, target: 18000 },
+    { day: 'Jul 09', sales: 22800, target: 18000 },
+    { day: 'Jul 10', sales: 15400, target: 18000 },
+    { day: 'Jul 11', sales: 27900, target: 18000 },
+    { day: 'Jul 12', sales: 31200, target: 18000 },
+    { day: 'Jul 13', sales: 18600, target: 18000 },
+    { day: 'Jul 14', sales: 20400, target: 18000 },
+    { day: 'Jul 15', sales: 26100, target: 18000 },
+    { day: 'Jul 16', sales: 23800, target: 18000 },
+    { day: 'Jul 17', sales: 29500, target: 18000 },
+    { day: 'Jul 18', sales: 17300, target: 18000 },
+    { day: 'Jul 19', sales: 32800, target: 18000 },
+    { day: 'Jul 20', sales: 28400, target: 18000 },
+    { day: 'Jul 21', sales: 34100, target: 18000 },
+    { day: 'Jul 22', sales: 22500, target: 18000 },
+    { day: 'Jul 23', sales: 27200, target: 18000 },
+    { day: 'Jul 24', sales: 35600, target: 18000 },
+    { day: 'Jul 25', sales: 31000, target: 18000 },
+    { day: 'Jul 26', sales: 29800, target: 18000 },
+    { day: 'Jul 27', sales: 38200, target: 18000 },
+    { day: 'Jul 28', sales: 33500, target: 18000 },
+    { day: 'Jul 29', sales: 41200, target: 18000 },
+    { day: 'Jul 30', sales: 39800, target: 18000 }
+  ];
+
+  thirtyDaySeries = [
+    { key: 'sales', name: 'Daily Sales Revenue ($)', color: '#20B2AA' },
+    { key: 'target', name: 'Daily Target ($18k)', color: '#A855F7', strokeDasharray: '4,4' }
+  ];
 
   // Live state
   liveTotalRevenue = signal<number>(1856231);
@@ -449,7 +523,7 @@ export class ChartCardComponent implements OnInit, OnDestroy {
     this.clearLiveStream();
   }
 
-  setMode(mode: '12m' | 'live') {
+  setMode(mode: '30d' | '12m' | 'live') {
     this.activeMode.set(mode);
     if (mode === 'live') {
       this.startLiveStream();

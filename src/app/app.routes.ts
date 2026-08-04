@@ -6,6 +6,10 @@ export const routes: Routes = [
     loadComponent: () => import('./dashboard.component').then(m => m.DashboardComponent)
   },
   {
+    path: 'scheduler',
+    loadComponent: () => import('./scheduler.component').then(m => m.SchedulerComponent)
+  },
+  {
     path: 'notifications',
     loadComponent: () => import('./notifications.component').then(m => m.NotificationsComponent)
   },
@@ -72,5 +76,9 @@ export const routes: Routes = [
   {
     path: 'newsletter',
     loadComponent: () => import('./newsletter.component').then(m => m.NewsletterComponent)
+  },
+  {
+    path: 'campaigns',
+    loadComponent: () => import('./campaigns.component').then(m => m.CampaignsComponent)
   }
 ];

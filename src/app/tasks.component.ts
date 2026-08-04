@@ -1,6 +1,7 @@
-import { Component, ChangeDetectionStrategy, signal, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal, inject, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Appwrite } from './appwrite';
 
 export interface TaskItem {
@@ -8,6 +9,9 @@ export interface TaskItem {
   title: string;
   category: string;
   status: string;
+  priority?: string;
+  dueDate?: string;
+  description?: string;
 }
 
 @Component({
@@ -23,32 +27,79 @@ export interface TaskItem {
             <div class="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center border border-purple-500/20 shadow-[0_0_15px_rgba(168,85,247,0.15)]">
               <mat-icon class="text-purple-400 text-[24px]">task_alt</mat-icon>
             </div>
-            Action Items & Workflow
+            Action Items & Workflow Objectives
           </h1>
           <p class="text-sm text-zinc-400 mt-2">
             Centralized task tracking and operational pipeline for high-value strategic objectives.
           </p>
         </div>
-        <button (click)="openCreateModal()" class="px-5 py-2.5 bg-purple-500 hover:bg-purple-400 text-purple-950 font-bold rounded-xl transition-all text-sm flex items-center gap-2 shadow-lg shadow-purple-500/20">
-          <mat-icon class="text-[18px]">add_task</mat-icon>
-          New Objective
-        </button>
+
+        <div class="flex items-center gap-3 self-start sm:self-auto">
+          <!-- Quick search -->
+          <div class="relative">
+            <mat-icon class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-[18px]">search</mat-icon>
+            <input 
+              type="text" 
+              [value]="searchQuery()" 
+              (input)="updateSearch($event)" 
+              placeholder="Search objectives..." 
+              class="w-44 sm:w-56 bg-zinc-900/60 border border-zinc-800 rounded-xl py-2 pl-9 pr-3 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-purple-500/50 transition-all font-medium" />
+          </div>
+
+          <button (click)="openCreateModal()" class="px-5 py-2.5 bg-purple-500 hover:bg-purple-400 text-purple-950 font-bold rounded-xl transition-all text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-purple-500/20 shrink-0">
+            <mat-icon class="text-[18px]">add_task</mat-icon>
+            New Objective
+          </button>
+        </div>
       </header>
 
+      <!-- Category Filter Pills Bar -->
+      <div class="flex items-center justify-between gap-3 mb-6 bg-zinc-900/40 p-2.5 rounded-2xl border border-zinc-800/80 flex-wrap">
+        <div class="flex items-center gap-2 overflow-x-auto custom-scrollbar py-0.5">
+          <span class="text-xs font-bold text-zinc-500 uppercase tracking-widest mr-1">Category:</span>
+          <button 
+            (click)="selectedCategory.set('All')" 
+            [class]="selectedCategory() === 'All' ? 'bg-purple-500/20 text-purple-300 border-purple-500/40 font-bold' : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:text-white'"
+            class="px-3 py-1 rounded-xl border text-xs transition-all">
+            All Categories ({{ appwrite.tasks().length }})
+          </button>
+          @for (cat of categories(); track cat) {
+            <button 
+              (click)="selectedCategory.set(cat)" 
+              [class]="selectedCategory() === cat ? 'bg-purple-500/20 text-purple-300 border-purple-500/40 font-bold' : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:text-white'"
+              class="px-3 py-1 rounded-xl border text-xs transition-all">
+              {{ cat }}
+            </button>
+          }
+        </div>
+
+        @if (getTasksBy('done').length > 0) {
+          <button (click)="clearResolved()" class="text-[11px] font-bold text-zinc-500 hover:text-rose-400 transition-colors flex items-center gap-1 px-2.5 py-1 rounded-lg hover:bg-zinc-800">
+            <mat-icon class="text-xs">cleaning_services</mat-icon>
+            Clear Resolved ({{ getTasksBy('done').length }})
+          </button>
+        }
+      </div>
+
+      <!-- Columns Layout -->
       <div class="flex-1 flex gap-6 overflow-x-auto custom-scrollbar pb-6 min-h-0 items-stretch">
         
         <!-- TODO Column -->
         <div class="flex-shrink-0 w-80 lg:w-96 flex flex-col bg-zinc-900/40 backdrop-blur-md rounded-2xl border border-zinc-800/80 overflow-hidden shadow-xl">
           <div class="p-4 border-b border-zinc-800/80 flex items-center justify-between bg-zinc-950/50">
-            <h3 class="font-bold text-white flex items-center gap-2">
+            <h3 class="font-bold text-white flex items-center gap-2 font-display text-sm">
                <mat-icon class="text-rose-400 text-[18px]">fiber_manual_record</mat-icon>
-               Backlog
+               Backlog / Pending
             </h3>
-            <span class="text-xs font-bold bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-md">{{ getTasksBy('todo').length }}</span>
+            <span class="text-xs font-bold bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-md font-mono">{{ getTasksBy('todo').length }}</span>
           </div>
           <div class="flex-1 p-4 overflow-y-auto custom-scrollbar space-y-4">
              @for (task of getTasksBy('todo'); track task.$id) {
                <ng-container *ngTemplateOutlet="taskCard; context: { task: task }"></ng-container>
+             } @empty {
+               <div class="h-32 border border-dashed border-zinc-800/80 rounded-xl flex items-center justify-center text-xs text-zinc-600 font-medium">
+                 No items in backlog
+               </div>
              }
           </div>
         </div>
@@ -56,15 +107,19 @@ export interface TaskItem {
         <!-- DOING Column -->
         <div class="flex-shrink-0 w-80 lg:w-96 flex flex-col bg-zinc-900/40 backdrop-blur-md rounded-2xl border border-zinc-800/80 overflow-hidden shadow-xl">
           <div class="p-4 border-b border-zinc-800/80 flex items-center justify-between bg-zinc-950/50">
-            <h3 class="font-bold text-white flex items-center gap-2">
+            <h3 class="font-bold text-white flex items-center gap-2 font-display text-sm">
                <mat-icon class="text-amber-400 text-[18px] animate-pulse">incomplete_circle</mat-icon>
-               Active Cycles
+               Active Execution Cycles
             </h3>
-            <span class="text-xs font-bold bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-md">{{ getTasksBy('in-progress').length }}</span>
+            <span class="text-xs font-bold bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-md font-mono">{{ getTasksBy('in-progress').length }}</span>
           </div>
           <div class="flex-1 p-4 overflow-y-auto custom-scrollbar space-y-4">
              @for (task of getTasksBy('in-progress'); track task.$id) {
                <ng-container *ngTemplateOutlet="taskCard; context: { task: task }"></ng-container>
+             } @empty {
+               <div class="h-32 border border-dashed border-zinc-800/80 rounded-xl flex items-center justify-center text-xs text-zinc-600 font-medium">
+                 No active execution cycles
+               </div>
              }
           </div>
         </div>
@@ -72,15 +127,19 @@ export interface TaskItem {
         <!-- DONE Column -->
         <div class="flex-shrink-0 w-80 lg:w-96 flex flex-col bg-zinc-900/40 backdrop-blur-md rounded-2xl border border-zinc-800/80 overflow-hidden shadow-xl">
           <div class="p-4 border-b border-zinc-800/80 flex items-center justify-between bg-zinc-950/50">
-            <h3 class="font-bold text-white flex items-center gap-2">
+            <h3 class="font-bold text-white flex items-center gap-2 font-display text-sm">
                <mat-icon class="text-teal-400 text-[18px]">check_circle</mat-icon>
-               Resolved
+               Resolved & Deployed
             </h3>
-            <span class="text-xs font-bold bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-md">{{ getTasksBy('done').length }}</span>
+            <span class="text-xs font-bold bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-md font-mono">{{ getTasksBy('done').length }}</span>
           </div>
           <div class="flex-1 p-4 overflow-y-auto custom-scrollbar space-y-4">
              @for (task of getTasksBy('done'); track task.$id) {
                <ng-container *ngTemplateOutlet="taskCard; context: { task: task }"></ng-container>
+             } @empty {
+               <div class="h-32 border border-dashed border-zinc-800/80 rounded-xl flex items-center justify-center text-xs text-zinc-600 font-medium">
+                 No resolved objectives
+               </div>
              }
           </div>
         </div>
@@ -89,36 +148,69 @@ export interface TaskItem {
 
       <!-- Add/Edit Modal -->
       @if (isModalOpen()) {
-        <div class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 w-full max-w-md shadow-2xl animate-fade-in">
-            <h2 class="text-xl font-bold text-white mb-4">{{ editingTask() ? 'Edit Objective' : 'New Objective' }}</h2>
+        <div class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" (click)="closeModal()" (keydown.escape)="closeModal()" tabindex="0" role="dialog" aria-modal="true">
+          <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 w-full max-w-md shadow-2xl animate-fade-in" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()" tabindex="-1">
+            <div class="flex items-center justify-between mb-4 border-b border-zinc-800 pb-3">
+              <h2 class="text-lg font-bold text-white font-display">{{ editingTask() ? 'Edit Objective' : 'New Strategic Objective' }}</h2>
+              <button (click)="closeModal()" class="text-zinc-500 hover:text-zinc-300">
+                <mat-icon class="text-[20px]">close</mat-icon>
+              </button>
+            </div>
+
             <div class="space-y-4">
               <div>
-                <label for="task-title-input" class="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1.5">Title</label>
-                <input id="task-title-input" type="text" #titleInput [value]="editingTask()?.title || ''" class="w-full bg-zinc-950/50 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500/50">
+                <label for="task-title-input" class="block text-xs font-bold text-zinc-400 uppercase tracking-widest mb-1.5">Objective Title *</label>
+                <input id="task-title-input" type="text" #titleInput [value]="editingTask()?.title || ''" placeholder="e.g. Finalize enterprise SLA & security audit" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500/50">
               </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label for="task-category-select" class="block text-xs font-bold text-zinc-400 uppercase tracking-widest mb-1.5">Category</label>
+                  <input id="task-category-select" list="categoryList" #catInput [value]="editingTask()?.category || 'Strategic'" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500/50">
+                  <datalist id="categoryList">
+                    @for (cat of categories(); track cat) {
+                      <option [value]="cat"></option>
+                    }
+                  </datalist>
+                </div>
+
+                <div>
+                  <label for="task-status-select" class="block text-xs font-bold text-zinc-400 uppercase tracking-widest mb-1.5">Status Column</label>
+                  <select id="task-status-select" #statusInput [value]="editingTask()?.status || 'todo'" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500/50">
+                    <option value="todo">Backlog</option>
+                    <option value="in-progress">Active</option>
+                    <option value="done">Resolved</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label for="task-priority-select" class="block text-xs font-bold text-zinc-400 uppercase tracking-widest mb-1.5">Priority</label>
+                  <select id="task-priority-select" #prioInput [value]="editingTask()?.priority || 'High'" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500/50">
+                    <option value="High">High</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Low">Low</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label for="task-duedate-input" class="block text-xs font-bold text-zinc-400 uppercase tracking-widest mb-1.5">Due Date</label>
+                  <input id="task-duedate-input" type="date" #dateInput [value]="editingTask()?.dueDate || defaultDueDate" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500/50">
+                </div>
+              </div>
+
               <div>
-                <label for="task-category-select" class="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1.5">Category</label>
-                <select id="task-category-select" #catInput [value]="editingTask()?.category || 'Routine'" class="w-full bg-zinc-950/50 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500/50">
-                  <option value="Strategic">Strategic</option>
-                  <option value="Urgent">Urgent</option>
-                  <option value="Client">Client</option>
-                  <option value="Routine">Routine</option>
-                </select>
+                <label for="task-desc-input" class="block text-xs font-bold text-zinc-400 uppercase tracking-widest mb-1.5">Notes / Description</label>
+                <textarea id="task-desc-input" #descInput rows="2" placeholder="Action item context or requirements..." class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-purple-500/50 resize-none">{{ editingTask()?.description || '' }}</textarea>
               </div>
-              <div>
-                <label for="task-status-select" class="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1.5">Status</label>
-                <select id="task-status-select" #statusInput [value]="editingTask()?.status || 'todo'" class="w-full bg-zinc-950/50 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500/50">
-                  <option value="todo">Backlog</option>
-                  <option value="in-progress">Active</option>
-                  <option value="done">Resolved</option>
-                </select>
-              </div>
+
             </div>
-            <div class="mt-6 flex justify-end gap-3">
-              <button (click)="closeModal()" class="px-4 py-2 rounded-lg font-bold text-zinc-400 hover:text-white transition-colors text-sm">Cancel</button>
-              <button (click)="saveTask(titleInput.value, catInput.value, statusInput.value)" class="px-4 py-2 bg-purple-500 hover:bg-purple-400 text-purple-950 font-bold rounded-lg transition-colors text-sm">
-                {{ editingTask() ? 'Save Changes' : 'Create' }}
+
+            <div class="mt-6 flex justify-end gap-3 border-t border-zinc-800/80 pt-4">
+              <button (click)="closeModal()" class="px-4 py-2 rounded-xl border border-zinc-800 text-xs font-semibold text-zinc-400 hover:text-white transition-colors">Cancel</button>
+              <button (click)="saveTask(titleInput.value, catInput.value, statusInput.value, prioInput.value, dateInput.value, descInput.value)" class="px-5 py-2 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-400 hover:to-indigo-400 text-zinc-950 font-bold rounded-xl transition-all text-xs shadow-lg shadow-purple-500/20">
+                {{ editingTask() ? 'Save Changes' : 'Create Objective' }}
               </button>
             </div>
           </div>
@@ -130,32 +222,55 @@ export interface TaskItem {
     <!-- Reusable Task Card Template -->
     <ng-template #taskCard let-task="task">
       <div 
-        class="bg-zinc-950/60 border border-zinc-800 rounded-xl p-4 cursor-grab hover:border-zinc-700 hover:shadow-lg transition-all group relative overflow-hidden"
+        class="bg-zinc-950/60 border border-zinc-800/80 rounded-xl p-4 hover:border-zinc-700 hover:shadow-lg transition-all group relative overflow-hidden"
         [class.opacity-60]="task.status === 'done'">
         <div class="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl" [ngClass]="getCategoryColor(task.category || 'Routine')"></div>
-        <div class="flex items-center justify-between mb-3">
-          <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border"
+        
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border"
             [ngClass]="getCategoryBadgeClass(task.category || 'Routine')">
             {{ task.category || 'Routine' }}
           </span>
-          @if (task.dueDate) {
-            <span class="text-[10px] font-semibold text-zinc-500 flex items-center gap-1">
-              <mat-icon class="text-[12px]">schedule</mat-icon> {{ task.dueDate }}
-            </span>
-          }
+
+          <div class="flex items-center gap-2">
+            @if (task.dueDate) {
+              <span class="text-[10px] font-semibold text-zinc-500 flex items-center gap-0.5">
+                <mat-icon class="text-[12px]">schedule</mat-icon> {{ task.dueDate }}
+              </span>
+            }
+          </div>
         </div>
-        <h4 class="text-sm font-bold text-zinc-200 leading-snug group-hover:text-white transition-colors" [class.line-through]="task.status === 'done'">
+
+        <h4 class="text-xs font-bold text-zinc-200 leading-snug group-hover:text-white transition-colors" [class.line-through]="task.status === 'done'">
           {{ task.title }}
         </h4>
-        <div class="mt-4 flex items-center justify-between border-t border-zinc-800/60 mt-3 pt-3">
-          <div class="flex items-center gap-[-4px]">
-             <!-- Avatars -->
-             <div class="w-6 h-6 rounded-full bg-zinc-800 border-2 border-zinc-950 flex items-center justify-center text-[10px] font-bold text-zinc-400">AJ</div>
+
+        @if (task.description) {
+          <p class="text-[11px] text-zinc-500 line-clamp-2 mt-1.5">{{ task.description }}</p>
+        }
+
+        <div class="mt-3 pt-2.5 border-t border-zinc-800/60 flex items-center justify-between">
+          
+          <!-- Column Progression Controls -->
+          <div class="flex items-center gap-1">
+            @if (task.status !== 'todo') {
+              <button (click)="moveStatus(task, -1)" title="Move Back" class="p-1 rounded bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-700 transition-colors">
+                <mat-icon class="text-[14px]">arrow_back</mat-icon>
+              </button>
+            }
+            @if (task.status !== 'done') {
+              <button (click)="moveStatus(task, 1)" title="Advance Status" class="p-1 rounded bg-purple-500/10 border border-purple-500/30 text-purple-400 hover:bg-purple-500/20 transition-colors">
+                <mat-icon class="text-[14px]">arrow_forward</mat-icon>
+              </button>
+            }
           </div>
-          <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button (click)="openEditModal(task)" class="text-zinc-500 hover:text-purple-400"><mat-icon class="text-[16px]">edit</mat-icon></button>
-            <button (click)="deleteTask(task.$id)" class="text-zinc-500 hover:text-rose-400"><mat-icon class="text-[16px]">delete</mat-icon></button>
+
+          <!-- Edit & Delete Buttons -->
+          <div class="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button (click)="openEditModal(task)" title="Edit" class="text-zinc-500 hover:text-purple-400 p-1 rounded hover:bg-zinc-900"><mat-icon class="text-[16px]">edit</mat-icon></button>
+            <button (click)="deleteTask(task.$id)" title="Delete" class="text-zinc-500 hover:text-rose-400 p-1 rounded hover:bg-zinc-900"><mat-icon class="text-[16px]">delete</mat-icon></button>
           </div>
+
         </div>
       </div>
     </ng-template>
@@ -168,20 +283,64 @@ export interface TaskItem {
       from { opacity: 0; transform: translateY(4px); }
       to { opacity: 1; transform: translateY(0); }
     }
-    .custom-scrollbar::-webkit-scrollbar { height: 8px; width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: rgba(24,24,27,0.5); border-radius: 4px; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(82,82,91,0.5); border-radius: 4px; }
   `]
 })
-export class TasksComponent {
+export class TasksComponent implements OnInit {
   appwrite = inject(Appwrite);
+  route = inject(ActivatedRoute);
+  router = inject(Router);
   
   isModalOpen = signal(false);
   editingTask = signal<TaskItem | null>(null);
+  searchQuery = signal('');
+  selectedCategory = signal('All');
+
+  categories = computed(() => {
+    const defaultCats = new Set(['Strategic', 'Urgent', 'Client', 'Routine', 'Legal Review', 'SDR Follow-up']);
+    this.appwrite.tasks().forEach(t => {
+      if (t.category) defaultCats.add(t.category);
+    });
+    return Array.from(defaultCats).sort();
+  });
+
+  defaultDueDate = new Date(Date.now() + 86400000 * 3).toISOString().slice(0, 10);
+
+  ngOnInit() {
+    this.route.queryParams.subscribe(params => {
+      if (params['action'] === 'create' || params['action'] === 'new') {
+        this.openCreateModal();
+        this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
+      }
+    });
+  }
+
+  updateSearch(event: Event) {
+    this.searchQuery.set((event.target as HTMLInputElement).value);
+  }
 
   getTasksBy(status: string) {
-    const arr = this.appwrite.tasks();
-    return arr.filter(t => (t.status || 'todo') === status);
+    const q = this.searchQuery().toLowerCase().trim();
+    const cat = this.selectedCategory();
+    let arr = this.appwrite.tasks();
+
+    arr = arr.filter(t => (t.status || 'todo') === status);
+
+    if (cat !== 'All') {
+      arr = arr.filter(t => (t.category || 'Routine') === cat);
+    }
+
+    if (q) {
+      arr = arr.filter(t => 
+        t.title.toLowerCase().includes(q) || 
+        (t.category && t.category.toLowerCase().includes(q)) ||
+        (t.description && t.description.toLowerCase().includes(q))
+      );
+    }
+
+    return arr;
   }
 
   getCategoryColor(category: string) {
@@ -189,6 +348,8 @@ export class TasksComponent {
       case 'Urgent': return 'bg-rose-500';
       case 'Strategic': return 'bg-purple-500';
       case 'Client': return 'bg-teal-500';
+      case 'Legal Review': return 'bg-amber-500';
+      case 'SDR Follow-up': return 'bg-sky-500';
       case 'Routine': default: return 'bg-zinc-500';
     }
   }
@@ -198,6 +359,8 @@ export class TasksComponent {
       case 'Urgent': return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
       case 'Strategic': return 'bg-purple-500/10 text-purple-400 border-purple-500/20';
       case 'Client': return 'bg-teal-500/10 text-teal-400 border-teal-500/20';
+      case 'Legal Review': return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+      case 'SDR Follow-up': return 'bg-sky-500/10 text-sky-400 border-sky-500/20';
       case 'Routine': default: return 'bg-zinc-800 text-zinc-400 border-zinc-700';
     }
   }
@@ -217,22 +380,66 @@ export class TasksComponent {
     this.editingTask.set(null);
   }
 
-  async saveTask(title: string, category: string, status: string) {
+  async saveTask(title: string, category: string, status: string, priority?: string, dueDate?: string, description?: string) {
     if (!title.trim()) return;
     
     const task = this.editingTask();
     if (task) {
-      await this.appwrite.updateTask(task.$id, { title, category, status });
+      await this.appwrite.updateTask(task.$id, { title, category, status, priority, dueDate, description });
+      this.appwrite.addNotification({
+        title: 'Objective Updated',
+        message: `Updated task "${title}".`,
+        type: 'info'
+      });
     } else {
-      await this.appwrite.addTask({ title, category, status });
+      await this.appwrite.addTask({ title, category, status, priority, dueDate, description });
+      this.appwrite.addNotification({
+        title: 'Objective Created',
+        message: `Added new task "${title}".`,
+        type: 'success'
+      });
     }
     this.closeModal();
+  }
+
+  async moveStatus(task: TaskItem, direction: number) {
+    const statuses = ['todo', 'in-progress', 'done'];
+    const currIdx = statuses.indexOf(task.status || 'todo');
+    const newIdx = Math.max(0, Math.min(statuses.length - 1, currIdx + direction));
+    const nextStatus = statuses[newIdx];
+
+    if (nextStatus !== task.status) {
+      await this.appwrite.updateTask(task.$id, { status: nextStatus });
+      this.appwrite.addNotification({
+        title: 'Task Status Shifted',
+        message: `Moved "${task.title}" to ${nextStatus.toUpperCase()}`,
+        type: nextStatus === 'done' ? 'success' : 'info'
+      });
+    }
+  }
+
+  async clearResolved() {
+    if (confirm('Clear all resolved objectives?')) {
+      const resolved = this.getTasksBy('done');
+      for (const t of resolved) {
+        await this.appwrite.deleteTask(t.$id);
+      }
+      this.appwrite.addNotification({
+        title: 'Resolved Tasks Cleared',
+        message: `Removed ${resolved.length} completed tasks.`,
+        type: 'warning'
+      });
+    }
   }
 
   async deleteTask(id: string) {
     if (confirm('Are you sure you want to delete this task?')) {
       await this.appwrite.deleteTask(id);
+      this.appwrite.addNotification({
+        title: 'Task Deleted',
+        message: 'Task removed from active pipeline.',
+        type: 'warning'
+      });
     }
   }
 }
-

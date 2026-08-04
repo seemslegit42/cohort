@@ -172,9 +172,11 @@ import { MatIconModule } from '@angular/material/icon';
       <!-- X-Axis Labels -->
       <div class="absolute bottom-2 inset-x-6 flex justify-between text-[10px] font-bold text-zinc-500 font-mono">
         @for (point of data; track point[xAxisKey]) {
-          <span [class.text-purple-400]="hoveredIndex === $index" class="transition-colors duration-200">
-            {{ point[xAxisKey] }}
-          </span>
+          @if (data.length <= 15 || $index % 5 === 0 || $index === data.length - 1) {
+            <span [class.text-teal-400]="hoveredIndex === $index" class="transition-colors duration-200">
+              {{ point[xAxisKey] }}
+            </span>
+          }
         }
       </div>
 

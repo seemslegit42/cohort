@@ -167,7 +167,6 @@ app.post('/api/nextcloud/calendar', async (req, res): Promise<void> => {
     res.status(400).json({ error: 'Missing credentials' });
     return;
   }
-
   try {
     const auth = Buffer.from(`${username}:${password}`).toString('base64');
     
@@ -195,6 +194,11 @@ app.post('/api/nextcloud/calendar', async (req, res): Promise<void> => {
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });
   }
+});
+
+// Endpoint to expose Google Maps Platform Key to the client
+app.get('/api/config/maps', (req, res) => {
+  res.json({ key: process.env['GOOGLE_MAPS_PLATFORM_KEY'] || '' });
 });
 
 /**
