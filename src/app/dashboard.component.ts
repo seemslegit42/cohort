@@ -473,11 +473,20 @@ export class DashboardComponent implements OnInit {
     { id: 'main-chart', type: 'chart', title: 'Revenue progression chart', enabled: true, order: 5 },
     { id: 'quick-report', type: 'suite', title: 'Quick Report Compiler', enabled: true, order: 6 },
     { id: 'calendar-sync', type: 'insight', title: 'Calendar Sync (Nextcloud)', enabled: true, order: 7 },
-    { id: 'agent-insights', type: 'insight', title: 'Agent Performance', enabled: true, order: 8 },
-    { id: 'insight-oracle', type: 'insight', title: 'AI Insights Oracle', enabled: true, order: 9 },
-    { id: 'contract-suite', type: 'suite', title: 'Contract Folders', enabled: true, order: 10 },
-    { id: 'recent-transactions', type: 'table', title: 'Recent Transactions', enabled: true, order: 11 }
+    { id: 'upcoming-tasks', type: 'insight', title: 'Upcoming Tasks', enabled: true, order: 8 },
+    { id: 'agent-insights', type: 'insight', title: 'Agent Performance', enabled: true, order: 9 },
+    { id: 'insight-oracle', type: 'insight', title: 'AI Insights Oracle', enabled: true, order: 10 },
+    { id: 'contract-suite', type: 'suite', title: 'Contract Folders', enabled: true, order: 11 },
+    { id: 'recent-transactions', type: 'table', title: 'Recent Transactions', enabled: true, order: 12 }
   ]);
+
+  // Upcoming Tasks computed
+  upcomingTasks = computed(() => {
+    return this.appwrite.tasks()
+      .filter(t => !t.completed)
+      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
+      .slice(0, 5);
+  });
 
   ngOnInit() {
     this.leadService.loadLeads();

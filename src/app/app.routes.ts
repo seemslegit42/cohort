@@ -30,6 +30,10 @@ export const routes: Routes = [
     loadComponent: () => import('./reports.component').then(m => m.ReportsComponent)
   },
   {
+    path: 'lead-scoring',
+    loadComponent: () => import('./lead-scoring.component').then(m => m.LeadScoringComponent)
+  },
+  {
     path: 'pipeline-signals',
     loadComponent: () => import('./pipeline-signals.component').then(m => m.PipelineSignalsComponent)
   },

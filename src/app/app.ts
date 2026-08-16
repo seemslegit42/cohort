@@ -2,7 +2,6 @@ import { Component, ChangeDetectionStrategy, OnInit, inject, signal, computed } 
 import { SidebarComponent } from './sidebar.component';
 import { DockComponent } from './dock.component';
 import { RouterOutlet, Router } from '@angular/router';
-import { client } from '../lib/appwrite';
 import { Appwrite } from './appwrite';
 import { LeadService } from './lead.service';
 import { MatIconModule } from '@angular/material/icon';
@@ -253,23 +252,5 @@ export class App implements OnInit {
 
   ngOnInit() {
     this.leadService.loadLeads();
-    
-    try {
-      console.log("[ΛΞVOS App] Verifying Appwrite backend communication...");
-      const clientObj = client as unknown as Record<string, unknown>;
-      if (typeof clientObj['ping'] === 'function') {
-        const pingFn = clientObj['ping'] as () => unknown;
-        const res = pingFn();
-        if (res && typeof (res as Record<string, unknown>)['catch'] === 'function') {
-          const catchFn = (res as Record<string, unknown>)['catch'] as (err: unknown) => void;
-          catchFn((err: unknown) => {
-            const errStr = err instanceof Error ? err.message : String(err);
-            console.warn("Appwrite backend verification failed:", errStr);
-          });
-        }
-      }
-    } catch (e) {
-      console.log("Auto-ping triggered asynchronously:", e);
-    }
   }
 }

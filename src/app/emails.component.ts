@@ -1,8 +1,9 @@
-import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormsModule } from '@angular/forms';
 import { Appwrite } from './appwrite';
+import { LeadService } from './lead.service';
 
 interface CampaignEmail {
   $id: string;
@@ -11,6 +12,15 @@ interface CampaignEmail {
   subject: string;
   status: 'Sent' | 'Delivered' | 'Replied' | 'Bounced';
   sentAt: string;
+}
+
+interface InboxEmail {
+  $id: string;
+  sender: string;
+  subject: string;
+  snippet: string;
+  isRead: boolean;
+  receivedAt: Date;
 }
 
 @Component({
@@ -33,31 +43,32 @@ interface CampaignEmail {
           </p>
         </div>
 
-        <!-- Campaign Stats Block (Floating) -->
-        <div class="flex flex-wrap gap-3">
-          <div class="bg-zinc-950/60 border border-zinc-850 px-4 py-2 rounded-xl flex items-center gap-3">
-            <div class="w-8 h-8 rounded-lg bg-teal-500/10 flex items-center justify-center font-display text-teal-400 font-bold">
-              {{ campaignEmails().length }}
-            </div>
-            <div>
-              <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Outbox Total</p>
-              <p class="text-xs font-semibold text-white">Processed</p>
-            </div>
-          </div>
-          <div class="bg-zinc-950/60 border border-zinc-850 px-4 py-2 rounded-xl flex items-center gap-3">
-            <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center font-display text-emerald-400 font-bold">
-              84%
-            </div>
-            <div>
-              <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Open Rate</p>
-              <p class="text-xs font-semibold text-white">Top-Tier Conversion</p>
-            </div>
-          </div>
+        <div class="flex bg-zinc-900/60 p-1 rounded-xl border border-zinc-800">
+          <button (click)="activeTab.set('compose')" 
+                  [class.bg-zinc-800]="activeTab() === 'compose'"
+                  [class.text-white]="activeTab() === 'compose'"
+                  [class.text-zinc-400]="activeTab() !== 'compose'"
+                  class="px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2">
+            <mat-icon class="text-[16px]">edit_note</mat-icon>
+            Composer & Outbox
+          </button>
+          <button (click)="activeTab.set('inbox')" 
+                  [class.bg-zinc-800]="activeTab() === 'inbox'"
+                  [class.text-white]="activeTab() === 'inbox'"
+                  [class.text-zinc-400]="activeTab() !== 'inbox'"
+                  class="px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2">
+            <mat-icon class="text-[16px]">inbox</mat-icon>
+            Inbox
+            @if (inboxEmails().length > 0) {
+              <span class="bg-teal-500/20 text-teal-400 px-1.5 py-0.5 rounded text-[9px]">{{ inboxEmails().length }}</span>
+            }
+          </button>
         </div>
       </header>
 
-      <!-- Main Email Panel -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      @if (activeTab() === 'compose') {
+        <!-- Main Email Panel -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-fade-in">
         
         <!-- Left 7 cols: AI Composer Console -->
         <div class="lg:col-span-7 space-y-6">
@@ -77,6 +88,19 @@ interface CampaignEmail {
             <!-- Composer form -->
             <form [formGroup]="composeForm" (ngSubmit)="generateOutreachEmail()" class="space-y-4">
               
+              <div class="grid grid-cols-1 gap-4">
+                 <div class="space-y-1">
+                  <label for="leadSelect" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Link CRM Lead (Optional)</label>
+                  <select id="leadSelect" (change)="onLeadSelect($event)"
+                          class="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2.5 px-3 text-xs text-zinc-300 focus:outline-none focus:border-teal-500/40">
+                    <option value="">-- Select a Lead --</option>
+                    @for (lead of leadService.leads(); track lead.$id) {
+                      <option [value]="lead.$id">{{ lead.name }} ({{ lead.companySize }} - {{ lead.industry }})</option>
+                    }
+                  </select>
+                </div>
+              </div>
+
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-1">
                   <label for="clientNameInput" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Client Name</label>
@@ -223,6 +247,58 @@ interface CampaignEmail {
         </div>
 
       </div>
+      }
+
+      @if (activeTab() === 'inbox') {
+        <div class="bg-zinc-900/40 border border-zinc-800/80 rounded-2xl p-5 min-h-[500px] flex flex-col animate-fade-in">
+          <div class="flex items-center justify-between border-b border-zinc-800/60 pb-3 mb-4">
+            <h3 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+              <mat-icon class="text-zinc-500 text-sm">inbox</mat-icon>
+              Primary Inbox
+            </h3>
+            <div class="flex gap-2 items-center">
+               <button (click)="openSettings()" class="text-zinc-400 hover:text-teal-400 p-1.5 rounded-lg hover:bg-zinc-800 transition-colors">
+                  <mat-icon class="text-sm">settings</mat-icon>
+               </button>
+               <button class="bg-zinc-950 border border-zinc-800 text-zinc-300 hover:text-teal-400 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-2">
+                 <mat-icon class="text-sm">sync</mat-icon>
+                 Sync Now
+               </button>
+            </div>
+          </div>
+
+          <div class="flex-1 space-y-3 overflow-y-auto max-h-[600px] pr-1 custom-scrollbar">
+            @for (mail of inboxEmails(); track mail.$id) {
+              <div class="bg-zinc-950/40 border border-zinc-850 p-4 rounded-xl flex items-start gap-4 hover:bg-zinc-900/60 transition-colors cursor-pointer" (click)="viewEmail(mail)" (keydown.enter)="viewEmail(mail)" tabindex="0">
+                <div class="w-10 h-10 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-sm uppercase flex-shrink-0">
+                  {{ mail.sender.charAt(0) }}
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center justify-between gap-2">
+                    <p class="text-sm font-bold text-white truncate" [class.text-zinc-300]="mail.isRead">{{ mail.sender }}</p>
+                    <span class="text-[10px] text-zinc-500 font-bold whitespace-nowrap">{{ mail.receivedAt | date:'shortTime' }}</span>
+                  </div>
+                  <p class="text-xs font-semibold mt-1" [class.text-white]="!mail.isRead" [class.text-zinc-400]="mail.isRead">
+                     {{ mail.subject }}
+                  </p>
+                  <p class="text-[11px] text-zinc-500 truncate mt-1 leading-relaxed">{{ mail.snippet }}</p>
+                </div>
+                @if (!mail.isRead) {
+                  <div class="w-2 h-2 rounded-full bg-teal-400 flex-shrink-0 mt-2"></div>
+                }
+              </div>
+            } @empty {
+              <div class="flex-1 flex flex-col items-center justify-center text-center p-12">
+                <div class="w-16 h-16 bg-zinc-800/40 rounded-2xl border border-zinc-750 flex items-center justify-center mb-4">
+                  <mat-icon class="text-zinc-500 text-2xl">inbox</mat-icon>
+                </div>
+                <h4 class="text-zinc-300 font-bold text-sm tracking-wide">Inbox is empty</h4>
+                <p class="text-zinc-500 text-xs mt-2 max-w-[220px] leading-relaxed">You're all caught up! Incoming emails will appear here.</p>
+              </div>
+            }
+          </div>
+        </div>
+      }
 
       <!-- Settings Modal (Overlay) -->
       @if (showSettings()) {
@@ -300,9 +376,10 @@ interface CampaignEmail {
     }
   `]
 })
-export class EmailsComponent {
+export class EmailsComponent implements OnInit {
   appwrite = inject(Appwrite);
   fb = inject(FormBuilder);
+  leadService = inject(LeadService);
 
   composeForm!: FormGroup;
   isProcessing = signal<boolean>(false);
@@ -323,6 +400,26 @@ export class EmailsComponent {
   mailUser = '';
   mailPass = '';
 
+  activeTab = signal<'compose' | 'inbox'>('compose');
+  inboxEmails = signal<InboxEmail[]>([
+    {
+      $id: '1',
+      sender: 'Alice Wonderland (TechCorp)',
+      subject: 'Re: Strategic Enterprise Initiative',
+      snippet: 'Thanks for reaching out. We are actually looking into streamlining our DB models this quarter...',
+      isRead: false,
+      receivedAt: new Date(Date.now() - 1000 * 60 * 15) // 15 mins ago
+    },
+    {
+      $id: '2',
+      sender: 'Bob Builder (BuildCo)',
+      subject: 'Contract Signature Delay',
+      snippet: 'Sorry for the delay, our legal team is still reviewing the SLA. I will get back to you by EOD.',
+      isRead: true,
+      receivedAt: new Date(Date.now() - 1000 * 60 * 60 * 3) // 3 hours ago
+    }
+  ]);
+
   constructor() {
     this.composeForm = this.fb.group({
       clientName: ['', [Validators.required, Validators.minLength(2)]],
@@ -331,6 +428,32 @@ export class EmailsComponent {
       tone: ['Executive'],
       valueProposition: ['', [Validators.required, Validators.minLength(10)]]
     });
+  }
+
+  ngOnInit() {
+    this.leadService.loadLeads();
+  }
+
+  onLeadSelect(event: Event) {
+    const target = event.target as HTMLSelectElement;
+    const leadId = target.value;
+    if (leadId) {
+      const lead = this.leadService.leads().find(l => l.$id === leadId);
+      if (lead) {
+        this.composeForm.patchValue({
+          clientName: lead.name,
+          companyName: lead.industry // Or another relevant field since lead doesn't explicitly have companyName sometimes
+        });
+      }
+    }
+  }
+
+  viewEmail(mail: InboxEmail) {
+    if (!mail.isRead) {
+      this.inboxEmails.update(emails => 
+        emails.map(e => e.$id === mail.$id ? { ...e, isRead: true } : e)
+      );
+    }
   }
 
   openSettings() {

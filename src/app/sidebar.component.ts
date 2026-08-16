@@ -74,6 +74,10 @@ import { Appwrite } from './appwrite';
           <mat-icon class="text-[20px] w-5 h-5">bar_chart</mat-icon>
           <span class="font-medium text-sm">Reports</span>
         </a>
+        <a routerLink="/lead-scoring" routerLinkActive="bg-zinc-900/60 text-white shadow-sm border border-zinc-800" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all">
+          <mat-icon class="text-[20px] w-5 h-5 text-purple-400">psychology</mat-icon>
+          <span class="font-medium text-sm">AI Lead Scoring</span>
+        </a>
         <a routerLink="/forecast" routerLinkActive="bg-zinc-900/60 text-white shadow-sm border border-zinc-800" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all">
           <mat-icon class="text-[20px] w-5 h-5 text-purple-400">troubleshoot</mat-icon>
           <span class="font-medium text-sm">AI Forecast</span>

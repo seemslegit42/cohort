@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, signal, computed }  from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
+import { FormsModule } from '@angular/forms';
 import { Appwrite } from './appwrite';
 import { RechartsComponent } from './recharts.component';
 import { LeadService } from './lead.service';
@@ -9,7 +10,7 @@ import { LeadService } from './lead.service';
   selector: 'app-forecast',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, MatIconModule, RechartsComponent],
+  imports: [CommonModule, MatIconModule, RechartsComponent, FormsModule],
   template: `
     <div class="max-w-[1600px] mx-auto space-y-8 animate-fade-in pb-12 h-full flex flex-col">
       <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2">
@@ -25,8 +26,8 @@ import { LeadService } from './lead.service';
           </p>
         </div>
         <div class="flex gap-3">
-           <button class="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl text-zinc-300 font-bold text-sm transition-colors flex items-center gap-2">
-             <mat-icon class="text-[18px]">tune</mat-icon> Adjust Models
+           <button (click)="resetParameters()" class="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl text-zinc-300 font-bold text-sm transition-colors flex items-center gap-2">
+             <mat-icon class="text-[18px]">restart_alt</mat-icon> Reset Parameters
            </button>
            <button (click)="runAnalysis()" [disabled]="isAnalyzing()" class="px-5 py-2.5 bg-purple-500 hover:bg-purple-400 disabled:opacity-50 text-zinc-950 font-bold rounded-xl transition-all text-sm flex items-center gap-2 shadow-lg shadow-purple-500/20 group relative overflow-hidden">
              <div class="absolute inset-0 bg-white w-0 group-hover:w-full transition-all duration-500 opacity-10"></div>
@@ -38,6 +39,36 @@ import { LeadService } from './lead.service';
            </button>
         </div>
       </header>
+
+      <!-- Parameter Adjustment Toolbar -->
+      <div class="bg-zinc-900/60 backdrop-blur-xl border border-zinc-800/80 rounded-2xl p-6 shadow-xl grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div>
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-zinc-400">Win Rate Adjustment</span>
+            <span class="text-xs font-mono font-bold text-purple-400">{{ winRateModifier() > 0 ? '+' : '' }}{{ winRateModifier() }}%</span>
+          </div>
+          <input type="range" min="-30" max="50" step="5" [ngModel]="winRateModifier()" (ngModelChange)="winRateModifier.set($event)" class="w-full accent-purple-500 bg-zinc-800 h-2 rounded-lg cursor-pointer">
+          <p class="text-[11px] text-zinc-500 mt-1">Adjust baseline probability of closing deals.</p>
+        </div>
+
+        <div>
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-zinc-400">Monthly Growth Multiplier</span>
+            <span class="text-xs font-mono font-bold text-emerald-400">{{ growthMultiplier() }}x</span>
+          </div>
+          <input type="range" min="0.5" max="2.5" step="0.1" [ngModel]="growthMultiplier()" (ngModelChange)="growthMultiplier.set($event)" class="w-full accent-emerald-500 bg-zinc-800 h-2 rounded-lg cursor-pointer">
+          <p class="text-[11px] text-zinc-500 mt-1">Scale projected pipeline acceleration rate.</p>
+        </div>
+
+        <div>
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-zinc-400">Deal Velocity Factor</span>
+            <span class="text-xs font-mono font-bold text-blue-400">{{ velocityFactor() }}x</span>
+          </div>
+          <input type="range" min="0.8" max="2.0" step="0.1" [ngModel]="velocityFactor()" (ngModelChange)="velocityFactor.set($event)" class="w-full accent-blue-500 bg-zinc-800 h-2 rounded-lg cursor-pointer">
+          <p class="text-[11px] text-zinc-500 mt-1">Speed at which deals progress through stages.</p>
+        </div>
+      </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
         
@@ -205,6 +236,11 @@ export class ForecastComponent {
   appwrite = inject(Appwrite);
   leadService = inject(LeadService);
   isAnalyzing = signal<boolean>(false);
+
+  // Interactive parameters
+  winRateModifier = signal<number>(0); // e.g. -30 to +50
+  growthMultiplier = signal<number>(1.0); // 0.5 to 2.5
+  velocityFactor = signal<number>(1.0); // 0.8 to 2.0
   
   // Base historical data to ground the chart
   private historicalData = [
@@ -220,27 +256,28 @@ export class ForecastComponent {
     let junForecast = 0;
     let julForecast = 0;
     
-    // Simple projection logic based on lead scores and values
-    // Hot leads are likely to close soon (May), Warm later (Jun), Cold much later (Jul)
+    const velocity = this.velocityFactor();
+    const growth = this.growthMultiplier();
+    const winMod = 1 + (this.winRateModifier() / 100);
+
     leads.forEach(lead => {
-      const val = lead.value || 0;
+      const val = (lead.value || 0) * winMod;
       if (lead.scoreCategory === 'Hot') {
-        mayForecast += val * 0.8; // 80% probability
-        junForecast += val * 0.2;
+        mayForecast += val * (0.8 * velocity);
+        junForecast += val * (0.2 * velocity);
       } else if (lead.scoreCategory === 'Warm') {
-        mayForecast += val * 0.2;
-        junForecast += val * 0.6; // 60% probability
-        julForecast += val * 0.2;
+        mayForecast += val * (0.2 * velocity);
+        junForecast += val * (0.6 * velocity);
+        julForecast += val * (0.2 * velocity);
       } else {
-        junForecast += val * 0.1;
-        julForecast += val * 0.4; // 40% probability
+        junForecast += val * (0.1 * velocity);
+        julForecast += val * (0.4 * velocity);
       }
     });
     
-    // Add base line values to projections to make the chart look continuous and realistic
-    const baseProjectedMay = 550000 + mayForecast;
-    const baseProjectedJun = 580000 + junForecast;
-    const baseProjectedJul = 600000 + julForecast;
+    const baseProjectedMay = (550000 * growth) + mayForecast;
+    const baseProjectedJun = (580000 * growth) + junForecast;
+    const baseProjectedJul = (600000 * growth) + julForecast;
 
     return [
       { month: 'Jan', actual: this.historicalData[0].actual, projected: null },
@@ -253,15 +290,14 @@ export class ForecastComponent {
     ];
   });
 
-  // Calculate dynamic KPIs based on the lead data
+  // Calculate dynamic KPIs based on the lead data & parameters
   winRatePrediction = computed(() => {
     const leads = this.leadService.leads();
     if (leads.length === 0) return 0;
     const hotCount = leads.filter(l => l.scoreCategory === 'Hot').length;
     const warmCount = leads.filter(l => l.scoreCategory === 'Warm').length;
-    // Base 50% + weighted by hot/warm leads
-    const predictedRate = 50 + (hotCount / leads.length) * 30 + (warmCount / leads.length) * 10;
-    return Math.min(95, predictedRate);
+    const predictedRate = 50 + (hotCount / leads.length) * 30 + (warmCount / leads.length) * 10 + this.winRateModifier();
+    return Math.min(99, Math.max(10, predictedRate));
   });
   
   riskExposure = computed(() => {
@@ -273,13 +309,17 @@ export class ForecastComponent {
   upsellPotential = computed(() => {
      const leads = this.leadService.leads();
      return leads.filter(l => l.status === 'Closed' && l.scoreCategory === 'Hot')
-                 .reduce((sum, lead) => sum + (lead.value || 0) * 0.5, 0); // Estimate 50% upsell on closed hot deals
+                 .reduce((sum, lead) => sum + (lead.value || 0) * 0.5 * this.growthMultiplier(), 0);
   });
+
+  resetParameters() {
+    this.winRateModifier.set(0);
+    this.growthMultiplier.set(1.0);
+    this.velocityFactor.set(1.0);
+  }
 
   runAnalysis() {
     this.isAnalyzing.set(true);
-    // Simulate AI deep analysis delay, which just triggers a re-render of the same computed data right now
-    // but in a real app would fetch a fresh ML model output
     setTimeout(() => {
       this.isAnalyzing.set(false);
     }, 1500);

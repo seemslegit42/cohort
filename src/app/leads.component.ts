@@ -449,6 +449,56 @@ import { LeadImportComponent } from './lead-import.component';
         ></app-lead-import>
       }
 
+      <!-- Export Modal -->
+      @if (showExportModal()) {
+        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div class="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-md overflow-hidden animate-fade-in shadow-2xl shadow-black">
+            <div class="p-5 border-b border-zinc-800 flex justify-between items-center bg-zinc-950/50">
+              <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <mat-icon class="text-orange-500 text-sm">file_download</mat-icon>
+                Custom Data Export
+              </h3>
+              <button (click)="showExportModal.set(false)" class="text-zinc-500 hover:text-white transition-colors">
+                <mat-icon class="text-sm">close</mat-icon>
+              </button>
+            </div>
+            
+            <div class="p-5 space-y-4">
+              <p class="text-[11px] text-zinc-400 leading-relaxed mb-2">Select filters to export a customized dataset of leads and deals.</p>
+              
+              <div class="space-y-1">
+                <label for="exportFilterStatus" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Filter by Status</label>
+                <select id="exportFilterStatus" (change)="exportFilterStatus = $any($event.target).value" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-orange-500/40">
+                  <option value="All">All Statuses</option>
+                  @for (s of stages; track s) {
+                    <option [value]="s">{{ s }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="space-y-1">
+                <label for="exportFilterDateFrom" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Added After (Date)</label>
+                <input id="exportFilterDateFrom" type="date" (change)="exportFilterDateFrom = $any($event.target).value" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-orange-500/40" />
+              </div>
+
+              <div class="space-y-1">
+                <label for="exportFilterDateTo" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Added Before (Date)</label>
+                <input id="exportFilterDateTo" type="date" (change)="exportFilterDateTo = $any($event.target).value" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-orange-500/40" />
+              </div>
+            </div>
+
+            <div class="p-4 border-t border-zinc-800 bg-zinc-950/50 flex justify-end gap-3">
+              <button (click)="showExportModal.set(false)" class="px-4 py-2 bg-transparent text-zinc-400 hover:text-white text-xs font-bold transition-colors">
+                Cancel
+              </button>
+              <button (click)="executeExport()" class="px-5 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-2">
+                <mat-icon class="text-[16px]">download</mat-icon> Download CSV
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
       <!-- Add/Edit Modal -->
       @if (showModal()) {
         <div class="fixed inset-0 bg-zinc-950/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
@@ -752,6 +802,10 @@ export class LeadsComponent implements OnInit {
   viewMode = signal<'board' | 'list' | 'map'>('board');
   showModal = signal<boolean>(false);
   showImportModal = signal<boolean>(false);
+  showExportModal = signal<boolean>(false);
+  exportFilterStatus = 'All';
+  exportFilterDateFrom = '';
+  exportFilterDateTo = '';
   isSubmitting = signal<boolean>(false);
   editingId = signal<string | null>(null);
   
@@ -954,11 +1008,31 @@ export class LeadsComponent implements OnInit {
   }
 
   exportToCSV() {
-    const leads = this.filteredLeads();
+    this.showExportModal.set(true);
+  }
+
+  executeExport() {
+    let leads = this.leadService.leads();
+
+    // Apply Filters
+    if (this.exportFilterStatus !== 'All') {
+      leads = leads.filter(l => l.status === this.exportFilterStatus);
+    }
+    
+    if (this.exportFilterDateFrom) {
+      const fromDate = new Date(this.exportFilterDateFrom).getTime();
+      leads = leads.filter(l => l.createdAt ? new Date(l.createdAt).getTime() >= fromDate : false);
+    }
+    
+    if (this.exportFilterDateTo) {
+      const toDate = new Date(this.exportFilterDateTo).getTime();
+      leads = leads.filter(l => l.createdAt ? new Date(l.createdAt).getTime() <= toDate : false);
+    }
+
     if (leads.length === 0) {
       this.appwrite.addNotification({
         title: 'Export Failed',
-        message: 'There are no leads in the current view to export.',
+        message: 'There are no leads matching the selected criteria to export.',
         isRead: false,
         type: 'info'
       });
@@ -999,6 +1073,7 @@ export class LeadsComponent implements OnInit {
       link.click();
       document.body.removeChild(link);
 
+      this.showExportModal.set(false);
       this.appwrite.addNotification({
         title: 'Leads Exported',
         message: `Successfully exported ${leads.length} leads to CSV format.`,

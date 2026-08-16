@@ -11,6 +11,8 @@ interface EmailCampaign {
   status: 'Draft' | 'Sending' | 'Sent';
   sentDate?: Date;
   audience: string;
+  trigger?: string;
+  schedule?: string;
   stats: {
     sent: number;
     opened: number;
@@ -181,30 +183,58 @@ interface EmailCampaign {
               </button>
             </div>
             
-            <form (ngSubmit)="sendCampaign()" class="p-6 space-y-4">
+            <form (ngSubmit)="sendCampaign()" class="p-6 space-y-4 max-h-[80vh] overflow-y-auto custom-scrollbar">
               <div>
                 <label for="campaignName" class="block text-xs font-semibold text-zinc-400 mb-1.5 uppercase tracking-wider">Campaign Name</label>
                 <input id="campaignName" type="text" [(ngModel)]="newCampaign.name" name="name" required placeholder="Q3 Product Launch" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors">
               </div>
 
-              <div>
-                <label for="audienceSelect" class="block text-xs font-semibold text-zinc-400 mb-1.5 uppercase tracking-wider">Target Audience Segment</label>
-                <select id="audienceSelect" [(ngModel)]="newCampaign.audience" name="audience" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors appearance-none">
-                  <option value="Hot Leads">Hot Leads (Score > 80)</option>
-                  <option value="Warm Leads">Warm Leads (Score 50-79)</option>
-                  <option value="Newsletter Subscribers">Newsletter Subscribers</option>
-                  <option value="All Contacts">All Contacts</option>
-                </select>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label for="audienceSelect" class="block text-xs font-semibold text-zinc-400 mb-1.5 uppercase tracking-wider">Target Audience Segment</label>
+                  <select id="audienceSelect" [(ngModel)]="newCampaign.audience" name="audience" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors appearance-none">
+                    <option value="Hot Leads">Hot Leads (Score > 80)</option>
+                    <option value="Warm Leads">Warm Leads (Score 50-79)</option>
+                    <option value="Newsletter Subscribers">Newsletter Subscribers</option>
+                    <option value="All Contacts">All Contacts</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="triggerSelect" class="block text-xs font-semibold text-zinc-400 mb-1.5 uppercase tracking-wider">Campaign Trigger</label>
+                  <select id="triggerSelect" [(ngModel)]="newCampaign.trigger" name="trigger" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors appearance-none">
+                    <option value="Manual Broadcast">Manual Broadcast</option>
+                    <option value="Lead Created">Trigger on New Lead Creation</option>
+                    <option value="Deal Stage Negotiation">Trigger on Deal Stage: Negotiation</option>
+                    <option value="14-day Inactivity">Trigger on 14-day Inactivity</option>
+                  </select>
+                </div>
               </div>
 
-              <div>
-                <label for="campaignSubject" class="block text-xs font-semibold text-zinc-400 mb-1.5 uppercase tracking-wider">Email Subject</label>
-                <input id="campaignSubject" type="text" [(ngModel)]="newCampaign.subject" name="subject" required placeholder="Exciting news for your team..." class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label for="campaignSubject" class="block text-xs font-semibold text-zinc-400 mb-1.5 uppercase tracking-wider">Email Subject</label>
+                  <input id="campaignSubject" type="text" [(ngModel)]="newCampaign.subject" name="subject" required placeholder="Exciting news for your team..." class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors">
+                </div>
+                <div>
+                  <label for="scheduleSelect" class="block text-xs font-semibold text-zinc-400 mb-1.5 uppercase tracking-wider">Schedule / Automation</label>
+                  <select id="scheduleSelect" [(ngModel)]="newCampaign.schedule" name="schedule" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors appearance-none">
+                    <option value="Immediate">Send Immediately</option>
+                    <option value="Tomorrow 9 AM">Schedule for Tomorrow at 9:00 AM</option>
+                    <option value="Automated Event">Automated Event-Driven</option>
+                  </select>
+                </div>
               </div>
               
               <div>
-                <label for="campaignBody" class="block text-xs font-semibold text-zinc-400 mb-1.5 uppercase tracking-wider">Email HTML/Text</label>
-                <textarea id="campaignBody" rows="5" placeholder="Dear {{ '{{' }}firstName{{ '}}' }},&#10;&#10;We are excited to announce..." class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors custom-scrollbar"></textarea>
+                <div class="flex justify-between items-center mb-1.5">
+                  <label for="campaignBody" class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider">Email Content & Personalization</label>
+                  <div class="flex gap-1.5">
+                    <button type="button" (click)="insertTag('{{firstName}}')" class="px-2 py-0.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-indigo-400 text-[10px] font-mono rounded">+ First Name</button>
+                    <button type="button" (click)="insertTag('{{companyName}}')" class="px-2 py-0.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-indigo-400 text-[10px] font-mono rounded">+ Company</button>
+                    <button type="button" (click)="insertTag('{{industry}}')" class="px-2 py-0.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-indigo-400 text-[10px] font-mono rounded">+ Industry</button>
+                  </div>
+                </div>
+                <textarea id="campaignBody" [(ngModel)]="newCampaignBody" name="body" rows="5" placeholder="Dear {{ '{{' }}firstName{{ '}}' }},&#10;&#10;We noticed your work at {{ '{{' }}companyName{{ '}}' }} in the {{ '{{' }}industry{{ '}}' }} sector..." class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors custom-scrollbar font-mono text-xs"></textarea>
               </div>
               
               <div class="pt-4 flex justify-between items-center border-t border-zinc-800/50">
@@ -268,8 +298,15 @@ export class CampaignsComponent {
   isSending = signal<boolean>(false);
 
   newCampaign: Partial<EmailCampaign> = {
-    audience: 'Hot Leads'
+    audience: 'Hot Leads',
+    trigger: 'Manual Broadcast',
+    schedule: 'Immediate'
   };
+  newCampaignBody = '';
+
+  insertTag(tag: string) {
+    this.newCampaignBody = (this.newCampaignBody || '') + ' ' + tag;
+  }
 
   // KPI Computations
   totalSent = computed(() => this.campaigns().reduce((sum, c) => sum + (c.stats?.sent || 0), 0));
@@ -294,8 +331,11 @@ export class CampaignsComponent {
     this.newCampaign = {
       name: '',
       subject: '',
-      audience: 'Hot Leads'
+      audience: 'Hot Leads',
+      trigger: 'Manual Broadcast',
+      schedule: 'Immediate'
     };
+    this.newCampaignBody = '';
     this.showCreateModal.set(true);
   }
 
@@ -317,7 +357,6 @@ export class CampaignsComponent {
   sendCampaign() {
     this.isSending.set(true);
     
-    // Simulate API call to SendGrid/Mailchimp
     setTimeout(() => {
       const sentCampaign: EmailCampaign = {
         id: Math.random().toString(36).substr(2, 9),
@@ -326,8 +365,9 @@ export class CampaignsComponent {
         status: 'Sent',
         sentDate: new Date(),
         audience: this.newCampaign.audience || 'All',
+        trigger: this.newCampaign.trigger || 'Manual Broadcast',
+        schedule: this.newCampaign.schedule || 'Immediate',
         stats: {
-           // Simulate a newly sent campaign with 0 initial engagement
            sent: this.newCampaign.audience === 'All Contacts' ? 5000 : 
                  this.newCampaign.audience === 'Hot Leads' ? 120 :
                  this.newCampaign.audience === 'Newsletter Subscribers' ? 2400 : 850,

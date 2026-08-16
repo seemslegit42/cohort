@@ -141,15 +141,6 @@ export class Appwrite {
       this.functionsService = new Functions(this.client);
       this.storage = new Storage(this.client);
       
-      // Ping the Appwrite backend to verify setup
-      try {
-        (this.client as any).ping()
-          .then((res: any) => console.log('Appwrite backend ping verification successful:', res))
-          .catch((err: any) => console.warn('Appwrite backend ping failed:', err));
-      } catch (pingErr) {
-        console.warn('Appwrite ping method call error:', pingErr);
-      }
-      
       this.isConnected.set(true);
       this.checkSession();
     } catch (e: any) {
@@ -166,9 +157,26 @@ export class Appwrite {
     try {
       const user = await this.account.get();
       this.currentUser.set(user);
-      await this.loadUserTeams();
-    } catch (e) {
+      if (user && user.$id) {
+        await this.loadUserTeams();
+      } else {
+        this.initDefaultLocalTeam();
+      }
+    } catch {
       this.currentUser.set(null);
+      this.initDefaultLocalTeam();
+    }
+  }
+
+  private initDefaultLocalTeam() {
+    if (this.userTeams().length === 0) {
+      const defaultTeam: any = {
+        $id: 'laevos-workspace',
+        name: 'ΛΞVOS Workspace',
+        total: 1
+      };
+      this.userTeams.set([defaultTeam]);
+      this.activeTeam.set(defaultTeam);
     }
   }
 
@@ -225,17 +233,21 @@ export class Appwrite {
 
   // --- Real Tenant-based Teams API ---
   async loadUserTeams() {
+    if (!this.currentUser()) {
+      this.initDefaultLocalTeam();
+      return;
+    }
     try {
       const response = await this.teams.list();
       this.userTeams.set(response.teams);
       if (response.teams.length > 0) {
         this.activeTeam.set(response.teams[0]);
       } else {
-        // Automatically create a default ΛΞVOS CRM team if none exists
+        // Automatically create a default workspace team if none exists
         await this.createWorkspaceTeam('ΛΞVOS Default Workspace');
       }
-    } catch (e) {
-      console.error('Failed listing teams:', e);
+    } catch {
+      this.initDefaultLocalTeam();
     }
   }
 
@@ -334,113 +346,121 @@ export class Appwrite {
   }
 
   async getTeamPrefs(teamId: string) {
-    try {
-      return await this.teams.getPrefs(teamId);
-    } catch (e) {
-      console.warn('Fallback: get team preferences from localStorage', e);
-      if (typeof localStorage !== 'undefined') {
-        const saved = localStorage.getItem(`laevos_team_prefs_${teamId}`);
-        if (saved) return JSON.parse(saved);
+    if (this.currentUser()) {
+      try {
+        return await this.teams.getPrefs(teamId);
+      } catch {
+        // Fallback to local storage
       }
-      return { theme: 'cosmic-dark', notifications_enabled: 'true', default_role: 'member' };
     }
+    if (typeof localStorage !== 'undefined') {
+      const saved = localStorage.getItem(`laevos_team_prefs_${teamId}`);
+      if (saved) return JSON.parse(saved);
+    }
+    return { theme: 'cosmic-dark', notifications_enabled: 'true', default_role: 'member' };
   }
 
   async updateTeamPrefs(teamId: string, prefs: any) {
-    try {
-      return await this.teams.updatePrefs(teamId, prefs);
-    } catch (e) {
-      console.warn('Fallback: update team preferences in localStorage', e);
-      if (typeof localStorage !== 'undefined') {
-        localStorage.setItem(`laevos_team_prefs_${teamId}`, JSON.stringify(prefs));
+    if (this.currentUser()) {
+      try {
+        return await this.teams.updatePrefs(teamId, prefs);
+      } catch {
+        // Fallback to local storage
       }
-      return prefs;
     }
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(`laevos_team_prefs_${teamId}`, JSON.stringify(prefs));
+    }
+    return prefs;
   }
 
   // --- Storage API & Simulation Fallback ---
   async uploadFile(file: File, bucketId?: string) {
     const bId = bucketId || this.config().contractsBucketId || 'contracts';
     const teamId = this.activeTeam()?.$id || 'laevos-crm';
-    try {
-      const result = await this.storage.createFile(bId, ID.unique(), file);
-      this.addNotification({
-        title: 'File Uploaded',
-        message: `"${file.name}" has been uploaded to Appwrite Storage bucket "${bId}".`,
-        type: 'success'
-      });
-      return {
-        $id: result.$id,
-        $createdAt: result.$createdAt,
-        name: result.name,
-        size: result.sizeOriginal || 0,
-        mimeType: result.mimeType,
-        bucketId: bId,
-        teamId
-      };
-    } catch (e: any) {
-      console.warn('Appwrite Storage upload failed, simulating file storage locally:', e);
-      const simResult = {
-        $id: 'file-' + Math.random().toString(36).substr(2, 9),
-        $createdAt: new Date().toISOString(),
-        name: file.name,
-        size: file.size,
-        mimeType: file.type || 'application/octet-stream',
-        bucketId: bId,
-        teamId
-      };
-      if (typeof localStorage !== 'undefined') {
-        const key = `laevos_mock_files_${teamId}`;
-        const existing = JSON.parse(localStorage.getItem(key) || '[]');
-        existing.unshift(simResult);
-        localStorage.setItem(key, JSON.stringify(existing));
+    if (this.currentUser()) {
+      try {
+        const result = await this.storage.createFile(bId, ID.unique(), file);
+        this.addNotification({
+          title: 'File Uploaded',
+          message: `"${file.name}" has been uploaded to Appwrite Storage bucket "${bId}".`,
+          type: 'success'
+        });
+        return {
+          $id: result.$id,
+          $createdAt: result.$createdAt,
+          name: result.name,
+          size: result.sizeOriginal || 0,
+          mimeType: result.mimeType,
+          bucketId: bId,
+          teamId
+        };
+      } catch {
+        // Simulating locally below
       }
-      return simResult;
     }
+    const simResult = {
+      $id: 'file-' + Math.random().toString(36).substr(2, 9),
+      $createdAt: new Date().toISOString(),
+      name: file.name,
+      size: file.size,
+      mimeType: file.type || 'application/octet-stream',
+      bucketId: bId,
+      teamId
+    };
+    if (typeof localStorage !== 'undefined') {
+      const key = `laevos_mock_files_${teamId}`;
+      const existing = JSON.parse(localStorage.getItem(key) || '[]');
+      existing.unshift(simResult);
+      localStorage.setItem(key, JSON.stringify(existing));
+    }
+    return simResult;
   }
 
   async listFiles(bucketId?: string) {
     const bId = bucketId || this.config().contractsBucketId || 'contracts';
     const teamId = this.activeTeam()?.$id || 'laevos-crm';
-    try {
-      const result = await this.storage.listFiles(bId);
-      return result.files.map((f: any) => ({
-        $id: f.$id,
-        $createdAt: f.$createdAt,
-        name: f.name,
-        size: f.sizeOriginal || f.size || 0,
-        mimeType: f.mimeType,
+    if (this.currentUser()) {
+      try {
+        const result = await this.storage.listFiles(bId);
+        return result.files.map((f: any) => ({
+          $id: f.$id,
+          $createdAt: f.$createdAt,
+          name: f.name,
+          size: f.sizeOriginal || f.size || 0,
+          mimeType: f.mimeType,
+          bucketId: bId,
+          teamId
+        }));
+      } catch {
+        // Fallback to local files
+      }
+    }
+    if (typeof localStorage !== 'undefined') {
+      const key = `laevos_mock_files_${teamId}`;
+      const saved = localStorage.getItem(key);
+      if (saved) return JSON.parse(saved);
+    }
+    return [
+      {
+        $id: 'file-nda',
+        $createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
+        name: 'NDA_laevos_v2_signed.pdf',
+        size: 1024 * 342,
+        mimeType: 'application/pdf',
         bucketId: bId,
         teamId
-      }));
-    } catch (e) {
-      console.warn('Appwrite Storage list failed, returning simulated files:', e);
-      if (typeof localStorage !== 'undefined') {
-        const key = `laevos_mock_files_${teamId}`;
-        const saved = localStorage.getItem(key);
-        if (saved) return JSON.parse(saved);
+      },
+      {
+        $id: 'file-sla',
+        $createdAt: new Date(Date.now() - 86400000 * 5).toISOString(),
+        name: 'SLA_enterprise_draft.docx',
+        size: 1024 * 128,
+        mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        bucketId: bId,
+        teamId
       }
-      return [
-        {
-          $id: 'file-nda',
-          $createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
-          name: 'NDA_laevos_v2_signed.pdf',
-          size: 1024 * 342,
-          mimeType: 'application/pdf',
-          bucketId: bId,
-          teamId
-        },
-        {
-          $id: 'file-sla',
-          $createdAt: new Date(Date.now() - 86400000 * 5).toISOString(),
-          name: 'SLA_enterprise_draft.docx',
-          size: 1024 * 128,
-          mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          bucketId: bId,
-          teamId
-        }
-      ];
-    }
+    ];
   }
 
   async deleteFile(fileId: string, bucketId?: string) {
