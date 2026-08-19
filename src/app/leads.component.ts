@@ -19,21 +19,51 @@ import { LeadImportComponent } from './lead-import.component';
     <div class="h-full flex flex-col p-4 md:p-6 animate-fade-in max-w-[1600px] mx-auto">
       
       <!-- Header -->
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 md:mb-6">
+      <header class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4 mb-4 md:mb-6">
         <div>
-          <h1 class="font-display text-2xl md:text-3xl font-bold tracking-tight text-white flex items-center gap-3 drop-shadow-md">
-            <div class="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-orange-500/10 flex items-center justify-center border border-orange-500/20 shadow-[0_0_15px_rgba(249,115,22,0.15)]">
-              <mat-icon class="text-orange-400 text-[20px] md:text-[24px]">filter_alt</mat-icon>
+          <h1 class="font-display text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-white flex items-center gap-2.5 sm:gap-3 drop-shadow-md">
+            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-orange-500/10 flex items-center justify-center border border-orange-500/20 shadow-[0_0_15px_rgba(249,115,22,0.15)] shrink-0">
+              <mat-icon class="text-orange-400 text-[20px] sm:text-[22px]">filter_alt</mat-icon>
             </div>
-            Leads Pipeline
+            <span>Leads Pipeline</span>
           </h1>
-          <p class="text-xs md:text-sm text-zinc-400 mt-2">Funnel progression tracking for pre-conversion prospect accounts.</p>
+          <p class="text-xs sm:text-sm text-zinc-400 mt-1">Funnel progression tracking for pre-conversion prospect accounts.</p>
         </div>
         
-        <div class="flex flex-col sm:flex-row sm:items-center gap-3 flex-wrap">
+        <!-- Action Toolbar (Responsive Flex Wrap Container) -->
+        <div class="flex items-center gap-2 sm:gap-2.5 flex-wrap">
+          
+          <!-- View Mode Toggle (Board / List / Map) -->
+          <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-0.5 sm:p-1 flex items-center gap-0.5 shadow-inner">
+            <button 
+              type="button"
+              (click)="viewMode.set('board')" 
+              [class]="viewMode() === 'board' ? 'bg-zinc-800 text-white font-bold shadow-xs' : 'text-zinc-400 hover:text-zinc-200'"
+              class="px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer">
+              <mat-icon class="text-[15px] sm:text-[16px]">view_column</mat-icon> 
+              <span class="hidden sm:inline">Board</span>
+            </button>
+            <button 
+              type="button"
+              (click)="viewMode.set('list')" 
+              [class]="viewMode() === 'list' ? 'bg-zinc-800 text-white font-bold shadow-xs' : 'text-zinc-400 hover:text-zinc-200'"
+              class="px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer">
+              <mat-icon class="text-[15px] sm:text-[16px]">table_rows</mat-icon> 
+              <span class="hidden sm:inline">List</span>
+            </button>
+            <button 
+              type="button"
+              (click)="viewMode.set('map')" 
+              [class]="viewMode() === 'map' ? 'bg-zinc-800 text-white font-bold shadow-xs' : 'text-zinc-400 hover:text-zinc-200'"
+              class="px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer">
+              <mat-icon class="text-[15px] sm:text-[16px]">map</mat-icon> 
+              <span class="hidden sm:inline">Map</span>
+            </button>
+          </div>
+
           <!-- Status Filter Dropdown -->
-          <div class="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-zinc-300">
-            <mat-icon class="text-zinc-500 text-[18px]">filter_list</mat-icon>
+          <div class="flex items-center gap-1.5 bg-zinc-900/90 border border-zinc-800 rounded-xl px-2.5 sm:px-3 py-1.5 text-zinc-300">
+            <mat-icon class="text-zinc-500 text-[16px]">filter_list</mat-icon>
             <select (change)="onStatusFilterChange($event)" class="bg-transparent text-xs font-semibold text-zinc-200 focus:outline-none cursor-pointer">
               <option value="All" class="bg-zinc-950 text-zinc-200">All Stages</option>
               <option value="New" class="bg-zinc-950 text-zinc-200">New</option>
@@ -44,35 +74,34 @@ import { LeadImportComponent } from './lead-import.component';
           </div>
 
           <!-- Export CSV Button -->
-          <button (click)="exportToCSV()" class="bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 font-semibold px-4 py-2 rounded-xl text-xs transition-colors flex items-center gap-2 shadow-sm">
-            <mat-icon class="text-[18px]">file_download</mat-icon>
-            Export CSV
+          <button 
+            type="button"
+            (click)="exportToCSV()" 
+            class="bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 font-semibold px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95">
+            <mat-icon class="text-[16px]">file_download</mat-icon>
+            <span class="hidden sm:inline">Export CSV</span>
           </button>
 
-          <!-- View Mode Toggle -->
-          <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-1 flex items-center justify-center sm:justify-start gap-1">
-            <button (click)="viewMode.set('board')" [class.bg-zinc-800]="viewMode() === 'board'" [class.text-white]="viewMode() === 'board'" class="text-zinc-500 px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors">
-              <mat-icon class="text-[16px]">view_column</mat-icon> Board
-            </button>
-            <button (click)="viewMode.set('list')" [class.bg-zinc-800]="viewMode() === 'list'" [class.text-white]="viewMode() === 'list'" class="text-zinc-500 px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors">
-              <mat-icon class="text-[16px]">table_rows</mat-icon> List
-            </button>
-            <button (click)="viewMode.set('map')" [class.bg-zinc-800]="viewMode() === 'map'" [class.text-white]="viewMode() === 'map'" class="text-zinc-500 px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors">
-              <mat-icon class="text-[16px]">map</mat-icon> Map
-            </button>
-          </div>
-          
-          <button (click)="showImportModal.set(true)" class="bg-zinc-800 hover:bg-zinc-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition-colors flex items-center gap-2">
-            <mat-icon class="text-[18px]">upload_file</mat-icon>
-            Import
+          <!-- Import Leads Button -->
+          <button 
+            type="button"
+            (click)="showImportModal.set(true)" 
+            class="bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 font-semibold px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95">
+            <mat-icon class="text-[16px]">upload_file</mat-icon>
+            <span class="hidden sm:inline">Import</span>
           </button>
 
-          <button (click)="openAddModal()" class="bg-orange-500 hover:bg-orange-400 text-zinc-950 font-bold px-4 py-2 rounded-xl text-xs transition-colors shadow-[0_0_15px_rgba(249,115,22,0.2)] flex items-center gap-2">
-            <mat-icon class="text-[18px]">add</mat-icon>
-            New Lead
+          <!-- New Lead Trigger Button -->
+          <button 
+            type="button"
+            (click)="openAddModal()" 
+            class="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-zinc-950 font-bold px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs transition-all shadow-[0_0_15px_rgba(249,115,22,0.25)] flex items-center gap-1.5 cursor-pointer active:scale-95">
+            <mat-icon class="text-[16px]">add</mat-icon>
+            <span>New Lead</span>
           </button>
+
         </div>
-      </div>
+      </header>
 
       <!-- Quick Stats -->
       <div class="grid grid-cols-2 xl:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">

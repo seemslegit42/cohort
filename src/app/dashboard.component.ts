@@ -40,27 +40,42 @@ export interface DashboardWidget {
     <div class="max-w-[1400px] mx-auto space-y-8 animate-fade-in relative">
       
       <!-- Analytics Header -->
-      <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2 mb-6">
-        <div>
-          <h1 class="font-display text-2xl font-bold tracking-tight text-white flex items-center gap-3 drop-shadow-md">
-            <mat-icon class="text-zinc-500 text-[28px]">insights</mat-icon>
-            Fresh analytics from everything
-          </h1>
-          @if (appwrite.activeTeam(); as active) {
-            <p class="text-xs text-zinc-400 mt-1 flex items-center gap-1.5 font-medium">
-              <span class="inline-block w-2 h-2 rounded-full bg-teal-400 animate-pulse"></span>
-              Synchronized tenant workspace: <span class="text-white font-bold">{{ active.name }}</span>
-            </p>
-          }
+      <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mt-1 sm:mt-2 mb-4 sm:mb-6">
+        <div class="space-y-1">
+          <div class="flex items-center gap-2.5 sm:gap-3">
+            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400 shrink-0 shadow-[0_0_15px_rgba(20,184,166,0.15)]">
+              <mat-icon class="text-[20px] sm:text-[22px]">insights</mat-icon>
+            </div>
+            <div>
+              <h1 class="font-display text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-white flex items-center gap-2 drop-shadow-md">
+                Operations & Analytics
+              </h1>
+              @if (appwrite.activeTeam(); as active) {
+                <p class="text-[11px] sm:text-xs text-zinc-400 flex items-center gap-1.5 font-medium">
+                  <span class="inline-block w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse"></span>
+                  <span class="text-zinc-500">Tenant:</span>
+                  <span class="text-zinc-200 font-semibold truncate max-w-[180px] sm:max-w-none">{{ active.name }}</span>
+                </p>
+              }
+            </div>
+          </div>
         </div>
         
-        <div class="flex items-center gap-3">
-          <div class="bg-zinc-900/60 border border-zinc-800 rounded-xl px-3 py-1.5 flex items-center gap-2 text-xs text-zinc-400">
-            <span class="w-2 h-2 rounded-full" [ngClass]="appwrite.isConnected() ? 'bg-teal-400' : 'bg-rose-450'"></span>
-            Appwrite Realtime Subscriptions Active
+        <div class="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
+          <!-- Realtime Sync Pill (Adaptive) -->
+          <div class="bg-zinc-900/70 border border-zinc-800 rounded-xl px-2.5 sm:px-3 py-1.5 flex items-center gap-2 text-[11px] sm:text-xs text-zinc-400 shadow-xs">
+            <span class="w-2 h-2 rounded-full shrink-0" [ngClass]="appwrite.isConnected() ? 'bg-teal-400 animate-pulse' : 'bg-rose-450'"></span>
+            <span class="hidden md:inline font-medium">Appwrite Realtime Subscriptions</span>
+            <span class="inline md:hidden font-medium">Realtime Active</span>
           </div>
-          <button (click)="isEditing.set(!isEditing())" class="px-4 py-1.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2">
-             <mat-icon class="text-[16px]">tune</mat-icon> Customize
+
+          <!-- Customize Dashboard Trigger Button -->
+          <button 
+            type="button"
+            (click)="isEditing.set(!isEditing())" 
+            class="px-3 sm:px-4 py-1.5 sm:py-2 bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-700/80 hover:border-teal-500/40 text-zinc-200 hover:text-white rounded-xl text-xs font-semibold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer active:scale-95">
+             <mat-icon class="text-[16px] text-teal-400">tune</mat-icon> 
+             <span>Customize</span>
           </button>
         </div>
       </header>

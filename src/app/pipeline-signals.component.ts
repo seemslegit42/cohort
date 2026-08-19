@@ -20,33 +20,36 @@ interface PipelineSignal {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, MatIconModule],
   template: `
-    <div class="h-full flex flex-col p-6 animate-fade-in max-w-[1400px] mx-auto">
+    <div class="h-full flex flex-col p-2 sm:p-4 md:p-6 animate-fade-in max-w-[1400px] mx-auto">
       
-      <!-- Header -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+      <!-- Signals Header -->
+      <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mt-1 sm:mt-2 mb-6 sm:mb-8 shrink-0">
         <div>
-          <h1 class="font-display text-3xl font-bold tracking-tight text-white flex items-center gap-3 drop-shadow-md">
-            <mat-icon class="text-purple-400 text-[32px]">satellite_alt</mat-icon>
-            Pipeline Signals
+          <h1 class="font-display text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-white flex items-center gap-2.5 sm:gap-3 drop-shadow-md">
+            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-purple-500/10 flex items-center justify-center border border-purple-500/20 shadow-[0_0_15px_rgba(168,85,247,0.15)] shrink-0">
+              <mat-icon class="text-purple-400 text-[20px] sm:text-[22px]">satellite_alt</mat-icon>
+            </div>
+            <span>Predictive Pipeline Signals</span>
           </h1>
-          <p class="text-sm text-zinc-400 mt-2">AI-driven intent data and predictive modeling on high-value targets, aggregating global enterprise telemetry.</p>
+          <p class="text-xs sm:text-sm text-zinc-400 mt-1">AI-driven intent data and predictive modeling on high-value targets, aggregating global enterprise telemetry.</p>
         </div>
         
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2 sm:gap-3 shrink-0 self-start sm:self-auto">
           <button 
+            type="button"
             (click)="runTelemetrySync()"
             [disabled]="isSyncing()"
-            class="bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-zinc-950 font-bold px-5 py-3 rounded-xl text-sm transition-all shadow-[0_0_15px_rgba(168,85,247,0.25)] flex items-center gap-2 cursor-pointer">
+            class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm transition-all shadow-[0_0_15px_rgba(168,85,247,0.25)] flex items-center gap-2 cursor-pointer active:scale-95">
             @if (isSyncing()) {
-              <span class="animate-spin inline-block w-4 h-4 border-2 border-zinc-950 border-t-transparent rounded-full"></span>
-              <span>{{ syncStep() }}</span>
+              <span class="animate-spin inline-block w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full"></span>
+              <span class="text-xs sm:text-sm">{{ syncStep() }}</span>
             } @else {
-              <mat-icon class="text-[18px]">sync</mat-icon>
-              <span>Run Global Telemetry Sync</span>
+              <mat-icon class="text-[17px]">sync</mat-icon>
+              <span>Sync Telemetry</span>
             }
           </button>
         </div>
-      </div>
+      </header>
 
       <!-- Signals Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">

@@ -69,6 +69,24 @@ import { Appwrite } from './appwrite';
           <span class="font-medium text-sm">Deployment</span>
         </a>
 
+        <div class="text-xs font-semibold text-zinc-600 uppercase tracking-wider mb-3 px-3 mt-8">Revenue & Strategy</div>
+        <a routerLink="/deal-rooms" routerLinkActive="bg-zinc-900/60 text-white shadow-sm border border-zinc-800" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all">
+          <mat-icon class="text-[20px] w-5 h-5 text-purple-400">meeting_room</mat-icon>
+          <span class="font-medium text-sm">Deal Rooms</span>
+        </a>
+        <a routerLink="/cadences" routerLinkActive="bg-zinc-900/60 text-white shadow-sm border border-zinc-800" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all">
+          <mat-icon class="text-[20px] w-5 h-5 text-cyan-400">alt_route</mat-icon>
+          <span class="font-medium text-sm">Outbound Cadences</span>
+        </a>
+        <a routerLink="/revops-simulator" routerLinkActive="bg-zinc-900/60 text-white shadow-sm border border-zinc-800" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all">
+          <mat-icon class="text-[20px] w-5 h-5 text-emerald-400">query_stats</mat-icon>
+          <span class="font-medium text-sm">RevOps Monte Carlo</span>
+        </a>
+        <a routerLink="/contracts" routerLinkActive="bg-zinc-900/60 text-white shadow-sm border border-zinc-800" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all">
+          <mat-icon class="text-[20px] w-5 h-5 text-amber-400">gavel</mat-icon>
+          <span class="font-medium text-sm">Legal & Contracts Vault</span>
+        </a>
+
         <div class="text-xs font-semibold text-zinc-600 uppercase tracking-wider mb-3 px-3 mt-8">Analytics</div>
         <a routerLink="/reports" routerLinkActive="bg-zinc-900/60 text-white shadow-sm border border-zinc-800" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all">
           <mat-icon class="text-[20px] w-5 h-5">bar_chart</mat-icon>

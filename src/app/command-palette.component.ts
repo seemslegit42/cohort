@@ -623,6 +623,54 @@ export class CommandPaletteComponent implements OnDestroy {
       }
     },
     {
+      id: 'act-deal-room',
+      category: 'Actions',
+      title: 'Open Deal War-Room & Buying Committee',
+      subtitle: 'Simulate objections, mutual action plans & stakeholder buying authority',
+      icon: 'meeting_room',
+      iconBg: 'bg-purple-500/10',
+      iconColor: 'text-purple-400',
+      action: () => {
+        this.router.navigate(['/deal-rooms']);
+      }
+    },
+    {
+      id: 'act-revops-sim',
+      category: 'Actions',
+      title: 'Run RevOps Monte Carlo Simulation',
+      subtitle: 'Run 1,000 statistical iterations on pipeline attainment & AE capacity',
+      icon: 'query_stats',
+      iconBg: 'bg-emerald-500/10',
+      iconColor: 'text-emerald-400',
+      action: () => {
+        this.router.navigate(['/revops-simulator']);
+      }
+    },
+    {
+      id: 'act-outbound-cadence',
+      category: 'Actions',
+      title: 'Launch Outbound Multi-Touch Cadence',
+      subtitle: 'Orchestrate email, LinkedIn, and phone touchpoints with Liquid syntax',
+      icon: 'alt_route',
+      iconBg: 'bg-cyan-500/10',
+      iconColor: 'text-cyan-400',
+      action: () => {
+        this.router.navigate(['/cadences']);
+      }
+    },
+    {
+      id: 'act-legal-vault',
+      category: 'Actions',
+      title: 'Generate Legal Contract & Seal',
+      subtitle: 'Draft MSA/NDA agreements with SHA-256 seal & digital signature',
+      icon: 'gavel',
+      iconBg: 'bg-amber-500/10',
+      iconColor: 'text-amber-400',
+      action: () => {
+        this.router.navigate(['/contracts']);
+      }
+    },
+    {
       id: 'act-schedule-meeting',
       category: 'Actions',
       title: 'Schedule Discovery Call',
@@ -695,6 +743,46 @@ export class CommandPaletteComponent implements OnDestroy {
       iconBg: 'bg-zinc-800',
       iconColor: 'text-zinc-300',
       action: () => { this.router.navigate(['/']); }
+    },
+    {
+      id: 'nav-deal-rooms',
+      category: 'Navigation',
+      title: 'Go to Deal Rooms & Buying Committees',
+      subtitle: 'Enterprise war-rooms, MAPs, and objection simulation',
+      icon: 'meeting_room',
+      iconBg: 'bg-zinc-800',
+      iconColor: 'text-purple-400',
+      action: () => { this.router.navigate(['/deal-rooms']); }
+    },
+    {
+      id: 'nav-cadences',
+      category: 'Navigation',
+      title: 'Go to Outbound Cadence Studio',
+      subtitle: 'Omnichannel multi-touch sequences & step analytics',
+      icon: 'alt_route',
+      iconBg: 'bg-zinc-800',
+      iconColor: 'text-cyan-400',
+      action: () => { this.router.navigate(['/cadences']); }
+    },
+    {
+      id: 'nav-revops',
+      category: 'Navigation',
+      title: 'Go to RevOps Simulator Engine',
+      subtitle: 'Monte Carlo ARR model, capacity planner, and accelerators',
+      icon: 'query_stats',
+      iconBg: 'bg-zinc-800',
+      iconColor: 'text-emerald-400',
+      action: () => { this.router.navigate(['/revops-simulator']); }
+    },
+    {
+      id: 'nav-contracts',
+      category: 'Navigation',
+      title: 'Go to Legal & Contract Vault',
+      subtitle: 'MSA/NDA generator, cryptographic seal & Appwrite vault',
+      icon: 'gavel',
+      iconBg: 'bg-zinc-800',
+      iconColor: 'text-amber-400',
+      action: () => { this.router.navigate(['/contracts']); }
     },
     {
       id: 'nav-notes',

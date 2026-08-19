@@ -54,71 +54,101 @@ import { CommandPaletteComponent } from './command-palette.component';
                    (menuClick)="isSidebarOpen.set(false)" />
       
       <main class="flex-1 flex flex-col overflow-hidden relative bg-transparent z-10 w-full">
-        <!-- Top Persistent Header Bar with Brand Identity and Notification Bell -->
-        <header class="h-16 border-b border-zinc-800/60 bg-zinc-950/40 backdrop-blur-md flex items-center justify-between px-4 lg:px-6 z-30 select-none flex-shrink-0">
-          <div class="flex items-center gap-3 lg:w-[260px]">
-            <button class="lg:hidden w-10 h-10 rounded-xl bg-zinc-900/50 border border-zinc-800 flex items-center justify-center text-zinc-300 hover:text-white" (click)="isSidebarOpen.set(true)">
-              <mat-icon>menu</mat-icon>
+        <!-- Top Persistent Header Bar with Brand Identity, Omnisearch & Sentinel Telemetry -->
+        <header class="h-14 sm:h-16 border-b border-zinc-800/70 bg-zinc-950/75 backdrop-blur-2xl flex items-center justify-between px-3 sm:px-4 lg:px-6 z-30 select-none shrink-0 transition-all duration-200 shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
+          
+          <!-- Left Zone: Mobile Sidebar Trigger & Brand Identifier -->
+          <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+            <button 
+              type="button"
+              class="lg:hidden w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-zinc-900/70 hover:bg-zinc-800 border border-zinc-800/90 flex items-center justify-center text-zinc-300 hover:text-white transition-all active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400" 
+              (click)="isSidebarOpen.set(true)"
+              aria-label="Open Navigation Drawer">
+              <mat-icon class="text-[20px] sm:text-[22px]">menu</mat-icon>
             </button>
-            <div class="font-logo text-lg tracking-tighter text-white flex items-center leading-none lg:hidden">
-              <span class="font-light">ΛΞV</span>
-              <span class="font-bold text-teal-400">OS</span>
-            </div>
-            <div class="font-display font-medium text-[10px] tracking-widest text-[#20B2AA]/80 uppercase hidden lg:block">
-              Laevos CRM Sentinel
+
+            <!-- Brand Wordmark (Mobile & Desktop) -->
+            <div class="flex items-center gap-2">
+              <div class="font-logo text-base sm:text-lg tracking-tighter text-white flex items-center leading-none">
+                <span class="font-light tracking-wide text-zinc-300">ΛΞV</span>
+                <span class="font-bold text-teal-400">OS</span>
+              </div>
+
+              <!-- Desktop Environment / Tenant Indicator -->
+              <div class="hidden xl:flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-teal-500/10 border border-teal-500/20 text-[10px] font-mono text-teal-300 font-semibold tracking-wider uppercase">
+                <span class="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse"></span>
+                <span>CRM Sentinel</span>
+              </div>
             </div>
           </div>
 
-          <!-- Global Search / Command Palette Trigger Bar -->
-          <div class="flex-1 max-w-xl px-2 sm:px-4 relative">
+          <!-- Middle Zone: Global Omnisearch / Command Palette Trigger -->
+          <div class="flex-1 max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl mx-2 sm:mx-4">
             <button 
+              type="button"
               (click)="isCommandPaletteOpen.set(true)"
-              class="w-full bg-zinc-900/60 hover:bg-zinc-900/90 border border-zinc-800/90 hover:border-teal-500/40 rounded-xl py-2 px-3 text-left text-sm text-zinc-400 focus:outline-none transition-all backdrop-blur-md flex items-center justify-between group cursor-pointer shadow-sm hover:shadow-[0_0_20px_rgba(45,212,191,0.08)]">
-              <span class="flex items-center gap-2.5 text-zinc-500 group-hover:text-zinc-300 transition-colors">
-                <mat-icon class="text-zinc-500 text-sm group-hover:text-teal-400 transition-colors">search</mat-icon>
-                <span class="text-xs font-medium">Search or type a command...</span>
+              class="w-full bg-zinc-900/70 hover:bg-zinc-900/95 border border-zinc-800/90 hover:border-teal-500/50 rounded-xl py-1.5 sm:py-2 px-2.5 sm:px-3.5 text-left text-zinc-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 transition-all backdrop-blur-md flex items-center justify-between group cursor-pointer shadow-inner">
+              <span class="flex items-center gap-2 sm:gap-2.5 text-zinc-400 group-hover:text-zinc-200 transition-colors truncate">
+                <mat-icon class="text-zinc-500 text-[17px] sm:text-[19px] group-hover:text-teal-400 transition-colors shrink-0">search</mat-icon>
+                <span class="text-xs font-medium truncate">
+                  <span class="hidden md:inline">Quick search or command...</span>
+                  <span class="hidden sm:inline md:hidden">Search leads, tasks...</span>
+                  <span class="inline sm:hidden">Search...</span>
+                </span>
               </span>
-              <div class="flex items-center gap-1">
-                <kbd class="hidden sm:inline-flex items-center gap-0.5 px-2 py-0.5 text-[10px] font-mono font-bold text-zinc-400 bg-zinc-800/80 border border-zinc-700/60 rounded-md shadow-xs group-hover:border-teal-500/40 group-hover:text-teal-300 transition-colors">
+              <div class="flex items-center gap-1 shrink-0 ml-1.5">
+                <kbd class="hidden sm:inline-flex items-center gap-0.5 px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-mono font-bold text-zinc-400 bg-zinc-800/90 border border-zinc-700/70 rounded-md group-hover:border-teal-500/40 group-hover:text-teal-300 transition-colors">
                   <span class="text-[10px]">⌘</span>K
                 </kbd>
+                <span class="sm:hidden text-zinc-600 group-hover:text-teal-400">
+                  <mat-icon class="text-[15px]">keyboard_return</mat-icon>
+                </span>
               </div>
             </button>
           </div>
           
-          <div class="flex items-center gap-4 lg:w-[260px] justify-end">
-            <!-- Connection Indicator -->
-            <div class="flex items-center gap-1.5 px-3 py-1 bg-teal-500/5 border border-teal-500/10 rounded-full text-[9px] font-mono text-[#3EB991] hidden sm:flex">
-              <span class="w-1.5 h-1.5 rounded-full bg-[#3EB991] animate-pulse"></span>
-              <span>SENTINEL CORE ONLINE</span>
+          <!-- Right Zone: Realtime Sentinel Telemetry & Action Controls -->
+          <div class="flex items-center gap-1.5 sm:gap-2.5 md:gap-3 shrink-0">
+            
+            <!-- Realtime Telemetry Status Pill (Responsive) -->
+            <div class="hidden md:flex items-center gap-1.5 px-2.5 py-1 bg-zinc-900/80 border border-zinc-800 rounded-full text-[10px] font-mono text-emerald-400">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span class="hidden lg:inline font-semibold">CORE ONLINE</span>
+              <span class="lg:hidden font-semibold">SYNC</span>
             </div>
 
-            <!-- AI Copilot Button -->
+            <!-- AI Copilot Trigger Button -->
             <button 
+              type="button"
               (click)="isAICopilotOpen.set(true)"
-              class="relative w-10 h-10 rounded-xl bg-purple-550/10 hover:bg-purple-900/20 border border-purple-500/35 hover:border-purple-400 flex items-center justify-center transition-all text-purple-400 hover:text-white cursor-pointer group shadow-[0_0_12px_rgba(168,85,247,0.15)]"
-              title="Open AI Sentinel Copilot">
-              <mat-icon class="text-[20px] animate-pulse">auto_awesome</mat-icon>
+              class="relative w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-purple-950/30 hover:bg-purple-900/40 border border-purple-500/40 hover:border-purple-400 flex items-center justify-center transition-all text-purple-300 hover:text-white cursor-pointer group shadow-[0_0_12px_rgba(168,85,247,0.2)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400"
+              title="Open AI Sentinel Copilot"
+              aria-label="Open AI Copilot Drawer">
+              <mat-icon class="text-[18px] sm:text-[20px] group-hover:scale-110 transition-transform text-purple-400">auto_awesome</mat-icon>
+              <span class="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-purple-400 animate-ping"></span>
             </button>
 
-            <!-- Bell Icon Button -->
+            <!-- Notifications Drawer Trigger Button -->
             <button 
+              type="button"
               (click)="isNotificationDrawerOpen.set(true)"
-              class="relative w-10 h-10 rounded-xl bg-zinc-900/50 hover:bg-zinc-900 border border-zinc-800 hover:border-zinc-700 flex items-center justify-center transition-all text-zinc-300 hover:text-white cursor-pointer group"
-              title="View Sentinel Updates">
-              <mat-icon class="text-[20px] group-hover:rotate-12 transition-transform">notifications</mat-icon>
+              class="relative w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-zinc-900/70 hover:bg-zinc-800 border border-zinc-800/90 hover:border-zinc-700 flex items-center justify-center transition-all text-zinc-300 hover:text-white cursor-pointer group active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+              title="View Sentinel Updates"
+              aria-label="View notifications">
+              <mat-icon class="text-[19px] sm:text-[21px] group-hover:rotate-12 transition-transform text-zinc-400 group-hover:text-zinc-200">notifications</mat-icon>
               @if (unreadCount() > 0) {
-                <span class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#6A0DAD] border border-zinc-900 text-[10px] font-bold text-[#F5FFFA] flex items-center justify-center shadow-lg shadow-purple-500/30 animate-bounce">
-                  {{ unreadCount() }}
+                <span class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-600 border-2 border-zinc-950 text-[9px] font-bold text-white flex items-center justify-center shadow-lg shadow-purple-500/40 animate-pulse">
+                  {{ unreadCount() > 9 ? '9+' : unreadCount() }}
                 </span>
               }
             </button>
+
           </div>
         </header>
 
         <!-- Main Scrollable Route-outlet container -->
         <div class="flex-1 overflow-y-auto custom-scrollbar relative z-10">
-          <div class="p-4 sm:p-6 md:p-8 lg:p-10 relative z-10 w-full min-h-full pb-10 md:pb-32">
+          <div class="p-3 sm:p-6 md:p-8 lg:p-10 relative z-10 w-full min-h-full pb-24 sm:pb-28 md:pb-32">
             <router-outlet></router-outlet>
           </div>
         </div>

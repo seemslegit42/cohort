@@ -20,63 +20,71 @@ export interface TaskItem {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, MatIconModule],
   template: `
-    <div class="max-w-[1600px] mx-auto animate-fade-in px-2 md:px-0 h-full flex flex-col relative">
-      <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2 mb-6 flex-shrink-0">
+    <div class="max-w-[1600px] mx-auto animate-fade-in px-1 sm:px-2 md:px-0 h-full flex flex-col relative">
+      <!-- Tasks Header -->
+      <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mt-1 sm:mt-2 mb-4 sm:mb-6 shrink-0">
         <div>
-          <h1 class="font-display text-3xl font-bold tracking-tight text-white flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center border border-purple-500/20 shadow-[0_0_15px_rgba(168,85,247,0.15)]">
-              <mat-icon class="text-purple-400 text-[24px]">task_alt</mat-icon>
+          <h1 class="font-display text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-white flex items-center gap-2.5 sm:gap-3 drop-shadow-md">
+            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-purple-500/10 flex items-center justify-center border border-purple-500/20 shadow-[0_0_15px_rgba(168,85,247,0.15)] shrink-0">
+              <mat-icon class="text-purple-400 text-[20px] sm:text-[22px]">task_alt</mat-icon>
             </div>
-            Action Items & Workflow Objectives
+            <span>Action Items & Objectives</span>
           </h1>
-          <p class="text-sm text-zinc-400 mt-2">
+          <p class="text-xs sm:text-sm text-zinc-400 mt-1">
             Centralized task tracking and operational pipeline for high-value strategic objectives.
           </p>
         </div>
 
-        <div class="flex items-center gap-3 self-start sm:self-auto">
+        <div class="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
           <!-- Quick search -->
-          <div class="relative">
-            <mat-icon class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-[18px]">search</mat-icon>
+          <div class="relative flex-1 sm:flex-initial">
+            <mat-icon class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-[17px]">search</mat-icon>
             <input 
               type="text" 
               [value]="searchQuery()" 
               (input)="updateSearch($event)" 
               placeholder="Search objectives..." 
-              class="w-44 sm:w-56 bg-zinc-900/60 border border-zinc-800 rounded-xl py-2 pl-9 pr-3 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-purple-500/50 transition-all font-medium" />
+              class="w-full sm:w-56 bg-zinc-900/80 border border-zinc-800 rounded-xl py-1.5 sm:py-2 pl-9 pr-3 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-purple-500/50 transition-all font-medium shadow-inner" />
           </div>
 
-          <button (click)="openCreateModal()" class="px-5 py-2.5 bg-purple-500 hover:bg-purple-400 text-purple-950 font-bold rounded-xl transition-all text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-purple-500/20 shrink-0">
-            <mat-icon class="text-[18px]">add_task</mat-icon>
-            New Objective
+          <!-- New Objective Button -->
+          <button 
+            type="button"
+            (click)="openCreateModal()" 
+            class="px-3.5 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl transition-all text-xs flex items-center gap-1.5 shadow-lg shadow-purple-500/20 shrink-0 cursor-pointer active:scale-95">
+            <mat-icon class="text-[17px]">add_task</mat-icon>
+            <span>New Objective</span>
           </button>
         </div>
       </header>
 
-      <!-- Category Filter Pills Bar -->
-      <div class="flex items-center justify-between gap-3 mb-6 bg-zinc-900/40 p-2.5 rounded-2xl border border-zinc-800/80 flex-wrap">
-        <div class="flex items-center gap-2 overflow-x-auto custom-scrollbar py-0.5">
-          <span class="text-xs font-bold text-zinc-500 uppercase tracking-widest mr-1">Category:</span>
+      <!-- Category Filter Pills Bar (Mobile Scrollable) -->
+      <div class="flex items-center justify-between gap-2 sm:gap-3 mb-4 sm:mb-6 bg-zinc-900/60 p-2 sm:p-2.5 rounded-2xl border border-zinc-800/80">
+        <div class="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-0.5 w-full">
+          <span class="text-[11px] font-bold text-zinc-500 uppercase tracking-wider shrink-0 mr-1 hidden sm:inline">Category:</span>
           <button 
+            type="button"
             (click)="selectedCategory.set('All')" 
-            [class]="selectedCategory() === 'All' ? 'bg-purple-500/20 text-purple-300 border-purple-500/40 font-bold' : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:text-white'"
-            class="px-3 py-1 rounded-xl border text-xs transition-all">
-            All Categories ({{ appwrite.tasks().length }})
+            [class]="selectedCategory() === 'All' ? 'bg-purple-500/20 text-purple-300 border-purple-500/40 font-bold' : 'bg-zinc-950/80 text-zinc-400 border-zinc-800 hover:text-white'"
+            class="px-3 py-1 rounded-xl border text-xs transition-all shrink-0 cursor-pointer">
+            All ({{ appwrite.tasks().length }})
           </button>
           @for (cat of categories(); track cat) {
             <button 
+              type="button"
               (click)="selectedCategory.set(cat)" 
-              [class]="selectedCategory() === cat ? 'bg-purple-500/20 text-purple-300 border-purple-500/40 font-bold' : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:text-white'"
-              class="px-3 py-1 rounded-xl border text-xs transition-all">
+              [class]="selectedCategory() === cat ? 'bg-purple-500/20 text-purple-300 border-purple-500/40 font-bold' : 'bg-zinc-950/80 text-zinc-400 border-zinc-800 hover:text-white'"
+              class="px-3 py-1 rounded-xl border text-xs transition-all shrink-0 cursor-pointer">
               {{ cat }}
             </button>
           }
         </div>
 
         @if (getTasksBy('done').length > 0) {
-          <button (click)="clearResolved()" class="text-[11px] font-bold text-zinc-500 hover:text-rose-400 transition-colors flex items-center gap-1 px-2.5 py-1 rounded-lg hover:bg-zinc-800">
+          <button (click)="clearResolved()" class="text-[11px] font-bold text-zinc-500 hover:text-rose-400 transition-colors flex items-center gap-1 px-2.5 py-1 rounded-lg hover:bg-zinc-800 shrink-0 whitespace-nowrap">
             <mat-icon class="text-xs">cleaning_services</mat-icon>
-            Clear Resolved ({{ getTasksBy('done').length }})
+            <span class="hidden sm:inline">Clear Resolved ({{ getTasksBy('done').length }})</span>
+            <span class="inline sm:hidden">Clear ({{ getTasksBy('done').length }})</span>
           </button>
         }
       </div>

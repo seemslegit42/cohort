@@ -23,55 +23,64 @@ interface Deal {
     <div class="max-w-[1400px] mx-auto space-y-8 animate-fade-in">
       
       <!-- Clients Header -->
-      <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2 mb-4">
+      <header class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4 mt-1 sm:mt-2 mb-4 sm:mb-6 shrink-0">
         <div>
-          <h1 class="font-display text-2xl font-bold tracking-tight text-white flex items-center gap-3">
-            <mat-icon class="text-teal-400 text-[28px]">business</mat-icon>
-            Enterprise Portfolio Accounts & Deals
+          <h1 class="font-display text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-white flex items-center gap-2.5 sm:gap-3 drop-shadow-md">
+            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-teal-500/10 flex items-center justify-center border border-teal-500/20 shadow-[0_0_15px_rgba(20,184,166,0.15)] shrink-0">
+              <mat-icon class="text-teal-400 text-[20px] sm:text-[22px]">business</mat-icon>
+            </div>
+            <span>Enterprise Portfolio & Deals</span>
           </h1>
-          <p class="text-xs text-zinc-400 mt-1">
+          <p class="text-xs sm:text-sm text-zinc-400 mt-1">
             Monitor client account status, execute pipeline progression, and analyze deal values in real time.
           </p>
         </div>
 
-        <div class="flex items-center gap-3 self-start sm:self-auto">
-          <!-- Create Deal Button -->
-          <button (click)="openDealModal()" class="px-4 py-2 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-zinc-950 font-bold rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-teal-500/20">
-            <mat-icon class="text-sm">add</mat-icon>
-            New Deal
-          </button>
-
-          <!-- View Switcher Tabs -->
-          <div class="bg-zinc-950/60 p-1 rounded-xl border border-zinc-800/80 flex gap-1 shadow-inner overflow-x-auto custom-scrollbar">
+        <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
+          <!-- View Switcher Tabs (Responsive Scrollable) -->
+          <div class="bg-zinc-900/90 p-0.5 sm:p-1 rounded-xl border border-zinc-800/90 flex gap-0.5 sm:gap-1 shadow-inner overflow-x-auto no-scrollbar">
             <button 
+              type="button"
               (click)="activeTab.set('pipeline')"
-              [class]="activeTab() === 'pipeline' ? 'bg-zinc-800 text-white shadow-sm border border-zinc-700/60 font-semibold' : 'text-zinc-400 hover:text-zinc-200'"
-              class="px-4 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-2 whitespace-nowrap">
-              <mat-icon class="text-sm">view_week</mat-icon>
-              Deal Kanban
+              [class]="activeTab() === 'pipeline' ? 'bg-zinc-800 text-white shadow-xs font-semibold' : 'text-zinc-400 hover:text-zinc-200'"
+              class="px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer">
+              <mat-icon class="text-[15px] sm:text-[16px]">view_week</mat-icon>
+              <span>Kanban</span>
             </button>
             <button 
+              type="button"
               (click)="activeTab.set('accounts')"
-              [class]="activeTab() === 'accounts' ? 'bg-zinc-800 text-white shadow-sm border border-zinc-700/60 font-semibold' : 'text-zinc-400 hover:text-zinc-200'"
-              class="px-4 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-2 whitespace-nowrap">
-              <mat-icon class="text-sm">list_alt</mat-icon>
-              Account Directory
+              [class]="activeTab() === 'accounts' ? 'bg-zinc-800 text-white shadow-xs font-semibold' : 'text-zinc-400 hover:text-zinc-200'"
+              class="px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer">
+              <mat-icon class="text-[15px] sm:text-[16px]">list_alt</mat-icon>
+              <span>Accounts</span>
             </button>
             <button 
+              type="button"
               (click)="activeTab.set('datasync')"
-              [class]="activeTab() === 'datasync' ? 'bg-zinc-800 text-white shadow-sm border border-zinc-700/60 font-semibold' : 'text-zinc-400 hover:text-zinc-200'"
-              class="px-4 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-2 whitespace-nowrap">
-              <mat-icon class="text-sm">sync_alt</mat-icon>
-              Data Sync
+              [class]="activeTab() === 'datasync' ? 'bg-zinc-800 text-white shadow-xs font-semibold' : 'text-zinc-400 hover:text-zinc-200'"
+              class="px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer">
+              <mat-icon class="text-[15px] sm:text-[16px]">sync_alt</mat-icon>
+              <span>Sync</span>
             </button>
             <button 
+              type="button"
               (click)="activeTab.set('settings')"
-              [class]="activeTab() === 'settings' ? 'bg-zinc-800 text-white shadow-sm border border-zinc-700/60 font-semibold' : 'text-zinc-400 hover:text-zinc-200'"
-              class="px-4 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-2 whitespace-nowrap">
-              <mat-icon class="text-sm">settings</mat-icon>
-              Settings
+              [class]="activeTab() === 'settings' ? 'bg-zinc-800 text-white shadow-xs font-semibold' : 'text-zinc-400 hover:text-zinc-200'"
+              class="px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer">
+              <mat-icon class="text-[15px] sm:text-[16px]">settings</mat-icon>
+              <span>Settings</span>
             </button>
           </div>
+
+          <!-- Create Deal Button -->
+          <button 
+            type="button"
+            (click)="openDealModal()" 
+            class="px-3.5 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-zinc-950 font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-lg shadow-teal-500/20 cursor-pointer active:scale-95">
+            <mat-icon class="text-[16px]">add</mat-icon>
+            <span>New Deal</span>
+          </button>
         </div>
       </header>
 

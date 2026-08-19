@@ -37,27 +37,30 @@ interface CompiledReport {
       }
 
       <!-- Reports Header -->
-      <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2 mb-4 shrink-0">
+      <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mt-1 sm:mt-2 mb-4 sm:mb-6 shrink-0">
         <div>
-          <h1 class="font-display text-2xl font-bold tracking-tight text-white flex items-center gap-3">
-            <mat-icon class="text-teal-400 text-[28px]">assessment</mat-icon>
-            Executive Analytics & Reports
+          <h1 class="font-display text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-white flex items-center gap-2.5 sm:gap-3 drop-shadow-md">
+            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-teal-500/10 flex items-center justify-center border border-teal-500/20 shadow-[0_0_15px_rgba(20,184,166,0.15)] shrink-0">
+              <mat-icon class="text-teal-400 text-[20px] sm:text-[22px]">assessment</mat-icon>
+            </div>
+            <span>Executive Analytics & Reports</span>
           </h1>
-          <p class="text-xs text-zinc-400 mt-1">
-            Aggregate workspace data across pipeline values, active contracts, and client conversions instantly.
+          <p class="text-xs sm:text-sm text-zinc-400 mt-1">
+            Aggregate workspace telemetry across pipeline values, active contracts, and client conversions.
           </p>
         </div>
 
         <button 
+          type="button"
           (click)="openReportBuilder()"
           [disabled]="isGenerating()"
-          class="px-5 py-2.5 bg-teal-500 hover:bg-teal-400 disabled:opacity-50 text-zinc-950 font-bold rounded-xl transition-all text-sm flex items-center gap-2 shadow-lg shadow-teal-500/20">
+          class="px-4 sm:px-5 py-2 sm:py-2.5 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 disabled:opacity-50 text-zinc-950 font-bold rounded-xl transition-all text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-teal-500/20 shrink-0 self-start sm:self-auto cursor-pointer active:scale-95">
           @if (isGenerating()) {
-            <mat-icon class="animate-spin text-[18px]">autorenew</mat-icon>
-            Assembling Portfolio Data...
+            <mat-icon class="animate-spin text-[17px]">autorenew</mat-icon>
+            <span>Assembling Data...</span>
           } @else {
-            <mat-icon class="text-[18px]">add_chart</mat-icon>
-            Compile Custom Report
+            <mat-icon class="text-[17px]">add_chart</mat-icon>
+            <span>Compile Custom Report</span>
           }
         </button>
       </header>

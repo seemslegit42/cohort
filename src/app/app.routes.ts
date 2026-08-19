@@ -84,5 +84,21 @@ export const routes: Routes = [
   {
     path: 'campaigns',
     loadComponent: () => import('./campaigns.component').then(m => m.CampaignsComponent)
+  },
+  {
+    path: 'contracts',
+    loadComponent: () => import('./contract-suite.component').then(m => m.ContractSuiteComponent)
+  },
+  {
+    path: 'deal-rooms',
+    loadComponent: () => import('./deal-rooms.component').then(m => m.DealRoomsComponent)
+  },
+  {
+    path: 'revops-simulator',
+    loadComponent: () => import('./revops-simulator.component').then(m => m.RevopsSimulatorComponent)
+  },
+  {
+    path: 'cadences',
+    loadComponent: () => import('./cadences.component').then(m => m.CadencesComponent)
   }
 ];
