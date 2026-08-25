@@ -224,9 +224,9 @@ export interface SimulationResult {
               </div>
 
               <div class="flex items-center justify-between text-[10px] text-zinc-500 font-mono pt-2">
-                <span>\$0.5M</span>
+                <span>$0.5M</span>
                 <span>Target: \${{ (targetArr() / 1000000).toFixed(1) }}M</span>
-                <span>\$8.0M+</span>
+                <span>$8.0M+</span>
               </div>
             </div>
 

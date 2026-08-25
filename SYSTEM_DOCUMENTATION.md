@@ -3,7 +3,7 @@
 **System Designation:** ΛΞVOS Enterprise Revenue & Operations Operating System  
 **Framework Version:** Angular v21.0.0 (Zoneless, SSR / Hydration Ready, Strict TypeScript)  
 **Backend Infrastructure:** Node.js Express 5.x + Angular SSR (`AngularNodeAppEngine`)  
-**Data & Storage Engine:** Appwrite Cloud (Database: `leadwave-main`, Storage Buckets, Teams Multi-Tenancy) & `node-appwrite`  
+**Data & Storage Engine:** Appwrite Cloud (Endpoint: `https://tor.cloud.appwrite.io/v1`, Project: `6990e2830030cacccd98`, Database: `leadwave-main`, Storage Buckets, Teams Multi-Tenancy) & `node-appwrite` Server Driver  
 **AI Intelligence:** Google Gemini API (`@google/genai` v2.4.0 — `gemini-3.1-flash-lite` & `gemini-3.5-flash` with Google Search Grounding)  
 **Styling & Design System:** Tailwind CSS v4, Iridescent Verdigris & Ancient Glass Dark OS Canvas, Material Symbols, Motion JS  
 
@@ -210,8 +210,22 @@
 ### 4.3 Analytics & Intelligence Domain
 
 * **Reports (`/reports` — `ReportsComponent`):** Financial telemetry, cohort conversion breakdown, pipeline aging analysis, and CSV export.
-* **AI Lead Scoring (`/lead-scoring` — `LeadScoringComponent`):** Multi-factor scoring engine evaluating company size, industry category, website interaction frequency, email engagement, and deal magnitude to categorize leads into Hot, Warm, or Cold.
-* **AI Forecast (`/forecast` — `ForecastComponent`):** Machine-assisted pipeline forecasting factoring historical win-rates and seasonal deal velocity.
+* **AI Predictive Lead Scoring Engine (`/lead-scoring` — `LeadScoringComponent` & `LeadService`):**
+  * **Dual-Engine Scoring Architecture:** Normalized 100-point index composed of Demographic Fit (50 pts: Enterprise size, High-Value SaaS/FinTech industry, C-Suite seniority, pipeline ARR) + Behavioral Digital Intent (50 pts: Live webinar attendance, resource downloads, email clicks, inbound demo requests).
+  * **Dynamic Threshold Tiers:** Automated categorization into Hot (70+ pts / A-tier), Warm (40-69 pts / B-tier), and Cold (<40 pts / C/D-tier) with color-coded radial progress dials.
+  * **Configurable Weights Engine:** Interactive drawer allowing operators to calibrate point distributions across firmographics and engagement triggers, persisting instantly to `localStorage` and recalculating the entire CRM pipeline in real-time.
+  * **Score Audit & Behavioral Event Simulator:** Deep audit modal itemizing every contributing factor with one-click real-time event simulation (Email Opens, Clicks, Whitepaper Downloads, Webinar Attendance) that updates live Appwrite database state.
+  * **CSV Pipeline Export:** Instant export of scored prospects with demographic and behavioral metrics.
+* **Automated Email Workflow Engine & Cadences (`/cadences` — `CadencesComponent`):**
+  * **Action-Triggered Automated Sequences:** Multi-step nurture workflows triggered by lead behavioral actions (Resource Download, Webinar Attendance, Pricing Page visits, Inbound Demo requests).
+  * **Integrated A/B Testing Engine:** Dual-variant (Variant A vs. Variant B) subject and body testing per step with automated traffic splitting (e.g. 50/50), send metrics, open rate %, CTR %, and reply rate % tracking to determine winning copy.
+  * **Liquid & Variable Token Personalization:** Dynamic variable substitution (`{{contact.firstName}}`, `{{contact.company}}`, `{{contact.industry}}`) with live preview and syntax checking.
+  * **Interactive Trigger Simulator:** Modal allowing operators to select any CRM lead and trigger behavioral events to test enrollment, immediate step execution, and score updates.
+* **Sales Forecasting & Scenario Modeling Engine (`/forecast` — `ForecastComponent`):**
+  * **Predictive Pipeline Projection Engine:** Computes Total Pipeline Value, Weighted Expected Forecast, Commit Value, Best Case Projection, and Quota Attainment against target ARR ($2.4M).
+  * **Interactive Scenario Sensitivity Modeling:** Real-time sliders adjusting Win Rate Multiplier (0.5x–2.0x), Growth Factor (-50% to +100%), and Sales Cycle Velocity (0.5x–2.0x) to generate dynamic Scenario Projections alongside historical baseline and target quota.
+  * **Deal-Level Forecast Overrides:** Granular category overrides (Commit, Best Case, Pipeline, Omitted) per opportunity with immediate visual recalculation of risk profiles.
+  * **Multi-Dimensional Breakdowns:** Stage-by-stage pipeline distribution, rep-level quota attainment rankings, and historical forecast variance tracking.
 * **Pipeline Signals (`/pipeline-signals` — `PipelineSignalsComponent`):** Real-time intent detection stream capturing funding announcements, executive hiring, and website pricing page visits.
 * **Automations (`/automations` — `AutomationsComponent`):** Event-action automation builder triggering Appwrite serverless functions and Slack webhook alerts upon pipeline status changes.
 * **Workflows (`/workflows` — `WorkflowsComponent`):** Visual DAG workflow graph mapping complex enterprise onboarding and deal escalation workflows.

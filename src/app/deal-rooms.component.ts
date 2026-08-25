@@ -458,7 +458,7 @@ export interface DealRoom {
 
             <!-- Quick Objection Chips -->
             <div class="space-y-2 mb-4">
-              <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Preset Common Objections:</label>
+              <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 block">Preset Common Objections:</span>
               <div class="flex flex-wrap gap-2">
                 @for (preset of presetObjections; track preset) {
                   <button 
