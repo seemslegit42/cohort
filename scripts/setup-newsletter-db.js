@@ -13,10 +13,10 @@ async function setupNewsletterDatabase() {
     try {
         // Create Newsletter Subscribers table
         await tablesDB.createTable(databaseId, 'newsletter_subscribers', 'Newsletter Subscribers', [
-            Permission.read(Role.team('[TEAM_ID]')),
-            Permission.create(Role.team('[TEAM_ID]', 'member')),
-            Permission.update(Role.team('[TEAM_ID]', 'admin')),
-            Permission.delete(Role.team('[TEAM_ID]', 'owner')),
+            Permission.read(Role.any()),
+            Permission.create(Role.users()),
+            Permission.update(Role.users()),
+            Permission.delete(Role.users())
         ]);
         
         // Add columns
@@ -27,6 +27,9 @@ async function setupNewsletterDatabase() {
         await tablesDB.createVarcharColumn(databaseId, 'newsletter_subscribers', 'source', 255, false);
         await tablesDB.createVarcharColumn(databaseId, 'newsletter_subscribers', 'teamId', 255, true);
         
+        console.log('Waiting for columns to be created...');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
         // Create indexes
         await tablesDB.createIndex(databaseId, 'newsletter_subscribers', 'idx_team', 'key', ['teamId']);
         await tablesDB.createIndex(databaseId, 'newsletter_subscribers', 'idx_email', 'unique', ['email']);

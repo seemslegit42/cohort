@@ -325,17 +325,7 @@ export interface DashboardWidget {
         }
       </div>
 
-      <!-- Floating Action Button (Quick Add Lead) -->
-      <div class="fixed bottom-6 right-6 z-50">
-        <button 
-          (click)="openQuickAddModal()" 
-          class="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-zinc-950 font-bold px-5 py-3 rounded-full shadow-[0_0_25px_rgba(249,115,22,0.4)] hover:shadow-[0_0_35px_rgba(249,115,22,0.6)] hover:scale-105 active:scale-95 transition-all flex items-center gap-2.5 group cursor-pointer border border-orange-300/30">
-          <div class="w-7 h-7 rounded-full bg-zinc-950/20 flex items-center justify-center">
-            <mat-icon class="text-[20px] transition-transform group-hover:rotate-90">add</mat-icon>
-          </div>
-          <span class="text-xs tracking-wide font-display uppercase font-extrabold">Quick Add Lead</span>
-        </button>
-      </div>
+
 
       <!-- Quick Add Lead Modal -->
       @if (showQuickAddModal()) {
