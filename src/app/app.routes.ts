@@ -46,6 +46,10 @@ export const routes: Routes = [
     loadComponent: () => import('./workflows.component').then(m => m.WorkflowsComponent)
   },
   {
+    path: 'email-workflows',
+    loadComponent: () => import('./email-workflows.component').then(m => m.EmailWorkflowsComponent)
+  },
+  {
     path: 'forecast',
     loadComponent: () => import('./forecast.component').then(m => m.ForecastComponent)
   },
@@ -99,6 +103,10 @@ export const routes: Routes = [
   },
   {
     path: 'cadences',
+    loadComponent: () => import('./cadences.component').then(m => m.CadencesComponent)
+  },
+  {
+    path: 'sequences',
     loadComponent: () => import('./cadences.component').then(m => m.CadencesComponent)
   }
 ];

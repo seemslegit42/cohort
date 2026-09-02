@@ -99,6 +99,21 @@ async function setupAppwriteDatabase() {
           { key: 'read', type: 'boolean', required: true },
           { key: 'createdAt', type: 'string', size: 100, required: true }
         ]
+      },
+      {
+        id: process.env.APPWRITE_EMAIL_WORKFLOWS_COLLECTION_ID || 'email_workflows',
+        name: 'Email Workflows',
+        attributes: [
+          { key: 'teamId', type: 'string', size: 255, required: true },
+          { key: 'name', type: 'string', size: 255, required: true },
+          { key: 'description', type: 'string', size: 1000, required: false },
+          { key: 'status', type: 'string', size: 50, required: true },
+          { key: 'trigger', type: 'string', size: 2000, required: true },
+          { key: 'steps', type: 'string', size: 10000, required: true },
+          { key: 'enrolledCount', type: 'string', size: 50, required: false },
+          { key: 'openRate', type: 'string', size: 50, required: false },
+          { key: 'replyRate', type: 'string', size: 50, required: false }
+        ]
       }
     ];
 

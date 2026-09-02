@@ -76,7 +76,7 @@ import { Appwrite } from './appwrite';
         </a>
         <a routerLink="/cadences" routerLinkActive="bg-zinc-900/60 text-white shadow-sm border border-zinc-800" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all">
           <mat-icon class="text-[20px] w-5 h-5 text-cyan-400">alt_route</mat-icon>
-          <span class="font-medium text-sm">Outbound Cadences</span>
+          <span class="font-medium text-sm">Email Sequences</span>
         </a>
         <a routerLink="/revops-simulator" routerLinkActive="bg-zinc-900/60 text-white shadow-sm border border-zinc-800" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all">
           <mat-icon class="text-[20px] w-5 h-5 text-emerald-400">query_stats</mat-icon>
@@ -108,9 +108,13 @@ import { Appwrite } from './appwrite';
           <mat-icon class="text-[20px] w-5 h-5">auto_awesome</mat-icon>
           <span class="font-medium text-sm">Automations</span>
         </a>
-        <a routerLink="/workflows" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all">
+        <a routerLink="/workflows" routerLinkActive="bg-zinc-900/60 text-white shadow-sm border border-zinc-800" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all">
           <mat-icon class="text-[20px] w-5 h-5">account_tree</mat-icon>
           <span class="font-medium text-sm">Workflows</span>
+        </a>
+        <a routerLink="/email-workflows" routerLinkActive="bg-zinc-900/60 text-white shadow-sm border border-zinc-800" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all">
+          <mat-icon class="text-[20px] w-5 h-5 text-teal-400">mark_email_unread</mat-icon>
+          <span class="font-medium text-sm">Email Workflows</span>
         </a>
         <a routerLink="/newsletter" routerLinkActive="bg-zinc-900/60 text-white shadow-sm border border-zinc-800" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all">
           <mat-icon class="text-[20px] w-5 h-5 text-purple-400">mark_email_read</mat-icon>
