@@ -143,5 +143,7 @@ export const db = {
   notes: createTable<any>('notes'),
   events: createTable<any>('events'),
   emails: createTable<any>('emails'),
-  workflows: createTable<any>('workflows')
+  workflows: createTable<any>('workflows'),
+  campaigns: createTable<any>('campaigns'),
+  sequences: createTable<any>('sequences')
 };

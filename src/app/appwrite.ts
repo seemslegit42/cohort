@@ -1307,9 +1307,58 @@ export class Appwrite {
       ];
     } else if (collectionId === 'contacts') {
       return [
-        { $id: 'mock-c1', name: 'Bill Gates', email: 'bill@microsoft.com', phone: '+1 425 882 8080', company: 'Microsoft', teamId },
-        { $id: 'mock-c2', name: 'Marc Benioff', email: 'marc@salesforce.com', phone: '+1 415 901 7000', company: 'Salesforce', teamId },
-        { $id: 'mock-c3', name: 'Stewart Butterfield', email: 'stewart@slack.com', phone: '+1 415 555 1212', company: 'Slack', teamId }
+        { 
+          $id: 'mock-c1', 
+          name: 'Bill Gates', 
+          email: 'bill@microsoft.com', 
+          phone: '+1 425 882 8080', 
+          company: 'Microsoft', 
+          address: 'One Microsoft Way, Redmond, WA 98052', 
+          notes: 'Founder sponsor. Primary stakeholder for Azure infrastructure migrations and workspace licensing.', 
+          status: 'Customer', 
+          dealValue: 450000, 
+          lastContacted: '2 hours ago', 
+          teamId 
+        },
+        { 
+          $id: 'mock-c2', 
+          name: 'Marc Benioff', 
+          email: 'marc@salesforce.com', 
+          phone: '+1 415 901 7000', 
+          company: 'Salesforce', 
+          address: '415 Mission St, San Francisco, CA 94105', 
+          notes: 'Engaged on joint enterprise CRM integration initiative. Requires SOC2 Type II compliance audit.', 
+          status: 'Opportunity', 
+          dealValue: 180000, 
+          lastContacted: '1 day ago', 
+          teamId 
+        },
+        { 
+          $id: 'mock-c3', 
+          name: 'Stewart Butterfield', 
+          email: 'stewart@slack.com', 
+          phone: '+1 415 555 1212', 
+          company: 'Slack', 
+          address: '500 Howard St, San Francisco, CA 94105', 
+          notes: 'Evaluating automated webhook triggers for internal company alerts and workspace messaging.', 
+          status: 'Lead', 
+          dealValue: 65000, 
+          lastContacted: '5 minutes ago', 
+          teamId 
+        },
+        { 
+          $id: 'mock-c4', 
+          name: 'Sam Altman', 
+          email: 'sam@openai.com', 
+          phone: '+1 415 333 9999', 
+          company: 'OpenAI', 
+          address: '3180 18th St, San Francisco, CA 94110', 
+          notes: 'High-touch AI partner account. Requested custom edge inference SLAs and multi-tenant security architecture.', 
+          status: 'Customer', 
+          dealValue: 850000, 
+          lastContacted: 'Just now', 
+          teamId 
+        }
       ];
     } else if (collectionId === 'notes') {
       return [
@@ -1351,9 +1400,57 @@ export class Appwrite {
       ];
     } else if (collectionId === 'emails') {
       return [
-        { $id: 'mail-1', recipient: 'Bill Gates', company: 'Microsoft Corp', subject: 'Strategic Cloud Portal Proposal - ΛΞVOS Workspace', status: 'Replied', sentAt: '2h ago' },
-        { $id: 'mail-2', recipient: 'Marc Benioff', company: 'Salesforce Inc', subject: 'SLA Migration Framework Analysis for Salesforce', status: 'Delivered', sentAt: '12h ago' },
-        { $id: 'mail-3', recipient: 'Stewart Butterfield', company: 'Slack Technologies', subject: 'Follow up: CRM Database Expansion Timelines', status: 'Sent', sentAt: '1d ago' }
+        { 
+          $id: 'mail-1', 
+          recipient: 'Bill Gates', 
+          recipientEmail: 'bill@microsoft.com',
+          company: 'Microsoft Corp', 
+          contactId: 'mock-c1',
+          dealId: 'deal-azure-mig',
+          dealName: 'Azure Cloud Migration SLA ($450k)',
+          subject: 'Strategic Cloud Portal Proposal - ΛΞVOS Workspace', 
+          body: 'Dear Bill,\n\nFollowing our executive briefing, please find attached the revised technical specifications for the multi-tenant architecture.\n\nAll security postures and encryption parameters have been validated by our security team.\n\nLooking forward to our sync this Thursday.\n\nBest regards,\nSales Engineering\nΛΞVOS Inc',
+          status: 'Replied', 
+          direction: 'outbound',
+          humanApproved: true,
+          approvedBy: 'Alex Vance (Sales Director)',
+          sentAt: '2h ago',
+          teamId
+        },
+        { 
+          $id: 'mail-2', 
+          recipient: 'Marc Benioff', 
+          recipientEmail: 'marc@salesforce.com',
+          company: 'Salesforce Inc', 
+          contactId: 'mock-c2',
+          dealId: 'deal-sf-federation',
+          dealName: 'Salesforce FedRAMP Gateway ($180k)',
+          subject: 'SLA Migration Framework Analysis for Salesforce', 
+          body: 'Hi Marc,\n\nOur RevOps Monte Carlo simulation confirmed the projected throughput lift. We have locked in the enterprise discount tier through end of month.\n\nLet me know if you would like me to prepare the mutual action plan.\n\nWarm regards,\nAlex Vance',
+          status: 'Delivered', 
+          direction: 'outbound',
+          humanApproved: true,
+          approvedBy: 'Alex Vance (Sales Director)',
+          sentAt: '12h ago',
+          teamId
+        },
+        { 
+          $id: 'mail-3', 
+          recipient: 'Stewart Butterfield', 
+          recipientEmail: 'stewart@slack.com',
+          company: 'Slack Technologies', 
+          contactId: 'mock-c3',
+          dealId: 'deal-slack-webhook',
+          dealName: 'Slack Enterprise Bot Connector ($65k)',
+          subject: 'Follow up: CRM Database Expansion Timelines', 
+          body: 'Hello Stewart,\n\nJust checking in regarding the team webhook benchmarks we shared last Friday. Has the internal review team had a chance to test the staging endpoints?\n\nHappy to jump on a quick 10-minute huddle.\n\nCheers,\nAlex Vance',
+          status: 'Sent', 
+          direction: 'outbound',
+          humanApproved: true,
+          approvedBy: 'Alex Vance (Sales Director)',
+          sentAt: '1d ago',
+          teamId
+        }
       ];
     } else if (collectionId === 'workflows') {
       return [

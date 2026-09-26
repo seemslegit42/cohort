@@ -24,10 +24,14 @@ interface DockNavItem {
   template: `
     <!-- Floating Universal Flexbox Bottom Dock Bar (Mobile + Tablet + Desktop) -->
     <nav 
-      class="fixed bottom-2.5 sm:bottom-4 md:bottom-5 left-1/2 -translate-x-1/2 z-40 w-[96vw] sm:w-auto max-w-[98vw] flex items-center justify-between sm:justify-center gap-0.5 sm:gap-1.5 p-1.5 sm:p-2 bg-zinc-950/92 backdrop-blur-2xl border border-zinc-800/85 rounded-2xl shadow-[0_12px_45px_rgba(0,0,0,0.9)] transition-all duration-300 hover:border-zinc-700/80 select-none overflow-x-auto no-scrollbar"
+      class="fixed bottom-2 sm:bottom-4 md:bottom-5 left-1/2 -translate-x-1/2 z-40 w-[96vw] sm:w-auto max-w-[98vw] flex flex-col items-center p-1 sm:p-2 bg-zinc-950/95 backdrop-blur-2xl border border-zinc-800/85 rounded-2xl shadow-[0_12px_45px_rgba(0,0,0,0.9)] transition-all duration-300 hover:border-zinc-700/80 select-none overflow-x-auto no-scrollbar pb-[env(safe-area-inset-bottom,0.25rem)]"
       role="toolbar" 
       aria-label="Universal System Navigation and Action Dock">
       
+      <!-- Mobile Swipe/Grab Indicator Pill -->
+      <div class="sm:hidden w-8 h-1 bg-zinc-700/60 rounded-full mb-1"></div>
+
+      <div class="flex items-center justify-between sm:justify-center gap-0.5 sm:gap-1.5 w-full">
       <!-- Action Cluster (Flex Container) -->
       <div class="flex items-center gap-0.5 sm:gap-1.5 shrink-0">
         
@@ -35,11 +39,11 @@ interface DockNavItem {
         <div class="relative group">
           <button 
             type="button"
-            (click)="openQuickAdd('lead')" 
-            class="h-11 sm:h-12 md:h-13 min-w-[42px] sm:min-w-[48px] md:min-w-[54px] px-1.5 sm:px-2.5 py-1 rounded-xl flex flex-col items-center justify-center gap-0.5 bg-gradient-to-tr from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-zinc-950 shadow-md shadow-orange-500/20 active:scale-[0.95] sm:hover:scale-[1.03] transition-all font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 cursor-pointer"
+            (click)="triggerHaptic(); openQuickAdd('lead')" 
+            class="h-11 sm:h-12 md:h-13 min-w-[44px] sm:min-w-[48px] md:min-w-[54px] px-1.5 sm:px-2.5 py-1 rounded-xl flex flex-col items-center justify-center gap-0.5 bg-gradient-to-tr from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-zinc-950 shadow-md shadow-orange-500/20 active:scale-[0.95] sm:hover:scale-[1.03] transition-all font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 cursor-pointer"
             aria-label="Quick Add Record (Hotkey: Q)"
             aria-haspopup="dialog">
-            <mat-icon class="text-[18px] sm:text-[20px] leading-none">add</mat-icon>
+            <i class="ti ti-plus text-[18px] sm:text-[20px] leading-none"></i>
             <span class="text-[8px] sm:text-[9px] md:text-[10px] font-bold tracking-tight uppercase leading-none whitespace-nowrap">Create</span>
           </button>
 
@@ -68,7 +72,7 @@ interface DockNavItem {
             [class.opacity-100]="isSearchOpen()" 
             [class.opacity-0]="!isSearchOpen()" 
             [class.mr-1]="isSearchOpen()">
-            <mat-icon class="absolute left-2 text-zinc-400 text-[16px] sm:text-[18px]">search</mat-icon>
+            <i class="ti ti-search absolute left-2 text-zinc-400 text-[16px] sm:text-[18px]"></i>
             <input 
               #searchInput 
               type="text" 
@@ -89,7 +93,7 @@ interface DockNavItem {
               [class.text-teal-400]="isSearchOpen()"
               [class.border-zinc-700]="isSearchOpen()"
               aria-label="Toggle pipeline search (Hotkey: /)">
-              <mat-icon class="text-[18px] sm:text-[20px] leading-none">search</mat-icon>
+              <i class="ti ti-search text-[18px] sm:text-[20px] leading-none"></i>
               <span class="text-[8px] sm:text-[9px] md:text-[10px] font-medium tracking-tight leading-none whitespace-nowrap">Search</span>
             </button>
 
@@ -124,7 +128,7 @@ interface DockNavItem {
               [routerLinkActiveOptions]="{ exact: !!item.exact }" 
               class="h-11 sm:h-12 md:h-13 min-w-[38px] sm:min-w-[48px] md:min-w-[54px] px-1 sm:px-2 py-1 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900/60 border border-transparent hover:border-zinc-800/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 group cursor-pointer"
               [attr.aria-label]="item.title + ' view shortcut ' + item.shortcut">
-              <mat-icon class="text-[18px] sm:text-[20px] leading-none transition-transform group-hover:-translate-y-0.5">{{ item.icon }}</mat-icon>
+              <i class="ti {{ item.icon }} text-[18px] sm:text-[20px] leading-none transition-transform group-hover:-translate-y-0.5"></i>
               <span class="text-[8px] sm:text-[9px] md:text-[10px] tracking-tight leading-none whitespace-nowrap">{{ item.label }}</span>
             </a>
 
@@ -156,7 +160,7 @@ interface DockNavItem {
           class="h-11 sm:h-12 md:h-13 min-w-[38px] sm:min-w-[46px] md:min-w-[50px] px-1 sm:px-2 py-1 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all text-zinc-400 hover:text-purple-300 hover:bg-purple-950/20 border border-transparent hover:border-purple-800/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 cursor-pointer"
           aria-label="Draw a stoic nihilistic aphorism (Hotkey: G)">
           <div class="relative flex items-center justify-center">
-            <mat-icon class="text-[17px] sm:text-[19px] leading-none text-purple-400">psychology</mat-icon>
+            <i class="ti ti-brain text-[17px] sm:text-[19px] leading-none text-purple-400"></i>
             <span class="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-purple-400 animate-ping"></span>
           </div>
           <span class="text-[8px] sm:text-[9px] md:text-[10px] font-medium tracking-tight text-purple-300/80 leading-none whitespace-nowrap">Gnosis</span>
@@ -176,6 +180,7 @@ interface DockNavItem {
           <div class="w-2 h-2 bg-zinc-950 border-r border-b border-purple-500/40 transform rotate-45 -mt-1"></div>
         </div>
       </div>
+      </div>
 
     </nav>
 
@@ -185,7 +190,7 @@ interface DockNavItem {
         class="fixed bottom-20 sm:bottom-24 left-1/2 -translate-x-1/2 z-50 max-w-md w-[92vw] sm:w-auto bg-zinc-950/95 border border-purple-500/40 rounded-2xl p-3.5 shadow-[0_10px_35px_rgba(168,85,247,0.3)] backdrop-blur-2xl text-zinc-100 flex items-start gap-3 animate-fade-in"
         role="alert">
         <div class="w-8 h-8 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center shrink-0 text-purple-400 mt-0.5">
-          <mat-icon class="text-[18px]">auto_stories</mat-icon>
+          <i class="ti ti-book text-[18px]"></i>
         </div>
         <div class="flex-1 min-w-0 pr-2">
           <div class="flex items-center justify-between gap-2 mb-1">
@@ -202,7 +207,7 @@ interface DockNavItem {
           (click)="activeGnosisToast.set(null)" 
           class="text-zinc-500 hover:text-zinc-300 p-1 rounded-lg hover:bg-zinc-800 transition-colors shrink-0"
           aria-label="Dismiss gnoseological reflection">
-          <mat-icon class="text-[16px]">close</mat-icon>
+          <i class="ti ti-x text-[16px]"></i>
         </button>
       </div>
     }
@@ -227,7 +232,7 @@ interface DockNavItem {
           <div class="p-4 sm:p-5 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/50 shrink-0">
             <div class="flex items-center gap-2.5">
               <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center text-zinc-950 font-bold">
-                <mat-icon class="text-[18px]">add</mat-icon>
+                <i class="ti ti-plus text-[18px]"></i>
               </div>
               <div>
                 <h3 id="quick-add-title" class="text-xs sm:text-sm font-bold text-white font-display">Record Pipeline Entity</h3>
@@ -239,7 +244,7 @@ interface DockNavItem {
               (click)="closeQuickAdd()" 
               class="text-zinc-500 hover:text-zinc-300 w-8 h-8 rounded-lg flex items-center justify-center hover:bg-zinc-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
               aria-label="Close dialog">
-              <mat-icon class="text-[20px]">close</mat-icon>
+              <i class="ti ti-x text-[20px]"></i>
             </button>
           </div>
 
@@ -250,7 +255,7 @@ interface DockNavItem {
               (click)="quickAddTab.set('lead')"
               [class]="quickAddTab() === 'lead' ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 font-bold' : 'bg-zinc-800/50 text-zinc-400 border-zinc-700/50 hover:text-zinc-200'"
               class="flex-1 py-2 px-3 rounded-xl border text-xs flex items-center justify-center gap-1.5 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 cursor-pointer">
-              <mat-icon class="text-[16px]">person_add</mat-icon> <span>New Prospect</span>
+              <i class="ti ti-user-plus text-[16px]"></i> <span>New Prospect</span>
             </button>
             
             <button 
@@ -258,7 +263,7 @@ interface DockNavItem {
               (click)="quickAddTab.set('task')"
               [class]="quickAddTab() === 'task' ? 'bg-teal-500/10 text-teal-400 border-teal-500/30 font-bold' : 'bg-zinc-800/50 text-zinc-400 border-zinc-700/50 hover:text-zinc-200'"
               class="flex-1 py-2 px-3 rounded-xl border text-xs flex items-center justify-center gap-1.5 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 cursor-pointer">
-              <mat-icon class="text-[16px]">add_task</mat-icon> <span>New Action Item</span>
+              <i class="ti ti-file-plus text-[16px]"></i> <span>New Action Item</span>
             </button>
           </div>
 
@@ -269,12 +274,27 @@ interface DockNavItem {
               <form [formGroup]="leadForm" (ngSubmit)="submitLead()" class="space-y-3.5">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   
+                  <div class="space-y-1 col-span-1 sm:col-span-2">
+                    <div class="text-[11px] font-semibold text-zinc-400">Smart Voice Capture</div>
+                    <div class="flex items-center gap-2">
+                      <button type="button" (click)="simulateVoiceCapture()" [class.bg-rose-500]="isListening()" [class.animate-pulse]="isListening()" class="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors shrink-0">
+                        <i class="ti ti-microphone text-[18px]"></i>
+                      </button>
+                      <input type="text" [value]="voiceInputText()" readonly placeholder="Tap mic and say: 'John Doe from Acme Corp, john@acme.com'" class="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white placeholder-zinc-600 focus:outline-none" />
+                    </div>
+                  </div>
+
                   <div class="space-y-1">
                     <label for="quick-lead-name" class="text-[11px] font-semibold text-zinc-400">Full Name *</label>
                     <input id="quick-lead-name" formControlName="name" type="text" placeholder="e.g. Sarah Jenkins" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-amber-500" />
                   </div>
 
                   <div class="space-y-1">
+                    <label for="quick-lead-company" class="text-[11px] font-semibold text-zinc-400">Company</label>
+                    <input id="quick-lead-company" formControlName="company" type="text" placeholder="e.g. Acme Corp" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-amber-500" />
+                  </div>
+
+                  <div class="space-y-1 col-span-1 sm:col-span-2">
                     <label for="quick-lead-email" class="text-[11px] font-semibold text-zinc-400">Work Email *</label>
                     <input id="quick-lead-email" formControlName="email" type="email" placeholder="sarah@acmecorp.com" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-amber-500" />
                   </div>
@@ -319,7 +339,7 @@ interface DockNavItem {
                 <div class="pt-3 flex justify-end gap-2 border-t border-zinc-800/60">
                   <button type="button" (click)="closeQuickAdd()" class="px-4 py-2 rounded-xl border border-zinc-800 text-xs font-semibold text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors">Cancel</button>
                   <button type="submit" [disabled]="leadForm.invalid || isSubmitting()" class="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-zinc-950 font-bold text-xs transition-all flex items-center gap-1.5 shadow-lg shadow-orange-500/20 disabled:opacity-50 cursor-pointer">
-                    <mat-icon class="text-[16px]">check</mat-icon> Affirm Prospect
+                    <i class="ti ti-check text-[16px]"></i> Affirm Prospect
                   </button>
                 </div>
               </form>
@@ -372,7 +392,7 @@ interface DockNavItem {
                 <div class="pt-3 flex justify-end gap-2 border-t border-zinc-800/60">
                   <button type="button" (click)="closeQuickAdd()" class="px-4 py-2 rounded-xl border border-zinc-800 text-xs font-semibold text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors">Cancel</button>
                   <button type="submit" [disabled]="taskForm.invalid || isSubmitting()" class="px-5 py-2 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-zinc-950 font-bold text-xs transition-all flex items-center gap-1.5 shadow-lg shadow-teal-500/20 disabled:opacity-50 cursor-pointer">
-                    <mat-icon class="text-[16px]">check</mat-icon> Commit Task
+                    <i class="ti ti-check text-[16px]"></i> Commit Task
                   </button>
                 </div>
               </form>
@@ -409,65 +429,47 @@ export class DockComponent {
       id: 'dashboard',
       path: '/',
       label: 'Home',
-      icon: 'space_dashboard',
+      icon: 'ti-home',
       shortcut: '1',
-      title: 'Operational Dashboard',
+      title: 'Metrics Dashboard',
       gnoseologyQuote: 'Empirical metrics to soothe the mortal intellect.',
       exact: true
     },
     {
-      id: 'deal-rooms',
-      path: '/deal-rooms',
-      label: 'War Room',
-      icon: 'meeting_room',
-      shortcut: '2',
-      title: 'Deal War-Rooms',
-      gnoseologyQuote: 'Dissect stakeholder buying committee dialectics.'
-    },
-    {
-      id: 'cadences',
-      path: '/cadences',
-      label: 'Cadence',
-      icon: 'alt_route',
-      shortcut: '3',
-      title: 'Outbound Sequences',
-      gnoseologyQuote: 'Omnichannel rhythm orchestrating human response.'
-    },
-    {
       id: 'leads',
       path: '/leads',
-      label: 'Leads',
-      icon: 'contacts',
-      shortcut: '4',
-      title: 'Pipeline Prospects',
+      label: 'Clients',
+      icon: 'ti-users',
+      shortcut: '2',
+      title: 'Client Management',
       gnoseologyQuote: 'Ephemeral souls yearning for SaaS commitments.'
     },
     {
-      id: 'revops',
-      path: '/revops-simulator',
-      label: 'RevOps',
-      icon: 'query_stats',
-      shortcut: '5',
-      title: 'Monte Carlo ARR Model',
-      gnoseologyQuote: 'Stochastic projections calibrated across probability space.'
+      id: 'deal-rooms',
+      path: '/deal-rooms',
+      label: 'Pipeline',
+      icon: 'ti-layout-kanban',
+      shortcut: '3',
+      title: 'Deal Tracking',
+      gnoseologyQuote: 'Dissect stakeholder buying committee dialectics.'
     },
     {
       id: 'tasks',
       path: '/tasks',
-      label: 'Tasks',
-      icon: 'task_alt',
-      shortcut: '6',
-      title: 'Action Ledger',
+      label: 'Activity',
+      icon: 'ti-list-check',
+      shortcut: '4',
+      title: 'Task & Activity Ledger',
       gnoseologyQuote: 'Sisyphus rolleth the Kanban stone once more.'
     },
     {
-      id: 'contracts',
-      path: '/contracts',
-      label: 'Vault',
-      icon: 'gavel',
-      shortcut: '7',
-      title: 'Legal Contract Suite',
-      gnoseologyQuote: 'Cryptographic covenants etched into digital stone.'
+      id: 'sales-personality',
+      path: '/sales-personality',
+      label: 'Coach',
+      icon: 'ti-brain',
+      shortcut: '5',
+      title: 'Sales Personality (BEEP)',
+      gnoseologyQuote: 'BEEP v2.0 intervenes to eradicate desperate corporate cringe.'
     }
   ];
 
@@ -504,8 +506,12 @@ export class DockComponent {
     }
   ];
 
+  isListening = signal(false);
+  voiceInputText = signal('');
+
   leadForm: FormGroup = this.fb.group({
     name: ['', Validators.required],
+    company: [''],
     email: ['', [Validators.required, Validators.email]],
     value: [25000, [Validators.required, Validators.min(0)]],
     status: ['New', Validators.required],
@@ -520,6 +526,16 @@ export class DockComponent {
     dueDate: [new Date(Date.now() + 86400000).toISOString().slice(0, 10)],
     description: ['']
   });
+
+  triggerHaptic(duration = 10) {
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      try {
+        navigator.vibrate(duration);
+      } catch {
+        // Safe fallback if unsupported or blocked
+      }
+    }
+  }
 
   isMobileViewport(): boolean {
     if (typeof window !== 'undefined') {
@@ -603,8 +619,11 @@ export class DockComponent {
 
   closeQuickAdd() {
     this.isQuickAddOpen.set(false);
+    this.isListening.set(false);
+    this.voiceInputText.set('');
     this.leadForm.reset({
       name: '',
+      company: '',
       email: '',
       value: 25000,
       status: 'New',
@@ -624,6 +643,31 @@ export class DockComponent {
     if (event.target === event.currentTarget) {
       this.closeQuickAdd();
     }
+  }
+
+  simulateVoiceCapture() {
+    if (this.isListening()) return;
+    this.isListening.set(true);
+    this.voiceInputText.set('Listening...');
+    
+    // Simulate AI parsing voice input
+    setTimeout(() => {
+      this.voiceInputText.set('Processing: "Add John Doe from Acme Corp..."');
+      setTimeout(() => {
+        this.leadForm.patchValue({
+          name: 'John Doe',
+          company: 'Acme Corp',
+          email: 'john@acmecorp.com'
+        });
+        this.isListening.set(false);
+        this.voiceInputText.set('Extracted: John Doe, Acme Corp');
+        this.appwrite.addNotification({
+          title: 'Voice Capture Complete',
+          message: 'Smart fields populated from speech.',
+          type: 'success'
+        });
+      }, 800);
+    }, 1500);
   }
 
   async submitLead() {

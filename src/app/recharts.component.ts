@@ -111,7 +111,7 @@ import { MatIconModule } from '@angular/material/icon';
             <!-- Tooltip Header -->
             <div class="flex items-center justify-between border-b border-zinc-800 pb-1.5 mb-2">
               <span class="text-xs font-bold text-white uppercase tracking-wider font-display">
-                Forecast: {{ data[hoveredIndex][xAxisKey] }}
+                {{ tooltipLabel ? tooltipLabel + ': ' : (isCurrency ? 'Forecast: ' : 'Date: ') }}{{ data[hoveredIndex][xAxisKey] }}
               </span>
               <span class="text-[9px] font-mono font-bold text-zinc-400 bg-zinc-800 px-1.5 py-0.5 rounded">
                 Index {{ hoveredIndex + 1 }}
@@ -129,7 +129,7 @@ import { MatIconModule } from '@angular/material/icon';
                         <span class="text-[10px] font-semibold text-zinc-400">{{ s.name }}</span>
                       </div>
                       <span class="text-xs font-bold text-white font-mono">
-                        {{ formatCurrency(data[hoveredIndex][s.key]) }}
+                        {{ formatValue(data[hoveredIndex][s.key]) }}
                       </span>
                     </div>
 
@@ -207,6 +207,9 @@ export class RechartsComponent {
   @Input() xAxisKey = '';
   @Input() series: any[] = [];
   @Input() height = '100%';
+  @Input() isCurrency = true;
+  @Input() tooltipLabel = '';
+  @Input() unit = '';
 
   hoveredIndex: number | null = null;
 
@@ -275,6 +278,14 @@ export class RechartsComponent {
       .map(s => this.getY(this.data[index][s.key]))
       .filter(y => y !== null && y !== undefined && !isNaN(y) && y < 270);
     return ys.length > 0 ? Math.min(...ys) : 150;
+  }
+
+  formatValue(value: number | null | undefined): string {
+    if (value === null || value === undefined) return '';
+    if (this.isCurrency) {
+      return this.formatCurrency(value);
+    }
+    return new Intl.NumberFormat('en-US').format(value) + (this.unit ? ' ' + this.unit : '');
   }
 
   formatCurrency(value: number | null | undefined): string {

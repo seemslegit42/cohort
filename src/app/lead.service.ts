@@ -25,6 +25,7 @@ export interface Lead {
   status: string; // 'New', 'Contacted', 'Qualified', 'Proposal', 'Negotiation', 'Closed'
   value: number;
   industry?: string;
+  company?: string;
   region?: string;
   jobTitle?: string;
   companySize?: 'Enterprise' | 'Mid-Market' | 'Small Business' | 'Startup' | string;
@@ -373,6 +374,11 @@ export class LeadService {
 
   constructor() {
     this.leads.set(this.defaultMockLeads.map(l => this.scoreLead(l)));
+  }
+
+  fetchLeads() {
+    this.leads.set(this.defaultMockLeads.map(l => this.scoreLead(l)));
+    return this.leads();
   }
 
   private loadWeights(): ScoringWeights {

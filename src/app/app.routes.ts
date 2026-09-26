@@ -108,5 +108,17 @@ export const routes: Routes = [
   {
     path: 'sequences',
     loadComponent: () => import('./cadences.component').then(m => m.CadencesComponent)
+  },
+  {
+    path: 'sales-performance',
+    loadComponent: () => import('./sales-performance.component').then(m => m.SalesPerformanceComponent)
+  },
+  {
+    path: 'sales-personality',
+    loadComponent: () => import('./sales-personality.component').then(m => m.SalesPersonalityComponent)
+  },
+  {
+    path: 'performance',
+    loadComponent: () => import('./sales-performance.component').then(m => m.SalesPerformanceComponent)
   }
 ];

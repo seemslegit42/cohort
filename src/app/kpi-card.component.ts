@@ -17,12 +17,12 @@ import { CommonModule } from '@angular/common';
         <div class="flex items-center justify-between mb-5 relative z-10">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl bg-zinc-800/80 flex items-center justify-center border border-zinc-700/50 group-hover:border-zinc-600 transition-colors shadow-inner">
-              <mat-icon class="text-zinc-400 group-hover:text-white transition-colors text-[20px]">{{ icon }}</mat-icon>
+              <i class="ti {{ icon }} text-zinc-400 group-hover:text-white transition-colors text-[20px]"></i>
             </div>
             <span class="text-sm font-medium text-zinc-400">{{ title }}</span>
           </div>
           <button class="text-zinc-600 hover:text-zinc-300 transition-colors p-1 rounded-md hover:bg-zinc-800">
-            <mat-icon class="text-[20px]">more_horiz</mat-icon>
+            <i class="ti ti-dots text-[20px]"></i>
           </button>
         </div>
         
@@ -49,7 +49,7 @@ import { CommonModule } from '@angular/common';
             <div class="text-white text-3xl font-display font-bold tracking-tight">{{ value }}</div>
           </div>
           <div class="w-12 h-12 rounded-xl bg-zinc-950/50 border border-zinc-800 flex items-center justify-center shadow-inner group-hover:border-zinc-700 transition-colors">
-            <mat-icon class="text-zinc-500 group-hover:text-zinc-300 transition-colors">{{ icon }}</mat-icon>
+            <i class="ti {{ icon }} text-zinc-500 group-hover:text-zinc-300 transition-colors text-[24px]"></i>
           </div>
         </div>
       }

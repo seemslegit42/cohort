@@ -37,7 +37,7 @@ export interface CommandItem {
         <div 
           class="bg-zinc-950/95 border border-zinc-800/90 rounded-2xl w-full max-w-2xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)] backdrop-blur-2xl text-zinc-100 flex flex-col max-h-[85vh] relative animate-scale-up"
           (click)="$event.stopPropagation()"
-          (keydown)="$event.stopPropagation()"
+          (keydown)="handleModalKeyDown($event)"
           tabindex="-1">
           
           <!-- Subtle top gradient bar -->
@@ -53,8 +53,14 @@ export interface CommandItem {
               #commandInput
               type="text" 
               [(ngModel)]="searchQuery" 
-              (ngModelChange)="selectedIndex.set(0)"
+              (ngModelChange)="onSearchChange()"
+              (keydown)="handleInputKeyDown($event)"
               placeholder="Type a command or search leads, tasks, actions..." 
+              role="combobox"
+              aria-autocomplete="list"
+              aria-controls="cmd-listbox"
+              [attr.aria-expanded]="isOpen()"
+              [attr.aria-activedescendant]="'cmd-item-' + selectedIndex()"
               class="w-full bg-transparent text-white placeholder-zinc-500 text-sm focus:outline-none font-medium"
             />
 
@@ -204,7 +210,7 @@ export interface CommandItem {
           }
 
           <!-- List Content -->
-          <div class="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-4">
+          <div id="cmd-listbox" role="listbox" class="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-4">
             
             @if (filteredItems().length === 0) {
               <div class="p-12 text-center flex flex-col items-center justify-center">
@@ -236,9 +242,12 @@ export interface CommandItem {
                       @for (item of itemsInCategory; track item.id; let idx = $index) {
                         @let globalIndex = getGlobalIndex(item);
                         <button 
+                          [id]="'cmd-item-' + globalIndex"
                           (click)="executeCommand(item)"
                           (mouseenter)="selectedIndex.set(globalIndex)"
-                          [ngClass]="selectedIndex() === globalIndex ? 'bg-teal-500/10 border-teal-500/30 text-white' : 'border-transparent'"
+                          role="option"
+                          [attr.aria-selected]="selectedIndex() === globalIndex"
+                          [ngClass]="selectedIndex() === globalIndex ? 'bg-teal-500/15 border-teal-500/40 text-white shadow-[0_0_15px_rgba(20,184,166,0.15)] ring-1 ring-teal-500/30' : 'border-transparent text-zinc-300 hover:text-white'"
                           class="w-full text-left px-3 py-2.5 rounded-xl border transition-all flex items-center justify-between group cursor-pointer">
                           
                           <div class="flex items-center gap-3 min-w-0">
@@ -378,6 +387,66 @@ export class CommandPaletteComponent implements OnDestroy {
 
   ngOnDestroy() {
     this.stopVoiceMemo();
+  }
+
+  onSearchChange() {
+    this.selectedIndex.set(0);
+    this.scrollToSelected();
+  }
+
+  handleInputKeyDown(event: KeyboardEvent) {
+    if (this.isVoiceMode()) {
+      return;
+    }
+
+    const items = this.filteredItems();
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      event.stopPropagation();
+      if (items.length > 0) {
+        this.selectedIndex.update(i => (i + 1) % items.length);
+        this.scrollToSelected();
+      }
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      event.stopPropagation();
+      if (items.length > 0) {
+        this.selectedIndex.update(i => (i - 1 + items.length) % items.length);
+        this.scrollToSelected();
+      }
+    } else if (event.key === 'Enter') {
+      event.preventDefault();
+      event.stopPropagation();
+      if (items.length > 0) {
+        const selectedItem = items[this.selectedIndex()];
+        if (selectedItem) {
+          this.executeCommand(selectedItem);
+        }
+      }
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      this.close();
+    }
+  }
+
+  handleModalKeyDown(event: KeyboardEvent) {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp' || event.key === 'Enter' || event.key === 'Escape') {
+      this.handleInputKeyDown(event);
+    } else {
+      event.stopPropagation();
+    }
+  }
+
+  scrollToSelected() {
+    setTimeout(() => {
+      const idx = this.selectedIndex();
+      const el = document.getElementById(`cmd-item-${idx}`);
+      if (el) {
+        el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+    }, 10);
   }
 
   @HostListener('window:keydown', ['$event'])
@@ -876,7 +945,12 @@ export class CommandPaletteComponent implements OnDestroy {
           iconBg: 'bg-orange-500/10',
           iconColor: 'text-orange-400',
           action: () => {
-            this.router.navigate(['/leads']);
+            this.router.navigate(['/leads'], { queryParams: { search: lead.name } });
+            this.appwrite.addNotification({
+              title: 'Prospect Selected',
+              message: `Opened pipeline lead for "${lead.name}".`,
+              type: 'info'
+            });
           }
         });
       }
@@ -894,18 +968,30 @@ export class CommandPaletteComponent implements OnDestroy {
           iconBg: 'bg-purple-500/10',
           iconColor: 'text-purple-400',
           action: () => {
-            this.router.navigate(['/tasks']);
+            this.router.navigate(['/tasks'], { queryParams: { search: task.title } });
+            this.appwrite.addNotification({
+              title: 'Task Selected',
+              message: `Opened task "${task.title}".`,
+              type: 'info'
+            });
           }
         });
       }
     });
 
+    if (query && dynamicSearchResults.length > 0) {
+      return [...dynamicSearchResults.slice(0, 8), ...matchedStatic];
+    }
+
     return [...matchedStatic, ...dynamicSearchResults.slice(0, 5)];
   });
 
   categories = computed<('Actions' | 'Navigation' | 'Search Results')[]>(() => {
+    const query = this.searchQuery().trim();
     const categoriesPresent = new Set(this.filteredItems().map(i => i.category));
-    const order: ('Actions' | 'Navigation' | 'Search Results')[] = ['Actions', 'Navigation', 'Search Results'];
+    const order: ('Actions' | 'Navigation' | 'Search Results')[] = query
+      ? ['Search Results', 'Actions', 'Navigation']
+      : ['Actions', 'Navigation', 'Search Results'];
     return order.filter(c => categoriesPresent.has(c));
   });
 

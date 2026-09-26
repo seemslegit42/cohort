@@ -58,14 +58,14 @@ export interface DealRoom {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, MatIconModule, FormsModule],
   template: `
-    <div class="h-full flex flex-col p-3 sm:p-5 md:p-6 animate-fade-in max-w-[1600px] mx-auto space-y-6">
+    <div class="h-full flex flex-col p-3 sm:p-5 md:p-6 animate-fade-in max-w-[1600px] mx-auto space-y-6 relative overflow-x-hidden">
       
       <!-- Header -->
       <header class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-zinc-800/80">
         <div>
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white shadow-[0_0_20px_rgba(168,85,247,0.25)] border border-purple-400/30">
-              <mat-icon class="text-[22px]">meeting_room</mat-icon>
+              <i class="ti ti-door-enter text-[22px]"></i>
             </div>
             <div>
               <h1 class="font-display text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-white flex items-center gap-2">
@@ -84,7 +84,7 @@ export interface DealRoom {
             (click)="activeSubTab.set('deals')" 
             [class]="activeSubTab() === 'deals' ? 'bg-zinc-800 text-white border-zinc-700 shadow-xs' : 'text-zinc-400 hover:text-white bg-zinc-900/60 border-zinc-800'"
             class="px-3.5 py-2 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-all cursor-pointer">
-            <mat-icon class="text-[16px] text-teal-400">dashboard_customize</mat-icon>
+            <i class="ti ti-layout-dashboard text-[16px] text-teal-400"></i>
             <span>Active Deal Rooms</span>
           </button>
 
@@ -93,7 +93,7 @@ export interface DealRoom {
             (click)="activeSubTab.set('battlecards')" 
             [class]="activeSubTab() === 'battlecards' ? 'bg-zinc-800 text-white border-zinc-700 shadow-xs' : 'text-zinc-400 hover:text-white bg-zinc-900/60 border-zinc-800'"
             class="px-3.5 py-2 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-all cursor-pointer">
-            <mat-icon class="text-[16px] text-purple-400">shield</mat-icon>
+            <i class="ti ti-shield text-[16px] text-purple-400"></i>
             <span>Competitor Battlecards</span>
           </button>
 
@@ -102,7 +102,7 @@ export interface DealRoom {
             (click)="activeSubTab.set('objections')" 
             [class]="activeSubTab() === 'objections' ? 'bg-zinc-800 text-white border-zinc-700 shadow-xs' : 'text-zinc-400 hover:text-white bg-zinc-900/60 border-zinc-800'"
             class="px-3.5 py-2 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-all cursor-pointer">
-            <mat-icon class="text-[16px] text-amber-400">psychology_alt</mat-icon>
+            <i class="ti ti-brain text-[16px] text-amber-400"></i>
             <span>Objection AI Simulator</span>
           </button>
 
@@ -110,7 +110,7 @@ export interface DealRoom {
             type="button"
             (click)="openCreateDealRoomModal()" 
             class="px-4 py-2 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-zinc-950 font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-lg shadow-teal-500/20 cursor-pointer active:scale-95 transition-all">
-            <mat-icon class="text-[16px]">add</mat-icon>
+            <i class="ti ti-plus text-[16px]"></i>
             <span>Forge Deal Room</span>
           </button>
         </div>
@@ -121,44 +121,44 @@ export interface DealRoom {
         <div class="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-xl flex flex-col justify-between">
           <div class="flex items-center justify-between text-zinc-400 text-xs mb-2">
             <span>Total War-Room Pipeline</span>
-            <mat-icon class="text-teal-400 text-[18px]">monetization_on</mat-icon>
+            <i class="ti ti-currency-dollar text-teal-400 text-[18px]"></i>
           </div>
           <div class="text-xl sm:text-2xl font-bold text-white font-mono">\${{ totalPipelineValue().toLocaleString() }}</div>
           <div class="text-[11px] text-teal-400 flex items-center gap-1 mt-1 font-semibold">
-            <mat-icon class="text-[14px]">trending_up</mat-icon> {{ dealRooms().length }} Tier-1 strategic pursuits
+            <i class="ti ti-trending-up text-[14px]"></i> {{ dealRooms().length }} Tier-1 strategic pursuits
           </div>
         </div>
 
         <div class="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-xl flex flex-col justify-between">
           <div class="flex items-center justify-between text-zinc-400 text-xs mb-2">
             <span>Avg Probability Score</span>
-            <mat-icon class="text-purple-400 text-[18px]">analytics</mat-icon>
+            <i class="ti ti-chart-bar text-purple-400 text-[18px]"></i>
           </div>
           <div class="text-xl sm:text-2xl font-bold text-white font-mono">{{ avgProbability() }}%</div>
           <div class="text-[11px] text-purple-400 flex items-center gap-1 mt-1 font-semibold">
-            <mat-icon class="text-[14px]">verified</mat-icon> Multi-threaded confidence
+            <i class="ti ti-badge-check text-[14px]"></i> Multi-threaded confidence
           </div>
         </div>
 
         <div class="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-xl flex flex-col justify-between">
           <div class="flex items-center justify-between text-zinc-400 text-xs mb-2">
             <span>Mapped Stakeholders</span>
-            <mat-icon class="text-amber-400 text-[18px]">groups</mat-icon>
+            <i class="ti ti-users text-amber-400 text-[18px]"></i>
           </div>
           <div class="text-xl sm:text-2xl font-bold text-white font-mono">{{ totalStakeholders() }} Profiles</div>
           <div class="text-[11px] text-amber-400 flex items-center gap-1 mt-1 font-semibold">
-            <mat-icon class="text-[14px]">star</mat-icon> {{ totalChampions() }} Identified Champions
+            <i class="ti ti-star text-[14px]"></i> {{ totalChampions() }} Identified Champions
           </div>
         </div>
 
         <div class="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-xl flex flex-col justify-between">
           <div class="flex items-center justify-between text-zinc-400 text-xs mb-2">
             <span>Active Battlecards</span>
-            <mat-icon class="text-indigo-400 text-[18px]">shield</mat-icon>
+            <i class="ti ti-shield text-indigo-400 text-[18px]"></i>
           </div>
           <div class="text-xl sm:text-2xl font-bold text-white font-mono">{{ battlecards().length }} Competitors</div>
           <div class="text-[11px] text-indigo-400 flex items-center gap-1 mt-1 font-semibold">
-            <mat-icon class="text-[14px]">bolt</mat-icon> 24 Verified counter-tactics
+            <i class="ti ti-bolt text-[14px]"></i> 24 Verified counter-tactics
           </div>
         </div>
       </div>
@@ -168,7 +168,7 @@ export interface DealRoom {
         <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
           
           <!-- Left Column: Deal Rooms Selector List (4 cols) -->
-          <div class="xl:col-span-4 space-y-3">
+          <div class="xl:col-span-4 space-y-3" [class.hidden]="isMobileDetailViewOpen() && isMobileViewport()">
             <div class="flex items-center justify-between px-1">
               <h2 class="text-xs font-bold text-zinc-400 uppercase tracking-wider font-mono">Select Deal Room</h2>
               <span class="text-[11px] text-zinc-500 font-mono">{{ dealRooms().length }} Deals</span>
@@ -177,12 +177,12 @@ export interface DealRoom {
             <div class="space-y-2.5 max-h-[720px] overflow-y-auto pr-1 custom-scrollbar">
               @for (deal of dealRooms(); track deal.id) {
                 <div 
-                  (click)="selectedDealId.set(deal.id)"
-                  (keydown.enter)="selectedDealId.set(deal.id)"
+                  (click)="selectDeal(deal.id)"
+                  (keydown.enter)="selectDeal(deal.id)"
                   tabindex="0"
                   role="button"
                   [class]="selectedDealId() === deal.id ? 'bg-[#121f20] border-teal-500/50 shadow-[0_0_20px_rgba(20,184,166,0.12)]' : 'bg-zinc-900/50 border-zinc-800/80 hover:border-zinc-700 hover:bg-zinc-900/80'"
-                  class="p-4 rounded-2xl border transition-all cursor-pointer text-left group">
+                  class="p-4 rounded-2xl border transition-all cursor-pointer text-left group relative overflow-hidden touch-pan-y">
                   <div class="flex items-start justify-between gap-2 mb-2">
                     <div class="min-w-0">
                       <div class="flex items-center gap-2">
@@ -215,13 +215,18 @@ export interface DealRoom {
 
           <!-- Right Column: Deal Room Detailed Workspace (8 cols) -->
           @if (selectedDeal(); as deal) {
-            <div class="xl:col-span-8 space-y-6">
+            <div class="xl:col-span-8 space-y-6" [class.hidden]="!isMobileDetailViewOpen() && isMobileViewport()">
               
               <!-- Deal Room Banner -->
               <div class="p-5 sm:p-6 rounded-2xl bg-[#0e1617] border border-[#304245] shadow-xl relative overflow-hidden backdrop-blur-2xl">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <div class="flex items-center gap-2.5 mb-1.5">
+                      @if (isMobileViewport()) {
+                        <button (click)="isMobileDetailViewOpen.set(false)" class="text-zinc-400 hover:text-white bg-zinc-900/80 border border-zinc-700/80 rounded-lg p-1 mr-2">
+                          <i class="ti ti-arrow-left text-[16px]"></i>
+                        </button>
+                      }
                       <span class="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-teal-500/15 text-teal-300 border border-teal-500/30">
                         {{ deal.stage }}
                       </span>
@@ -237,14 +242,14 @@ export interface DealRoom {
                       type="button"
                       (click)="generateBuyerPortalLink(deal)" 
                       class="px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer">
-                      <mat-icon class="text-[15px] text-teal-400">link</mat-icon>
+                      <i class="ti ti-link text-[15px] text-teal-400"></i>
                       <span>Buyer Link</span>
                     </button>
                     <button 
                       type="button"
                       (click)="openAddStakeholderModal()" 
                       class="px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer">
-                      <mat-icon class="text-[15px] text-amber-400">person_add</mat-icon>
+                      <i class="ti ti-user-plus text-[15px] text-amber-400"></i>
                       <span>Add Stakeholder</span>
                     </button>
                   </div>
@@ -260,6 +265,15 @@ export interface DealRoom {
                     <div class="bg-gradient-to-r from-teal-500 to-emerald-400 h-full rounded-full transition-all duration-500" [style.width.%]="deal.securityScore"></div>
                   </div>
                 </div>
+
+                <!-- One-tap Status Updates -->
+                <div class="mt-4 pt-4 border-t border-[#304245] flex items-center gap-2 overflow-x-auto no-scrollbar">
+                  @for(stage of ['Discovery', 'Security & Procurement', 'Executive Alignment', 'Proposal & Pricing Strategy', 'Closed Won']; track stage) {
+                    <button (click)="updateDealStage(deal, stage)" [class]="deal.stage === stage ? 'bg-teal-500 text-zinc-950 font-bold border-teal-500' : 'bg-zinc-900/50 text-zinc-400 hover:text-white border-zinc-700'" class="px-3 py-1.5 rounded-lg border text-[10px] uppercase tracking-wider whitespace-nowrap transition-colors active:scale-95 shrink-0">
+                      {{ stage }}
+                    </button>
+                  }
+                </div>
               </div>
 
               <!-- Stakeholder Buying Committee Matrix -->
@@ -267,7 +281,7 @@ export interface DealRoom {
                 <div class="flex items-center justify-between mb-4">
                   <div class="flex items-center gap-2">
                     <div class="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-                      <mat-icon class="text-[16px]">diversity_3</mat-icon>
+                      <i class="ti ti-users-group text-[16px]"></i>
                     </div>
                     <h3 class="text-sm font-bold text-white font-display">Buying Committee & Decision Makers</h3>
                   </div>
@@ -312,7 +326,7 @@ export interface DealRoom {
                       <div class="pt-2 border-t border-zinc-800/80 flex items-center justify-between text-[11px]">
                         <span class="text-zinc-500 truncate">{{ person.email }}</span>
                         <button (click)="cycleSentiment(person)" class="text-teal-400 hover:text-teal-300 text-[10px] font-semibold flex items-center gap-1 cursor-pointer">
-                          <mat-icon class="text-[12px]">sync</mat-icon> Update Sentiment
+                          <i class="ti ti-refresh text-[12px]"></i> Update Sentiment
                         </button>
                       </div>
                     </div>
@@ -325,12 +339,12 @@ export interface DealRoom {
                 <div class="flex items-center justify-between mb-4">
                   <div class="flex items-center gap-2">
                     <div class="w-7 h-7 rounded-lg bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400">
-                      <mat-icon class="text-[16px]">flag</mat-icon>
+                      <i class="ti ti-flag text-[16px]"></i>
                     </div>
                     <h3 class="text-sm font-bold text-white font-display">Mutual Action Plan (MAP) Timeline</h3>
                   </div>
                   <button (click)="openAddMilestoneModal()" class="text-xs text-teal-400 hover:text-teal-300 flex items-center gap-1 font-semibold cursor-pointer">
-                    <mat-icon class="text-[14px]">add_circle</mat-icon> Add Milestone
+                    <i class="ti ti-circle-plus text-[14px]"></i> Add Milestone
                   </button>
                 </div>
 
@@ -342,7 +356,7 @@ export interface DealRoom {
                           (click)="toggleMilestoneStatus(milestone)" 
                           [class]="milestone.status === 'Completed' ? 'bg-teal-500/20 text-teal-400 border-teal-500/40' : 'bg-zinc-900 text-zinc-500 border-zinc-800 hover:text-zinc-300'"
                           class="w-6 h-6 rounded-lg border flex items-center justify-center mt-0.5 shrink-0 transition-all cursor-pointer">
-                          <mat-icon class="text-[14px]">{{ milestone.status === 'Completed' ? 'check' : 'radio_button_unchecked' }}</mat-icon>
+                          <i class="ti text-[14px]" [class.ti-check]="milestone.status === 'Completed'" [class.ti-circle]="milestone.status !== 'Completed'"></i>
                         </button>
                         <div class="min-w-0">
                           <div class="flex items-center gap-2 flex-wrap">
@@ -386,7 +400,7 @@ export interface DealRoom {
                   <div class="flex items-center justify-between mb-3">
                     <div class="flex items-center gap-2.5">
                       <div class="w-9 h-9 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 font-bold">
-                        <mat-icon class="text-[18px]">verified_user</mat-icon>
+                        <i class="ti ti-shield-check text-[18px]"></i>
                       </div>
                       <h3 class="text-base font-bold text-white font-display">{{ card.competitor }}</h3>
                     </div>
@@ -396,7 +410,7 @@ export interface DealRoom {
                   <!-- Kill Points -->
                   <div class="space-y-2 my-3">
                     <span class="text-[11px] font-bold uppercase tracking-wider text-rose-400 flex items-center gap-1">
-                      <mat-icon class="text-[14px]">dangerous</mat-icon> Critical Kill-Points (Silver Bullets)
+                      <i class="ti ti-alert-triangle text-[14px]"></i> Critical Kill-Points (Silver Bullets)
                     </span>
                     <ul class="space-y-1 pl-1">
                       @for (kp of card.killPoints; track kp) {
@@ -411,7 +425,7 @@ export interface DealRoom {
                   <!-- Known Vulnerabilities -->
                   <div class="space-y-2 my-3 pt-3 border-t border-zinc-800/80">
                     <span class="text-[11px] font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1">
-                      <mat-icon class="text-[14px]">lock_open</mat-icon> Documented Architecture Flaws
+                      <i class="ti ti-lock-open text-[14px]"></i> Documented Architecture Flaws
                     </span>
                     <ul class="space-y-1 pl-1">
                       @for (vuln of card.vulnerabilities; track vuln) {
@@ -433,7 +447,7 @@ export interface DealRoom {
                 <div class="pt-3 border-t border-zinc-800/80 flex items-center justify-between">
                   <span class="text-[11px] text-zinc-500 font-mono">{{ card.objections.length }} Prepared Rebuttals</span>
                   <button (click)="testBattlecardWithSimulator(card)" class="px-3 py-1.5 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer">
-                    <mat-icon class="text-[14px]">psychology</mat-icon> Drill in Simulator
+                    <i class="ti ti-brain text-[14px]"></i> Drill in Simulator
                   </button>
                 </div>
               </div>
@@ -448,7 +462,7 @@ export interface DealRoom {
           <div class="p-6 rounded-2xl bg-gradient-to-br from-[#121a1f] to-[#0a1012] border border-teal-500/30 shadow-2xl backdrop-blur-2xl">
             <div class="flex items-center gap-3 mb-4">
               <div class="w-10 h-10 rounded-xl bg-teal-500/15 border border-teal-500/30 flex items-center justify-center text-teal-400">
-                <mat-icon class="text-[22px]">psychology</mat-icon>
+                <i class="ti ti-brain text-[22px]"></i>
               </div>
               <div>
                 <h2 class="text-lg font-bold text-white font-display">Real-Time Objection Response Engine</h2>
@@ -486,7 +500,7 @@ export interface DealRoom {
                 (click)="runObjectionAnalysis(selectedObjectionQuery())" 
                 [disabled]="!selectedObjectionQuery().trim()"
                 class="px-5 py-2.5 bg-teal-500 hover:bg-teal-400 disabled:opacity-40 text-zinc-950 font-bold rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-lg shadow-teal-500/20 cursor-pointer">
-                <mat-icon class="text-[16px]">bolt</mat-icon> Generate Rebuttal
+                <i class="ti ti-bolt text-[16px]"></i> Generate Rebuttal
               </button>
             </div>
 
@@ -501,7 +515,7 @@ export interface DealRoom {
                     <span class="text-xs text-zinc-400">Confidence Score: <span class="text-white font-bold font-mono">{{ resp.confidence }}%</span></span>
                   </div>
                   <button (click)="copyRebuttal(resp.script)" class="text-xs text-zinc-400 hover:text-white flex items-center gap-1">
-                    <mat-icon class="text-[14px]">content_copy</mat-icon> Copy Script
+                    <i class="ti ti-copy text-[14px]"></i> Copy Script
                   </button>
                 </div>
 
@@ -535,6 +549,8 @@ export interface DealRoom {
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
     .animate-fade-in { animation: fadeIn 0.3s ease-out; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
   `]
 })
@@ -544,6 +560,7 @@ export class DealRoomsComponent {
 
   activeSubTab = signal<'deals' | 'battlecards' | 'objections'>('deals');
   selectedDealId = signal<string>('deal-1');
+  isMobileDetailViewOpen = signal<boolean>(false);
 
   selectedObjectionQuery = signal<string>('Your license cost is 35% higher than Microsoft Dynamics.');
   analyzedResponse = signal<{ framework: string; confidence: number; script: string; proofAsset: string; closingPivot: string } | null>({
@@ -842,6 +859,30 @@ export class DealRoomsComponent {
       case 'Pending': return 'bg-zinc-900 text-zinc-500 border-zinc-800';
       case 'At Risk': return 'bg-rose-500/10 text-rose-400 border-rose-500/30';
     }
+  }
+
+  isMobileViewport(): boolean {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 1280; // xl breakpoint
+    }
+    return false;
+  }
+
+  selectDeal(id: string) {
+    this.selectedDealId.set(id);
+    if (this.isMobileViewport()) {
+      this.isMobileDetailViewOpen.set(true);
+    }
+  }
+
+  updateDealStage(deal: DealRoom, newStage: string) {
+    deal.stage = newStage;
+    this.dealRooms.update(rooms => [...rooms]);
+    this.appwrite.addNotification({
+      title: 'Pipeline Updated',
+      message: `${deal.clientName} advanced to ${newStage}.`,
+      type: 'success'
+    });
   }
 
   cycleSentiment(person: Stakeholder) {

@@ -70,6 +70,10 @@ import { Appwrite } from './appwrite';
         </a>
 
         <div class="text-xs font-semibold text-zinc-600 uppercase tracking-wider mb-3 px-3 mt-8">Revenue & Strategy</div>
+        <a routerLink="/sales-personality" routerLinkActive="bg-zinc-900/60 text-white shadow-sm border border-zinc-800" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all">
+          <mat-icon class="text-[20px] w-5 h-5 text-teal-400">psychology_alt</mat-icon>
+          <span class="font-medium text-sm">Sales Personality (BEEP)</span>
+        </a>
         <a routerLink="/deal-rooms" routerLinkActive="bg-zinc-900/60 text-white shadow-sm border border-zinc-800" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all">
           <mat-icon class="text-[20px] w-5 h-5 text-purple-400">meeting_room</mat-icon>
           <span class="font-medium text-sm">Deal Rooms</span>
@@ -87,7 +91,11 @@ import { Appwrite } from './appwrite';
           <span class="font-medium text-sm">Legal & Contracts Vault</span>
         </a>
 
-        <div class="text-xs font-semibold text-zinc-600 uppercase tracking-wider mb-3 px-3 mt-8">Analytics</div>
+        <div class="text-xs font-semibold text-zinc-600 uppercase tracking-wider mb-3 px-3 mt-8">Analytics & Performance</div>
+        <a routerLink="/sales-performance" routerLinkActive="bg-zinc-900/60 text-white shadow-sm border border-zinc-800" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all">
+          <mat-icon class="text-[20px] w-5 h-5 text-purple-400">insights</mat-icon>
+          <span class="font-medium text-sm">Sales Performance</span>
+        </a>
         <a routerLink="/reports" routerLinkActive="bg-zinc-900/60 text-white shadow-sm border border-zinc-800" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all">
           <mat-icon class="text-[20px] w-5 h-5">bar_chart</mat-icon>
           <span class="font-medium text-sm">Reports</span>
@@ -178,6 +186,13 @@ export class SidebarComponent {
   menuClick = output<void>();
 
   onNavClick() {
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      try {
+        navigator.vibrate(10);
+      } catch {
+        // Safe fallback
+      }
+    }
     this.menuClick.emit();
   }
 }

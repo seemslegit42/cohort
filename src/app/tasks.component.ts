@@ -26,7 +26,7 @@ export interface TaskItem {
         <div>
           <h1 class="font-display text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-white flex items-center gap-2.5 sm:gap-3 drop-shadow-md">
             <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-purple-500/10 flex items-center justify-center border border-purple-500/20 shadow-[0_0_15px_rgba(168,85,247,0.15)] shrink-0">
-              <mat-icon class="text-purple-400 text-[20px] sm:text-[22px]">task_alt</mat-icon>
+              <i class="ti ti-check text-[20px] sm:text-[22px]"></i>
             </div>
             <span>Action Items & Objectives</span>
           </h1>
@@ -35,26 +35,45 @@ export interface TaskItem {
           </p>
         </div>
 
-        <div class="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
-          <!-- Quick search -->
-          <div class="relative flex-1 sm:flex-initial">
-            <mat-icon class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-[17px]">search</mat-icon>
-            <input 
-              type="text" 
-              [value]="searchQuery()" 
-              (input)="updateSearch($event)" 
-              placeholder="Search objectives..." 
-              class="w-full sm:w-56 bg-zinc-900/80 border border-zinc-800 rounded-xl py-1.5 sm:py-2 pl-9 pr-3 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-purple-500/50 transition-all font-medium shadow-inner" />
-          </div>
+        <div class="flex flex-col gap-2 sm:gap-3 flex-1 sm:flex-initial w-full sm:w-auto">
+          <div class="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap justify-end">
+            <!-- Quick search -->
+            <div class="relative flex-1 sm:flex-initial">
+              <i class="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-[17px]"></i>
+              <input 
+                type="text" 
+                [value]="searchQuery()" 
+                (input)="updateSearch($event)" 
+                placeholder="Search objectives..." 
+                class="w-full sm:w-56 bg-zinc-900/80 border border-zinc-800 rounded-xl py-1.5 sm:py-2 pl-9 pr-3 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-purple-500/50 transition-all font-medium shadow-inner" />
+            </div>
 
-          <!-- New Objective Button -->
-          <button 
-            type="button"
-            (click)="openCreateModal()" 
-            class="px-3.5 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl transition-all text-xs flex items-center gap-1.5 shadow-lg shadow-purple-500/20 shrink-0 cursor-pointer active:scale-95">
-            <mat-icon class="text-[17px]">add_task</mat-icon>
-            <span>New Objective</span>
-          </button>
+            <!-- New Objective Button -->
+            <button 
+              type="button"
+              (click)="openCreateModal()" 
+              class="px-3.5 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl transition-all text-xs flex items-center gap-1.5 shadow-lg shadow-purple-500/20 shrink-0 cursor-pointer active:scale-95">
+              <i class="ti ti-plus text-[17px]"></i>
+              <span class="hidden sm:inline">New Objective</span>
+              <span class="sm:hidden">New</span>
+            </button>
+          </div>
+          
+          <!-- One-Tap Logging (Mobile Optimized) -->
+          <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 w-full sm:justify-end">
+            <button (click)="quickLog('call')" class="px-3 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white hover:border-teal-500/50 text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all whitespace-nowrap active:scale-95 shrink-0">
+              <i class="ti ti-phone text-teal-400 text-[14px]"></i> Log Call
+            </button>
+            <button (click)="quickLog('meeting')" class="px-3 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white hover:border-purple-500/50 text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all whitespace-nowrap active:scale-95 shrink-0">
+              <i class="ti ti-calendar text-purple-400 text-[14px]"></i> Log Meeting
+            </button>
+            <button (click)="quickLog('email')" class="px-3 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white hover:border-amber-500/50 text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all whitespace-nowrap active:scale-95 shrink-0">
+              <i class="ti ti-mail text-amber-400 text-[14px]"></i> Log Email
+            </button>
+            <button (click)="quickLog('note')" class="px-3 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white hover:border-emerald-500/50 text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all whitespace-nowrap active:scale-95 shrink-0">
+              <i class="ti ti-notebook text-emerald-400 text-[14px]"></i> Add Note
+            </button>
+          </div>
         </div>
       </header>
 
@@ -82,7 +101,7 @@ export interface TaskItem {
 
         @if (getTasksBy('done').length > 0) {
           <button (click)="clearResolved()" class="text-[11px] font-bold text-zinc-500 hover:text-rose-400 transition-colors flex items-center gap-1 px-2.5 py-1 rounded-lg hover:bg-zinc-800 shrink-0 whitespace-nowrap">
-            <mat-icon class="text-xs">cleaning_services</mat-icon>
+            <i class="ti ti-trash text-xs"></i>
             <span class="hidden sm:inline">Clear Resolved ({{ getTasksBy('done').length }})</span>
             <span class="inline sm:hidden">Clear ({{ getTasksBy('done').length }})</span>
           </button>
@@ -96,7 +115,7 @@ export interface TaskItem {
         <div class="flex-shrink-0 w-80 lg:w-96 flex flex-col bg-zinc-900/40 backdrop-blur-md rounded-2xl border border-zinc-800/80 overflow-hidden shadow-xl">
           <div class="p-4 border-b border-zinc-800/80 flex items-center justify-between bg-zinc-950/50">
             <h3 class="font-bold text-white flex items-center gap-2 font-display text-sm">
-               <mat-icon class="text-rose-400 text-[18px]">fiber_manual_record</mat-icon>
+               <i class="ti ti-circle-dashed text-rose-400 text-[18px]"></i>
                Backlog / Pending
             </h3>
             <span class="text-xs font-bold bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-md font-mono">{{ getTasksBy('todo').length }}</span>
@@ -116,7 +135,7 @@ export interface TaskItem {
         <div class="flex-shrink-0 w-80 lg:w-96 flex flex-col bg-zinc-900/40 backdrop-blur-md rounded-2xl border border-zinc-800/80 overflow-hidden shadow-xl">
           <div class="p-4 border-b border-zinc-800/80 flex items-center justify-between bg-zinc-950/50">
             <h3 class="font-bold text-white flex items-center gap-2 font-display text-sm">
-               <mat-icon class="text-amber-400 text-[18px] animate-pulse">incomplete_circle</mat-icon>
+               <i class="ti ti-loader text-amber-400 text-[18px] animate-spin"></i>
                Active Execution Cycles
             </h3>
             <span class="text-xs font-bold bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-md font-mono">{{ getTasksBy('in-progress').length }}</span>
@@ -136,7 +155,7 @@ export interface TaskItem {
         <div class="flex-shrink-0 w-80 lg:w-96 flex flex-col bg-zinc-900/40 backdrop-blur-md rounded-2xl border border-zinc-800/80 overflow-hidden shadow-xl">
           <div class="p-4 border-b border-zinc-800/80 flex items-center justify-between bg-zinc-950/50">
             <h3 class="font-bold text-white flex items-center gap-2 font-display text-sm">
-               <mat-icon class="text-teal-400 text-[18px]">check_circle</mat-icon>
+               <i class="ti ti-circle-check text-teal-400 text-[18px]"></i>
                Resolved & Deployed
             </h3>
             <span class="text-xs font-bold bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-md font-mono">{{ getTasksBy('done').length }}</span>
@@ -161,7 +180,7 @@ export interface TaskItem {
             <div class="flex items-center justify-between mb-4 border-b border-zinc-800 pb-3">
               <h2 class="text-lg font-bold text-white font-display">{{ editingTask() ? 'Edit Objective' : 'New Strategic Objective' }}</h2>
               <button (click)="closeModal()" class="text-zinc-500 hover:text-zinc-300">
-                <mat-icon class="text-[20px]">close</mat-icon>
+                <i class="ti ti-x text-[20px]"></i>
               </button>
             </div>
 
@@ -243,7 +262,7 @@ export interface TaskItem {
           <div class="flex items-center gap-2">
             @if (task.dueDate) {
               <span class="text-[10px] font-semibold text-zinc-500 flex items-center gap-0.5">
-                <mat-icon class="text-[12px]">schedule</mat-icon> {{ task.dueDate }}
+                <i class="ti ti-clock text-[12px]"></i> {{ task.dueDate }}
               </span>
             }
           </div>
@@ -263,20 +282,20 @@ export interface TaskItem {
           <div class="flex items-center gap-1">
             @if (task.status !== 'todo') {
               <button (click)="moveStatus(task, -1)" title="Move Back" class="p-1 rounded bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-700 transition-colors">
-                <mat-icon class="text-[14px]">arrow_back</mat-icon>
+                <i class="ti ti-arrow-left text-[14px]"></i>
               </button>
             }
             @if (task.status !== 'done') {
               <button (click)="moveStatus(task, 1)" title="Advance Status" class="p-1 rounded bg-purple-500/10 border border-purple-500/30 text-purple-400 hover:bg-purple-500/20 transition-colors">
-                <mat-icon class="text-[14px]">arrow_forward</mat-icon>
+                <i class="ti ti-arrow-right text-[14px]"></i>
               </button>
             }
           </div>
 
           <!-- Edit & Delete Buttons -->
           <div class="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button (click)="openEditModal(task)" title="Edit" class="text-zinc-500 hover:text-purple-400 p-1 rounded hover:bg-zinc-900"><mat-icon class="text-[16px]">edit</mat-icon></button>
-            <button (click)="deleteTask(task.$id)" title="Delete" class="text-zinc-500 hover:text-rose-400 p-1 rounded hover:bg-zinc-900"><mat-icon class="text-[16px]">delete</mat-icon></button>
+            <button (click)="openEditModal(task)" title="Edit" class="text-zinc-500 hover:text-purple-400 p-1 rounded hover:bg-zinc-900"><i class="ti ti-pencil text-[16px]"></i></button>
+            <button (click)="deleteTask(task.$id)" title="Delete" class="text-zinc-500 hover:text-rose-400 p-1 rounded hover:bg-zinc-900"><i class="ti ti-trash text-[16px]"></i></button>
           </div>
 
         </div>
@@ -449,5 +468,29 @@ export class TasksComponent implements OnInit {
         type: 'warning'
       });
     }
+  }
+
+  quickLog(type: 'call' | 'meeting' | 'email' | 'note') {
+    const titles = {
+      call: 'Outbound Dialectic Call Logged',
+      meeting: 'Stakeholder Alignment Meeting',
+      email: 'Strategic Email Dispatch',
+      note: 'Epistemic Note Appended'
+    };
+    
+    this.appwrite.addTask({
+      title: titles[type],
+      category: 'General',
+      status: 'done',
+      priority: 'Medium',
+      dueDate: new Date().toISOString().slice(0, 10),
+      description: `Rapid activity logged via mobile one-tap interface.`
+    });
+    
+    this.appwrite.addNotification({
+      title: 'Activity Logged',
+      message: `${titles[type]} recorded successfully.`,
+      type: 'success'
+    });
   }
 }

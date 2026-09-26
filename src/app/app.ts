@@ -64,7 +64,7 @@ import { CommandPaletteComponent } from './command-palette.component';
               class="lg:hidden w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-zinc-900/70 hover:bg-zinc-800 border border-zinc-800/90 flex items-center justify-center text-zinc-300 hover:text-white transition-all active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400" 
               (click)="isSidebarOpen.set(true)"
               aria-label="Open Navigation Drawer">
-              <mat-icon class="text-[20px] sm:text-[22px]">menu</mat-icon>
+              <i class="ti ti-menu-2 text-[20px] sm:text-[22px]"></i>
             </button>
 
             <!-- Brand Wordmark (Mobile & Desktop) -->
@@ -89,7 +89,7 @@ import { CommandPaletteComponent } from './command-palette.component';
               (click)="isCommandPaletteOpen.set(true)"
               class="w-full bg-zinc-900/70 hover:bg-zinc-900/95 border border-zinc-800/90 hover:border-teal-500/50 rounded-xl py-1.5 sm:py-2 px-2.5 sm:px-3.5 text-left text-zinc-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 transition-all backdrop-blur-md flex items-center justify-between group cursor-pointer shadow-inner">
               <span class="flex items-center gap-2 sm:gap-2.5 text-zinc-400 group-hover:text-zinc-200 transition-colors truncate">
-                <mat-icon class="text-zinc-500 text-[17px] sm:text-[19px] group-hover:text-teal-400 transition-colors shrink-0">search</mat-icon>
+                <i class="ti ti-search text-zinc-500 text-[17px] sm:text-[19px] group-hover:text-teal-400 transition-colors shrink-0"></i>
                 <span class="text-xs font-medium truncate">
                   <span class="hidden md:inline">Quick search or command...</span>
                   <span class="hidden sm:inline md:hidden">Search leads, tasks...</span>
@@ -101,7 +101,7 @@ import { CommandPaletteComponent } from './command-palette.component';
                   <span class="text-[10px]">⌘</span>K
                 </kbd>
                 <span class="sm:hidden text-zinc-600 group-hover:text-teal-400">
-                  <mat-icon class="text-[15px]">keyboard_return</mat-icon>
+                  <i class="ti ti-corner-down-left text-[15px]"></i>
                 </span>
               </div>
             </button>
@@ -124,7 +124,7 @@ import { CommandPaletteComponent } from './command-palette.component';
               class="relative w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-purple-950/30 hover:bg-purple-900/40 border border-purple-500/40 hover:border-purple-400 flex items-center justify-center transition-all text-purple-300 hover:text-white cursor-pointer group shadow-[0_0_12px_rgba(168,85,247,0.2)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400"
               title="Open AI Sentinel Copilot"
               aria-label="Open AI Copilot Drawer">
-              <mat-icon class="text-[18px] sm:text-[20px] group-hover:scale-110 transition-transform text-purple-400">auto_awesome</mat-icon>
+              <i class="ti ti-sparkles text-[18px] sm:text-[20px] group-hover:scale-110 transition-transform text-purple-400"></i>
               <span class="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-purple-400 animate-ping"></span>
             </button>
 
@@ -135,7 +135,7 @@ import { CommandPaletteComponent } from './command-palette.component';
               class="relative w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-zinc-900/70 hover:bg-zinc-800 border border-zinc-800/90 hover:border-zinc-700 flex items-center justify-center transition-all text-zinc-300 hover:text-white cursor-pointer group active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
               title="View Sentinel Updates"
               aria-label="View notifications">
-              <mat-icon class="text-[19px] sm:text-[21px] group-hover:rotate-12 transition-transform text-zinc-400 group-hover:text-zinc-200">notifications</mat-icon>
+              <i class="ti ti-bell text-[19px] sm:text-[21px] group-hover:rotate-12 transition-transform text-zinc-400 group-hover:text-zinc-200"></i>
               @if (unreadCount() > 0) {
                 <span class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-600 border-2 border-zinc-950 text-[9px] font-bold text-white flex items-center justify-center shadow-lg shadow-purple-500/40 animate-pulse">
                   {{ unreadCount() > 9 ? '9+' : unreadCount() }}
@@ -224,7 +224,7 @@ export class App implements OnInit {
           type: 'Lead',
           title: lead.name,
           description: lead.email,
-          icon: 'person',
+          icon: 'ti-user',
           iconBg: 'bg-teal-500/10',
           iconColor: 'text-teal-400',
           route: '/leads',
@@ -241,7 +241,7 @@ export class App implements OnInit {
           type: 'Task',
           title: task.title,
           description: task.category,
-          icon: 'task_alt',
+          icon: 'ti-list-check',
           iconBg: 'bg-purple-500/10',
           iconColor: 'text-purple-400',
           route: '/tasks',
@@ -258,7 +258,7 @@ export class App implements OnInit {
           type: 'Activity',
           title: n.title,
           description: n.message,
-          icon: 'notifications',
+          icon: 'ti-bell',
           iconBg: 'bg-zinc-500/10',
           iconColor: 'text-zinc-400',
           route: null,

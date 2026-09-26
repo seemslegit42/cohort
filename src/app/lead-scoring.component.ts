@@ -35,6 +35,14 @@ import { Appwrite } from './appwrite';
         <div class="flex items-center gap-2.5 flex-wrap">
           <button 
             type="button"
+            (click)="showApiExplorerModal.set(true)" 
+            class="px-3.5 py-2 rounded-xl text-xs font-semibold border bg-zinc-900 hover:bg-zinc-800 border-zinc-800 text-teal-300 flex items-center gap-1.5 transition-all cursor-pointer">
+            <mat-icon class="text-[16px] text-teal-400">api</mat-icon>
+            <span>Lead Scoring API Explorer</span>
+          </button>
+
+          <button 
+            type="button"
             (click)="showWeightsModal.set(true)" 
             class="px-3.5 py-2 rounded-xl text-xs font-semibold border bg-zinc-900 hover:bg-zinc-800 border-zinc-800 text-zinc-300 flex items-center gap-1.5 transition-all cursor-pointer">
             <mat-icon class="text-[16px] text-purple-400">tune</mat-icon>
@@ -397,6 +405,44 @@ import { Appwrite } from './appwrite';
               </div>
             </div>
 
+            <!-- Human Rep Battlecard & Coaching Call (AI-augmented, never replacing the human) -->
+            <div class="p-4 rounded-xl bg-gradient-to-r from-purple-950/40 via-zinc-900 to-indigo-950/40 border border-purple-500/30 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-purple-300 font-display flex items-center gap-1.5">
+                  <mat-icon class="text-[16px] text-purple-400">psychology</mat-icon> Human Rep Coaching & Discovery Battlecard
+                </span>
+                <span class="text-[10px] text-purple-400 font-mono bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20">Rep Augmentation Engine</span>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div class="p-3 bg-zinc-950/80 rounded-xl border border-zinc-800 space-y-1">
+                  <div class="font-bold text-amber-300 flex items-center gap-1 text-[11px]">
+                    <mat-icon class="text-[14px]">record_voice_over</mat-icon> Recommended Opener Vibe
+                  </div>
+                  <p class="text-zinc-300 text-[11px] leading-relaxed">
+                    {{ getLeadCoaching(lead).openerVibe }}
+                  </p>
+                </div>
+
+                <div class="p-3 bg-zinc-950/80 rounded-xl border border-zinc-800 space-y-1">
+                  <div class="font-bold text-teal-300 flex items-center gap-1 text-[11px]">
+                    <mat-icon class="text-[14px]">lightbulb</mat-icon> Human Actionable Advice
+                  </div>
+                  <p class="text-zinc-300 text-[11px] leading-relaxed">
+                    {{ getLeadCoaching(lead).actionableTip }}
+                  </p>
+                </div>
+              </div>
+
+              <div class="p-2.5 bg-zinc-950/90 rounded-xl border border-zinc-850 flex items-start gap-2 text-[11px]">
+                <mat-icon class="text-[16px] text-indigo-400 shrink-0 mt-0.5">sentiment_very_satisfied</mat-icon>
+                <div>
+                  <span class="font-bold text-indigo-300">Witty Conversation Hook:</span>
+                  <span class="text-zinc-300 ml-1">"Hey {{ lead.name.split(' ')[0] }}, saw you checking our platform—most leaders in {{ lead.industry || 'Tech' }} tell us their reps lose 4 hours a week fighting their current CRM clunk. Are you ready to see a CRM that's actually fast?"</span>
+                </div>
+              </div>
+            </div>
+
             <!-- Instant Activity Simulator for this lead -->
             <div class="p-4 rounded-xl bg-purple-500/5 border border-purple-500/20 space-y-3">
               <div class="flex items-center justify-between">
@@ -431,7 +477,13 @@ import { Appwrite } from './appwrite';
             </div>
 
             <!-- Close Action -->
-            <div class="flex justify-end pt-2">
+            <div class="flex justify-between items-center pt-2">
+              <button 
+                type="button" 
+                (click)="openApiForLead(lead)" 
+                class="px-3 py-1.5 bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 border border-teal-500/30 rounded-xl text-xs font-semibold flex items-center gap-1 cursor-pointer">
+                <mat-icon class="text-[14px]">api</mat-icon> Inspect JSON via API Endpoint
+              </button>
               <button (click)="selectedAuditLead.set(null)" class="px-5 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-xs font-semibold cursor-pointer">
                 Close Audit
               </button>
@@ -555,6 +607,107 @@ import { Appwrite } from './appwrite';
         </div>
       }
 
+      <!-- Lead Scoring REST API Endpoint Explorer Modal -->
+      @if (showApiExplorerModal()) {
+        <div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in" (click)="showApiExplorerModal.set(false)" (keydown.escape)="showApiExplorerModal.set(false)" tabindex="0" role="dialog">
+          <div class="bg-zinc-950 border border-teal-500/40 rounded-3xl w-full max-w-3xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()" tabindex="0">
+            
+            <!-- Header -->
+            <div class="px-6 py-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/80">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-teal-500/20 border border-teal-500/30 flex items-center justify-center text-teal-400">
+                  <mat-icon class="text-[20px]">terminal</mat-icon>
+                </div>
+                <div>
+                  <h3 class="text-base font-bold text-white font-display">Lead Scoring REST API Explorer</h3>
+                  <p class="text-xs text-zinc-400">Integrate real-time 1-100 scoring & rep battlecards via HTTP</p>
+                </div>
+              </div>
+              <button (click)="showApiExplorerModal.set(false)" class="text-zinc-500 hover:text-white">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+
+            <!-- Body -->
+            <div class="p-6 space-y-4 overflow-y-auto flex-1 custom-scrollbar text-xs">
+              
+              <!-- Endpoints List -->
+              <div class="space-y-3">
+                <div class="p-3 bg-zinc-900/80 rounded-xl border border-zinc-800 space-y-2">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                      <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono font-bold text-[10px]">GET</span>
+                      <code class="text-white font-mono text-xs">/api/leads/:id/score</code>
+                    </div>
+                    <span class="text-[11px] text-zinc-400">Retrieve real-time score for an existing lead</span>
+                  </div>
+                </div>
+
+                <div class="p-3 bg-zinc-900/80 rounded-xl border border-zinc-800 space-y-2">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                      <span class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 font-mono font-bold text-[10px]">POST</span>
+                      <code class="text-white font-mono text-xs">/api/leads/score</code>
+                    </div>
+                    <span class="text-[11px] text-zinc-400">Score arbitrary lead payload on-the-fly</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Live Test Section -->
+              <div class="p-4 bg-zinc-900 rounded-2xl border border-zinc-800 space-y-3">
+                <div class="flex items-center justify-between">
+                  <span class="font-bold text-teal-300 uppercase tracking-wider text-[11px] font-mono">Live API Test Invocation</span>
+                  <button 
+                    type="button" 
+                    (click)="copyApiCurl()" 
+                    class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded text-[11px] font-mono flex items-center gap-1 cursor-pointer">
+                    <mat-icon class="text-[13px]">content_copy</mat-icon> Copy cURL
+                  </button>
+                </div>
+
+                <div class="flex items-center gap-2">
+                  <select [(ngModel)]="apiSelectedLeadId" class="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-white font-mono text-xs focus:outline-none focus:border-teal-500">
+                    @for (l of leadService.leads(); track l.$id) {
+                      <option [value]="l.$id">{{ l.name }} ({{ l.company || l.industry || 'Lead' }}) - ID: {{ l.$id }}</option>
+                    }
+                  </select>
+
+                  <button 
+                    type="button" 
+                    (click)="testLiveApiEndpoint()" 
+                    [disabled]="apiLoading()"
+                    class="px-4 py-2 bg-teal-500 hover:bg-teal-400 disabled:opacity-50 text-zinc-950 font-bold rounded-xl text-xs flex items-center gap-1.5 cursor-pointer">
+                    <mat-icon class="text-[16px]">{{ apiLoading() ? 'sync' : 'send' }}</mat-icon>
+                    <span>{{ apiLoading() ? 'Fetching...' : 'Send Request' }}</span>
+                  </button>
+                </div>
+
+                <!-- Response Viewer -->
+                @if (apiResponseJson()) {
+                  <div class="space-y-1 pt-2">
+                    <div class="flex items-center justify-between text-[10px] text-zinc-400 font-mono">
+                      <span>HTTP 200 OK &bull; Response Payload</span>
+                      <span class="text-emerald-400">application/json</span>
+                    </div>
+                    <pre class="p-3 bg-zinc-950 rounded-xl border border-zinc-800 font-mono text-[11px] text-teal-300 overflow-x-auto whitespace-pre leading-relaxed custom-scrollbar">{{ apiResponseJson() }}</pre>
+                  </div>
+                }
+              </div>
+
+            </div>
+
+            <!-- Footer -->
+            <div class="p-4 border-t border-zinc-800 bg-zinc-900/50 flex justify-end">
+              <button (click)="showApiExplorerModal.set(false)" class="px-5 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-xs font-semibold cursor-pointer">
+                Close API Explorer
+              </button>
+            </div>
+
+          </div>
+        </div>
+      }
+
     </div>
   `,
   styles: [`
@@ -577,7 +730,77 @@ export class LeadScoringComponent implements OnInit {
 
   selectedAuditLead = signal<Lead | null>(null);
   showWeightsModal = signal<boolean>(false);
+  showApiExplorerModal = signal<boolean>(false);
   editWeights: ScoringWeights = { ...this.leadService.scoringWeights() };
+
+  // API Explorer State
+  apiSelectedLeadId = '';
+  apiLoading = signal<boolean>(false);
+  apiResponseJson = signal<string>('');
+
+  getLeadCoaching(lead: Lead) {
+    const score = lead.score || 0;
+    if (score >= 75) {
+      return {
+        openerVibe: `Direct Executive Pulse — Cut straight to high-priority pain points and immediate architecture velocity.`,
+        actionableTip: `Prospect has shown extreme intent across pricing and key downloads. Ask: "What timeline are you targeting for production rollout?"`
+      };
+    } else if (score >= 45) {
+      return {
+        openerVibe: `Warm Consultative Discovery — Validate where their current workflow bottlenecks are.`,
+        actionableTip: `Focus on their team size (${lead.companySize || 'growth-stage'}) and share how similar companies in ${lead.industry || 'Tech'} automated routine admin tasks.`
+      };
+    } else {
+      return {
+        openerVibe: `Low-Pressure Educational Nudge — Share valuable benchmark reports with no hard pitch.`,
+        actionableTip: `Send them our 2-minute architectural sandbox link so they can see performance on their own terms.`
+      };
+    }
+  }
+
+  openApiForLead(lead: Lead) {
+    if (lead.$id) {
+      this.apiSelectedLeadId = lead.$id;
+      this.showApiExplorerModal.set(true);
+      this.testLiveApiEndpoint();
+    }
+  }
+
+  async testLiveApiEndpoint() {
+    if (!this.apiSelectedLeadId && this.leadService.leads().length > 0) {
+      this.apiSelectedLeadId = this.leadService.leads()[0].$id || '';
+    }
+    if (!this.apiSelectedLeadId) return;
+
+    this.apiLoading.set(true);
+    try {
+      const res = await fetch(`/api/leads/${this.apiSelectedLeadId}/score`);
+      if (res.ok) {
+        const data = await res.json();
+        this.apiResponseJson.set(JSON.stringify(data, null, 2));
+      } else {
+        const errorText = await res.text();
+        this.apiResponseJson.set(`// Error ${res.status}: ${errorText}`);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.apiResponseJson.set(`// Network Exception: ${msg}`);
+    } finally {
+      this.apiLoading.set(false);
+    }
+  }
+
+  copyApiCurl() {
+    const id = this.apiSelectedLeadId || ':id';
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+    const curl = `curl -X GET "${origin}/api/leads/${id}/score" \\\n  -H "Accept: application/json"`;
+    navigator.clipboard.writeText(curl);
+    this.appwrite.addNotification({
+      title: 'cURL Copied to Clipboard',
+      message: 'Paste into your terminal, Postman, or webhook service to test.',
+      type: 'info'
+    });
+  }
 
   stats = computed(() => {
     const leads = this.leadService.leads();

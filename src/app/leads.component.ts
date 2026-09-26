@@ -9,12 +9,16 @@ import { LeadService, Lead } from './lead.service';
 import { Appwrite } from './appwrite';
 import { LeadMapComponent } from './lead-map.component';
 import { LeadImportComponent } from './lead-import.component';
+import { SalesPersonalityService, type InteractionType } from './sales-personality.service';
+import type { CringeAuditResult } from './sales-personality.service';
+import { PipelineChartsComponent } from './pipeline-charts.component';
+import { PipelineAiEngineComponent } from './pipeline-ai-engine.component';
 
 @Component({
   selector: 'app-leads',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule, MatIconModule, DragDropModule, KanbanBoardComponent, LeadMapComponent, LeadImportComponent],
+  imports: [CommonModule, ReactiveFormsModule, MatIconModule, DragDropModule, KanbanBoardComponent, LeadMapComponent, LeadImportComponent, PipelineChartsComponent, PipelineAiEngineComponent],
   template: `
     <div class="h-full flex flex-col p-4 md:p-6 animate-fade-in max-w-[1600px] mx-auto">
       
@@ -33,7 +37,7 @@ import { LeadImportComponent } from './lead-import.component';
         <!-- Action Toolbar (Responsive Flex Wrap Container) -->
         <div class="flex items-center gap-2 sm:gap-2.5 flex-wrap">
           
-          <!-- View Mode Toggle (Board / List / Map) -->
+          <!-- View Mode Toggle (Board / List / Charts / Map) -->
           <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-0.5 sm:p-1 flex items-center gap-0.5 shadow-inner">
             <button 
               type="button"
@@ -53,6 +57,14 @@ import { LeadImportComponent } from './lead-import.component';
             </button>
             <button 
               type="button"
+              (click)="viewMode.set('analytics')" 
+              [class]="viewMode() === 'analytics' ? 'bg-zinc-800 text-teal-400 font-bold shadow-xs' : 'text-zinc-400 hover:text-zinc-200'"
+              class="px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer">
+              <mat-icon class="text-[15px] sm:text-[16px] text-teal-400">insights</mat-icon> 
+              <span class="hidden sm:inline">Analytics</span>
+            </button>
+            <button 
+              type="button"
               (click)="viewMode.set('map')" 
               [class]="viewMode() === 'map' ? 'bg-zinc-800 text-white font-bold shadow-xs' : 'text-zinc-400 hover:text-zinc-200'"
               class="px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer">
@@ -60,6 +72,19 @@ import { LeadImportComponent } from './lead-import.component';
               <span class="hidden sm:inline">Map</span>
             </button>
           </div>
+
+          <!-- AI Copilot Engine Toggle -->
+          <button 
+            type="button"
+            (click)="showAiEngine.set(!showAiEngine())" 
+            [class]="showAiEngine() ? 'bg-purple-600/30 text-purple-300 border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.3)]' : 'bg-zinc-900/90 text-purple-400 hover:text-purple-300 border-zinc-800'"
+            class="border font-semibold px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs transition-all flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95">
+            <mat-icon class="text-[16px] text-purple-400">auto_awesome</mat-icon>
+            <span class="hidden sm:inline">AI Copilot</span>
+            @if (stalledDealsCount() > 0) {
+              <span class="bg-amber-400 text-zinc-950 text-[10px] font-bold px-1.5 py-0.2 rounded-full">{{ stalledDealsCount() }}</span>
+            }
+          </button>
 
           <!-- Status Filter Dropdown -->
           <div class="flex items-center gap-1.5 bg-zinc-900/90 border border-zinc-800 rounded-xl px-2.5 sm:px-3 py-1.5 text-zinc-300">
@@ -124,12 +149,22 @@ import { LeadImportComponent } from './lead-import.component';
         </div>
       </div>
 
+      <!-- AI Predictive & Autonomous Task Engine Panel (Collapsible) -->
+      @if (showAiEngine()) {
+        <div class="mb-6 animate-fade-in">
+          <app-pipeline-ai-engine 
+            [leads]="filteredLeads()" 
+            (tasksAdded)="onAutonomousTasksAdded($event)"
+          />
+        </div>
+      }
+
       <!-- Filter & Controls Bar -->
       <div class="bg-zinc-900/80 backdrop-blur-xl border border-zinc-800 rounded-2xl p-4 mb-6 shadow-xl space-y-3">
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-2.5">
           
           <!-- Search Input -->
-          <div class="relative col-span-1 sm:col-span-2 md:col-span-2">
+          <div class="relative col-span-1 sm:col-span-2 md:col-span-2 lg:col-span-2">
             <mat-icon class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-[18px]">search</mat-icon>
             <input 
               type="text" 
@@ -145,14 +180,26 @@ import { LeadImportComponent } from './lead-import.component';
             }
           </div>
 
-          <!-- Priority Filter -->
+          <!-- Deal Value Tier Filter -->
           <div class="flex items-center gap-1.5 bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-1.5">
-            <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Priority:</span>
-            <select [value]="selectedPriorityFilter()" (change)="selectedPriorityFilter.set($any($event.target).value)" class="bg-transparent text-xs font-semibold text-zinc-200 focus:outline-none cursor-pointer w-full">
-              <option value="All" class="bg-zinc-950 text-zinc-200">All Priorities</option>
-              <option value="High" class="bg-zinc-950 text-rose-400 font-bold">High</option>
-              <option value="Medium" class="bg-zinc-950 text-amber-400 font-bold">Medium</option>
-              <option value="Low" class="bg-zinc-950 text-zinc-400 font-bold">Low</option>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Tier:</span>
+            <select [value]="selectedValueTier()" (change)="selectedValueTier.set($any($event.target).value)" class="bg-transparent text-xs font-semibold text-zinc-200 focus:outline-none cursor-pointer w-full">
+              <option value="All" class="bg-zinc-950 text-zinc-200">All Sizes</option>
+              <option value="micro" class="bg-zinc-950 text-zinc-300">&lt; $25k Micro</option>
+              <option value="mid" class="bg-zinc-950 text-teal-400 font-semibold">$25k - $75k Mid-Market</option>
+              <option value="enterprise" class="bg-zinc-950 text-purple-400 font-bold">$75k - $150k Enterprise</option>
+              <option value="whale" class="bg-zinc-950 text-amber-400 font-bold">$150k+ Whale</option>
+            </select>
+          </div>
+
+          <!-- Win Odds / Grade Filter -->
+          <div class="flex items-center gap-1.5 bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-1.5">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Odds:</span>
+            <select [value]="selectedWinOddsTier()" (change)="selectedWinOddsTier.set($any($event.target).value)" class="bg-transparent text-xs font-semibold text-zinc-200 focus:outline-none cursor-pointer w-full">
+              <option value="All" class="bg-zinc-950 text-zinc-200">All Odds</option>
+              <option value="high" class="bg-zinc-950 text-emerald-400 font-bold">High (≥70% Prob.)</option>
+              <option value="moderate" class="bg-zinc-950 text-amber-400 font-bold">Moderate (45-69%)</option>
+              <option value="at_risk" class="bg-zinc-950 text-rose-400 font-bold">At-Risk (&lt;45%)</option>
             </select>
           </div>
 
@@ -173,7 +220,7 @@ import { LeadImportComponent } from './lead-import.component';
 
           <!-- Expected Close Date Filter -->
           <div class="flex items-center gap-1.5 bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-1.5">
-            <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Close Date:</span>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Close:</span>
             <select [value]="selectedDateFilter()" (change)="selectedDateFilter.set($any($event.target).value)" class="bg-transparent text-xs font-semibold text-zinc-200 focus:outline-none cursor-pointer w-full">
               <option value="All" class="bg-zinc-950 text-zinc-200">All Dates</option>
               <option value="this_month" class="bg-zinc-950 text-zinc-200">Closing This Month</option>
@@ -188,14 +235,55 @@ import { LeadImportComponent } from './lead-import.component';
             <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Sort:</span>
             <select [value]="selectedSortBy()" (change)="selectedSortBy.set($any($event.target).value)" class="bg-transparent text-xs font-semibold text-zinc-200 focus:outline-none cursor-pointer w-full">
               <option value="newest" class="bg-zinc-950 text-zinc-200">Newest Created</option>
-              <option value="oldest" class="bg-zinc-950 text-zinc-200">Oldest Created</option>
+              <option value="score_desc" class="bg-zinc-950 text-teal-400 font-bold">Highest Win Probability</option>
               <option value="value_desc" class="bg-zinc-950 text-orange-400 font-bold">Value: High to Low</option>
               <option value="value_asc" class="bg-zinc-950 text-zinc-200">Value: Low to High</option>
               <option value="priority" class="bg-zinc-950 text-rose-400 font-bold">Priority: High to Low</option>
               <option value="close_date" class="bg-zinc-950 text-zinc-200">Target Close Date</option>
+              <option value="name_asc" class="bg-zinc-950 text-zinc-200">Name (A-Z)</option>
             </select>
           </div>
 
+        </div>
+
+        <!-- Quick Strategy Presets Row -->
+        <div class="flex items-center gap-2 overflow-x-auto pb-1 pt-1 text-xs">
+          <span class="text-[10px] uppercase font-bold text-zinc-500 shrink-0">Strategy Presets:</span>
+          <button 
+            type="button"
+            (click)="applyPreset('all')"
+            [class]="selectedPreset() === 'all' ? 'bg-zinc-800 text-white border-zinc-700' : 'bg-zinc-950/70 text-zinc-400 border-zinc-800 hover:text-zinc-200'"
+            class="px-2.5 py-1 rounded-lg border text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer">
+            All Deals
+          </button>
+          <button 
+            type="button"
+            (click)="applyPreset('high_odds')"
+            [class]="selectedPreset() === 'high_odds' ? 'bg-teal-500/20 text-teal-300 border-teal-500/40' : 'bg-zinc-950/70 text-zinc-400 border-zinc-800 hover:text-zinc-200'"
+            class="px-2.5 py-1 rounded-lg border text-xs font-semibold whitespace-nowrap transition-colors flex items-center gap-1 cursor-pointer">
+            <mat-icon class="text-[13px] text-teal-400">bolt</mat-icon> High Win Odds
+          </button>
+          <button 
+            type="button"
+            (click)="applyPreset('stalled')"
+            [class]="selectedPreset() === 'stalled' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-zinc-950/70 text-zinc-400 border-zinc-800 hover:text-zinc-200'"
+            class="px-2.5 py-1 rounded-lg border text-xs font-semibold whitespace-nowrap transition-colors flex items-center gap-1 cursor-pointer">
+            <mat-icon class="text-[13px] text-amber-400">warning</mat-icon> Stalled Velocity
+          </button>
+          <button 
+            type="button"
+            (click)="applyPreset('whales')"
+            [class]="selectedPreset() === 'whales' ? 'bg-purple-500/20 text-purple-300 border-purple-500/40' : 'bg-zinc-950/70 text-zinc-400 border-zinc-800 hover:text-zinc-200'"
+            class="px-2.5 py-1 rounded-lg border text-xs font-semibold whitespace-nowrap transition-colors flex items-center gap-1 cursor-pointer">
+            <mat-icon class="text-[13px] text-purple-400">diamond</mat-icon> Enterprise Whales ($150k+)
+          </button>
+          <button 
+            type="button"
+            (click)="applyPreset('closing_month')"
+            [class]="selectedPreset() === 'closing_month' ? 'bg-blue-500/20 text-blue-300 border-blue-500/40' : 'bg-zinc-950/70 text-zinc-400 border-zinc-800 hover:text-zinc-200'"
+            class="px-2.5 py-1 rounded-lg border text-xs font-semibold whitespace-nowrap transition-colors flex items-center gap-1 cursor-pointer">
+            <mat-icon class="text-[13px] text-blue-400">event</mat-icon> Closing This Month
+          </button>
         </div>
 
         <!-- Filter Status Bar & Clear Button -->
@@ -355,6 +443,11 @@ import { LeadImportComponent } from './lead-import.component';
                 }
               </tbody>
             </table>
+          </div>
+        } @else if (viewMode() === 'analytics') {
+          <!-- Visual Analytics Chart.js View -->
+          <div class="flex-1 overflow-y-auto custom-scrollbar p-1">
+            <app-pipeline-charts [leads]="filteredLeads()"></app-pipeline-charts>
           </div>
         } @else {
           <!-- Map View -->
@@ -668,44 +761,424 @@ import { LeadImportComponent } from './lead-import.component';
               </form>
             </div>
             
-            <!-- Right Side: History Timeline (Only when editing) -->
+            <!-- Right Side: Extended Information Panel (Only when editing) -->
             @if (editingId()) {
-              <div class="w-full md:w-[400px] lg:w-[480px] bg-zinc-950/60 md:border-l border-zinc-800/80 flex flex-col relative z-10 flex-shrink-0">
-                <button (click)="closeModal()" class="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors z-10 hidden md:block">
+              <div class="w-full md:w-[420px] lg:w-[500px] bg-zinc-950/70 md:border-l border-zinc-800/80 flex flex-col relative z-10 flex-shrink-0">
+                <!-- Close Button Desktop -->
+                <button (click)="closeModal()" class="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors z-20 hidden md:block">
                   <mat-icon>close</mat-icon>
                 </button>
-                <div class="p-6 md:p-8 flex-1 overflow-y-auto custom-scrollbar">
-                  <div class="flex items-center justify-between mb-8">
-                    <h3 class="text-xs font-bold text-white tracking-widest uppercase flex items-center gap-2">
-                      <mat-icon class="text-orange-400 text-[16px]">history</mat-icon>
-                      Activity Timeline
-                    </h3>
+                
+                <!-- Header / Tabs -->
+                <div class="p-5 sm:p-6 border-b border-zinc-800/80 pb-3">
+                  <div class="flex items-center justify-between gap-2 mb-3">
+                    <span class="text-[10px] font-mono uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+                      <mat-icon class="text-[14px] text-orange-400">person_search</mat-icon>
+                      Lead Extended Intel
+                    </span>
+                    @if (currentEditingLead()?.score) {
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border"
+                            [ngClass]="getScorePillClass(currentEditingLead()?.scoreCategory || 'Warm')">
+                        Score: {{ currentEditingLead()?.score }}/100 • Grade {{ currentEditingLead()?.grade || 'B' }}
+                      </span>
+                    }
                   </div>
+
+                  <!-- Navigation Tabs -->
+                  <div class="flex items-center gap-1 bg-zinc-900/90 p-1 rounded-xl border border-zinc-800 text-xs">
+                    <button 
+                      type="button"
+                      (click)="activeExtendedTab.set('timeline')"
+                      [class]="activeExtendedTab() === 'timeline' ? 'bg-zinc-800 text-white font-bold shadow-xs' : 'text-zinc-400 hover:text-zinc-200'"
+                      class="flex-1 py-1.5 px-2 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer">
+                      <mat-icon class="text-[15px] text-orange-400">history</mat-icon>
+                      <span>Timeline</span>
+                      <span class="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-zinc-700/60">{{ editingLeadHistory().length }}</span>
+                    </button>
+                    <button 
+                      type="button"
+                      (click)="activeExtendedTab.set('tasks')"
+                      [class]="activeExtendedTab() === 'tasks' ? 'bg-zinc-800 text-white font-bold shadow-xs' : 'text-zinc-400 hover:text-zinc-200'"
+                      class="flex-1 py-1.5 px-2 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer">
+                      <mat-icon class="text-[15px] text-emerald-400">task_alt</mat-icon>
+                      <span>Tasks</span>
+                      <span class="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-zinc-700/60">{{ editingLeadTasks().length }}</span>
+                    </button>
+                    <button 
+                      type="button"
+                      (click)="activeExtendedTab.set('intelligence')"
+                      [class]="activeExtendedTab() === 'intelligence' ? 'bg-zinc-800 text-white font-bold shadow-xs' : 'text-zinc-400 hover:text-zinc-200'"
+                      class="flex-1 py-1.5 px-2 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer">
+                      <mat-icon class="text-[15px] text-purple-400">insights</mat-icon>
+                      <span>AI Intel</span>
+                    </button>
+                    <button 
+                      type="button"
+                      (click)="activeExtendedTab.set('coaching')"
+                      [class]="activeExtendedTab() === 'coaching' ? 'bg-zinc-800 text-white font-bold shadow-xs' : 'text-zinc-400 hover:text-zinc-200'"
+                      class="flex-1 py-1.5 px-2 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer">
+                      <mat-icon class="text-[15px] text-teal-400">psychology_alt</mat-icon>
+                      <span>Coach</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Tab Body Content -->
+                <div class="p-5 sm:p-6 flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-4">
                   
-                  @if (editingLeadHistory().length > 0) {
-                    <div class="relative space-y-8 before:absolute before:inset-0 before:ml-[15px] before:-translate-x-px md:before:mx-0 md:before:left-[15px] before:h-full before:w-[2px] before:bg-gradient-to-b before:from-zinc-800 before:via-zinc-800/50 before:to-transparent">
-                      @for (item of editingLeadHistory(); track $index) {
-                        <div class="relative flex items-start gap-4">
-                          <div class="absolute left-[15px] -translate-x-1/2 top-1 w-3 h-3 rounded-full border-[3px] border-zinc-950"
-                               [ngClass]="getHistoryIconColorClass(item.type)"></div>
-                          <div class="ml-10 flex-1">
-                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-1">
-                              <span class="text-xs font-bold text-white">{{ item.type }}</span>
-                              <span class="text-[10px] text-zinc-500 font-mono">{{ item.date }}</span>
+                  <!-- TAB 1: Timeline -->
+                  @if (activeExtendedTab() === 'timeline') {
+                    <div class="flex flex-col gap-4">
+                      <!-- Quick Action Bar -->
+                      <div class="bg-zinc-900/60 border border-zinc-800/80 p-3 rounded-xl flex flex-col gap-2.5">
+                        <div class="flex items-center justify-between">
+                          <span class="text-[10px] font-bold uppercase text-zinc-400 tracking-wider">Log Outreach Event</span>
+                          @if (!showLogActivityForm()) {
+                            <button type="button" (click)="showLogActivityForm.set(true)" class="text-[11px] text-orange-400 hover:text-orange-300 font-semibold flex items-center gap-1">
+                              <mat-icon class="text-[14px]">add_circle</mat-icon> Custom Log
+                            </button>
+                          } @else {
+                            <button type="button" (click)="showLogActivityForm.set(false)" class="text-[11px] text-zinc-500 hover:text-zinc-300 font-semibold">
+                              Cancel
+                            </button>
+                          }
+                        </div>
+                        
+                        <!-- Quick Click Buttons -->
+                        <div class="grid grid-cols-4 gap-1.5">
+                          <button type="button" (click)="quickLogActivityType('Call Logged')" class="py-1 px-1.5 bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-700/60 rounded-lg text-[10px] text-zinc-300 flex items-center justify-center gap-1 transition-colors">
+                            <mat-icon class="text-[13px] text-teal-400">call</mat-icon> Call
+                          </button>
+                          <button type="button" (click)="quickLogActivityType('Meeting')" class="py-1 px-1.5 bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-700/60 rounded-lg text-[10px] text-zinc-300 flex items-center justify-center gap-1 transition-colors">
+                            <mat-icon class="text-[13px] text-purple-400">groups</mat-icon> Meet
+                          </button>
+                          <button type="button" (click)="quickLogActivityType('Email Sent')" class="py-1 px-1.5 bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-700/60 rounded-lg text-[10px] text-zinc-300 flex items-center justify-center gap-1 transition-colors">
+                            <mat-icon class="text-[13px] text-sky-400">mail</mat-icon> Email
+                          </button>
+                          <button type="button" (click)="quickLogActivityType('Note Added')" class="py-1 px-1.5 bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-700/60 rounded-lg text-[10px] text-zinc-300 flex items-center justify-center gap-1 transition-colors">
+                            <mat-icon class="text-[13px] text-amber-400">note_alt</mat-icon> Note
+                          </button>
+                        </div>
+
+                        <!-- Expandable Log Form -->
+                        @if (showLogActivityForm()) {
+                          <form [formGroup]="leadActivityForm" (ngSubmit)="logLeadActivity()" class="mt-2 pt-2 border-t border-zinc-800/80 flex flex-col gap-2">
+                            <div class="flex items-center gap-2">
+                              <select formControlName="type" class="bg-zinc-950 border border-zinc-800 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-orange-500/50">
+                                <option value="Call Logged">Phone Call</option>
+                                <option value="Meeting">Live Meeting</option>
+                                <option value="Email Sent">Email Outreach</option>
+                                <option value="Note Added">Internal Note</option>
+                              </select>
                             </div>
-                            <p class="text-xs text-zinc-400 leading-relaxed bg-zinc-900/50 p-3 rounded-xl border border-zinc-800/50 mt-2">
-                              {{ item.content }}
-                            </p>
+                            <textarea formControlName="detail" placeholder="Enter notes or discussion takeaways..." rows="2" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-orange-500/50 resize-none"></textarea>
+                            <div class="flex justify-end gap-2">
+                              <button type="submit" [disabled]="leadActivityForm.invalid || isLoggingActivity()" class="px-3 py-1 bg-orange-500 hover:bg-orange-400 disabled:opacity-50 text-zinc-950 font-bold text-xs rounded-lg flex items-center gap-1 shadow-sm">
+                                <mat-icon class="text-[14px]">check</mat-icon> Save Event
+                              </button>
+                            </div>
+                          </form>
+                        }
+                      </div>
+
+                      <!-- Timeline entries list -->
+                      @if (editingLeadHistory().length > 0) {
+                        <div class="relative space-y-6 before:absolute before:inset-0 before:ml-[15px] before:-translate-x-px md:before:mx-0 md:before:left-[15px] before:h-full before:w-[2px] before:bg-gradient-to-b before:from-zinc-800 before:via-zinc-800/50 before:to-transparent">
+                          @for (item of editingLeadHistory(); track $index) {
+                            <div class="relative flex items-start gap-4">
+                              <div class="absolute left-[15px] -translate-x-1/2 top-1 w-3 h-3 rounded-full border-[3px] border-zinc-950"
+                                   [ngClass]="getHistoryIconColorClass(item.type)"></div>
+                              <div class="ml-9 flex-1">
+                                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-1">
+                                  <span class="text-xs font-bold text-white">{{ item.type }}</span>
+                                  <span class="text-[10px] text-zinc-500 font-mono">{{ item.date }}</span>
+                                </div>
+                                <p class="text-xs text-zinc-400 leading-relaxed bg-zinc-900/50 p-2.5 rounded-xl border border-zinc-800/50 mt-1">
+                                  {{ item.content }}
+                                </p>
+                              </div>
+                            </div>
+                          }
+                        </div>
+                      } @else {
+                        <div class="flex flex-col items-center justify-center text-center py-10 px-4 opacity-50">
+                          <mat-icon class="text-[32px] text-zinc-600 mb-2">history_toggle_off</mat-icon>
+                          <p class="text-xs text-zinc-400">No activity logged yet.</p>
+                        </div>
+                      }
+                    </div>
+                  }
+
+                  <!-- TAB 2: Tasks -->
+                  @if (activeExtendedTab() === 'tasks') {
+                    <div class="flex flex-col gap-4">
+                      <!-- Quick Add Task Form -->
+                      <form [formGroup]="leadTaskForm" (ngSubmit)="addLeadTask()" class="bg-zinc-900/60 border border-zinc-800/80 p-3 rounded-xl flex flex-col gap-2.5">
+                        <span class="text-[10px] font-bold uppercase text-zinc-400 tracking-wider">Assign Task for this Lead</span>
+                        <div class="flex items-center gap-2">
+                          <input formControlName="title" type="text" placeholder="e.g. Follow-up demo call, Send NDA..." class="flex-1 bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500/50" />
+                          <select formControlName="priority" class="bg-zinc-950 border border-zinc-800 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500/50">
+                            <option value="High">High</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Low">Low</option>
+                          </select>
+                        </div>
+                        <div class="flex items-center justify-between gap-2">
+                          <div class="flex items-center gap-1.5 text-zinc-400">
+                            <mat-icon class="text-[14px]">event</mat-icon>
+                            <input formControlName="dueDate" type="date" class="bg-zinc-950 border border-zinc-800 rounded-lg px-2 py-1 text-[11px] text-white focus:outline-none focus:border-emerald-500/50" />
+                          </div>
+                          <button type="submit" [disabled]="leadTaskForm.invalid || isAssigningTask()" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-xs rounded-lg flex items-center gap-1 shadow-sm">
+                            <mat-icon class="text-[14px]">add_task</mat-icon> Assign Task
+                          </button>
+                        </div>
+                      </form>
+
+                      <!-- Tasks List -->
+                      @if (editingLeadTasks().length > 0) {
+                        <div class="flex flex-col gap-2">
+                          @for (task of editingLeadTasks(); track task.$id) {
+                            <div class="flex items-start gap-3 p-3 bg-zinc-900/50 border border-zinc-800/60 rounded-xl hover:border-zinc-700 transition-colors group">
+                              <button type="button" (click)="toggleLeadTask(task)" class="mt-0.5 text-zinc-400 hover:text-emerald-400 transition-colors cursor-pointer">
+                                <mat-icon class="text-[18px]">{{ task.completed ? 'check_box' : 'check_box_outline_blank' }}</mat-icon>
+                              </button>
+                              <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between gap-2">
+                                  <span class="text-xs font-semibold" [ngClass]="task.completed ? 'line-through text-zinc-500' : 'text-zinc-200'">
+                                    {{ task.title }}
+                                  </span>
+                                  <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase"
+                                        [ngClass]="task.priority === 'High' ? 'bg-red-500/20 text-red-400' : task.priority === 'Medium' ? 'bg-amber-500/20 text-amber-400' : 'bg-zinc-800 text-zinc-400'">
+                                    {{ task.priority }}
+                                  </span>
+                                </div>
+                                <div class="flex items-center gap-3 mt-1 text-[10px] text-zinc-500 font-mono">
+                                  @if (task.dueDate) {
+                                    <span class="flex items-center gap-1">
+                                      <mat-icon class="text-[12px]">schedule</mat-icon> Due {{ task.dueDate }}
+                                    </span>
+                                  }
+                                  @if (task.category) {
+                                    <span class="bg-zinc-800 px-1.5 py-0.5 rounded text-[9px] text-zinc-400">
+                                      {{ task.category }}
+                                    </span>
+                                  }
+                                </div>
+                              </div>
+                            </div>
+                          }
+                        </div>
+                      } @else {
+                        <div class="flex flex-col items-center justify-center text-center py-12 px-4 bg-zinc-900/30 border border-zinc-800/40 rounded-xl">
+                          <mat-icon class="text-[32px] text-zinc-600 mb-2">checklist</mat-icon>
+                          <p class="text-xs font-semibold text-zinc-300">No tasks assigned to this lead</p>
+                          <p class="text-[11px] text-zinc-500 mt-1">Assign an outreach action or follow-up deadline above.</p>
+                        </div>
+                      }
+                    </div>
+                  }
+
+                  <!-- TAB 3: AI Intelligence -->
+                  @if (activeExtendedTab() === 'intelligence') {
+                    <div class="flex flex-col gap-4">
+                      <!-- Score Gauge / Overview -->
+                      <div class="p-4 bg-gradient-to-br from-purple-950/40 via-zinc-900/70 to-zinc-950 border border-purple-800/30 rounded-xl flex items-center justify-between">
+                        <div>
+                          <span class="text-[10px] font-bold uppercase text-purple-400 tracking-wider">AI Predictive Score</span>
+                          <div class="flex items-baseline gap-2 mt-1">
+                            <span class="text-3xl font-display font-bold text-white">{{ currentEditingLead()?.score || 65 }}</span>
+                            <span class="text-xs text-zinc-400">/ 100</span>
+                            <span class="ml-2 text-xs font-bold px-2 py-0.5 rounded-full border"
+                                  [ngClass]="getScorePillClass(currentEditingLead()?.scoreCategory || 'Warm')">
+                              {{ currentEditingLead()?.scoreCategory || 'Warm Intent' }}
+                            </span>
+                          </div>
+                        </div>
+                        <div class="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex flex-col items-center justify-center">
+                          <span class="text-[10px] text-purple-300 font-mono">GRADE</span>
+                          <span class="text-base font-bold text-white">{{ currentEditingLead()?.grade || 'B' }}</span>
+                        </div>
+                      </div>
+
+                      <!-- Factors Breakdown -->
+                      <div class="bg-zinc-900/60 border border-zinc-800/80 p-3.5 rounded-xl flex flex-col gap-2.5">
+                        <span class="text-[10px] font-bold uppercase text-zinc-400 tracking-wider flex items-center gap-1.5">
+                          <mat-icon class="text-[14px] text-purple-400">tune</mat-icon> Key Influencing Factors
+                        </span>
+                        
+                        <div class="flex flex-col gap-1.5">
+                          @if (currentEditingLead()?.scoreFactors && currentEditingLead()!.scoreFactors!.length > 0) {
+                            @for (factor of currentEditingLead()!.scoreFactors!; track $index) {
+                              <div class="flex items-center justify-between text-xs py-1 px-2 rounded-lg bg-zinc-950/50 border border-zinc-800/40">
+                                <span class="text-zinc-300 flex items-center gap-1.5">
+                                  <mat-icon class="text-[13px]" [ngClass]="factor.type === 'demographic' ? 'text-blue-400' : 'text-emerald-400'">
+                                    {{ factor.type === 'demographic' ? 'business' : 'trending_up' }}
+                                  </mat-icon>
+                                  {{ factor.factor }}
+                                </span>
+                                <span class="font-mono font-bold text-emerald-400">+{{ factor.points }}</span>
+                              </div>
+                            }
+                          } @else {
+                            <div class="flex items-center justify-between text-xs py-1 px-2 rounded-lg bg-zinc-950/50 border border-zinc-800/40">
+                              <span class="text-zinc-300">Strategic Industry Tier</span>
+                              <span class="font-mono font-bold text-emerald-400">+15</span>
+                            </div>
+                            <div class="flex items-center justify-between text-xs py-1 px-2 rounded-lg bg-zinc-950/50 border border-zinc-800/40">
+                              <span class="text-zinc-300">Verified Web Sessions</span>
+                              <span class="font-mono font-bold text-emerald-400">+12</span>
+                            </div>
+                          }
+                        </div>
+                      </div>
+
+                      <!-- Human Sales Rep Augmentation Coaching -->
+                      <div class="p-3.5 bg-zinc-900/60 border border-amber-500/20 rounded-xl flex flex-col gap-2">
+                        <div class="flex items-center gap-2 text-amber-400 text-xs font-bold">
+                          <mat-icon class="text-[16px]">psychology</mat-icon>
+                          Human Rep Augmentation Playbook
+                        </div>
+                        <p class="text-xs text-zinc-300 leading-relaxed">
+                          Do not read a script. Acknowledge {{ currentEditingLead()?.name }}'s focus in {{ currentEditingLead()?.industry || 'enterprise solutions' }}.
+                          Ask about their current bottlenecks with scaling workflows before introducing technical specs.
+                        </p>
+                      </div>
+                    </div>
+                  }
+
+                  <!-- TAB 4: Sales Personality & BEEP Coach -->
+                  @if (activeExtendedTab() === 'coaching') {
+                    <div class="flex flex-col gap-4 animate-fade-in">
+                      <!-- Persona Quick Select -->
+                      <div class="bg-zinc-900/70 border border-zinc-800/80 p-3 rounded-xl flex flex-col gap-2">
+                        <div class="flex items-center justify-between">
+                          <span class="text-[10px] font-bold uppercase text-teal-400 tracking-wider flex items-center gap-1.5">
+                            <mat-icon class="text-[14px]">tune</mat-icon> Active Persona
+                          </span>
+                          <span class="text-[10px] text-zinc-500 font-mono">{{ personalityService.activePersona() }}</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-1.5">
+                          @for (p of personalityService.personas; track p.key) {
+                            <button
+                              type="button"
+                              (click)="personalityService.activePersona.set(p.key); personalityService.playCrystallineChime()"
+                              class="px-2 py-1.5 rounded-lg border text-[11px] font-medium flex items-center gap-1.5 transition-all cursor-pointer text-left truncate"
+                              [class.border-teal-500]="personalityService.activePersona() === p.key"
+                              [class.bg-teal-500/15]="personalityService.activePersona() === p.key"
+                              [class.text-teal-200]="personalityService.activePersona() === p.key"
+                              [class.border-zinc-800]="personalityService.activePersona() !== p.key"
+                              [class.text-zinc-400]="personalityService.activePersona() !== p.key"
+                              [class.bg-zinc-950/40]="personalityService.activePersona() !== p.key"
+                            >
+                              <mat-icon class="text-[14px] shrink-0" [style.color]="p.accentColor">{{ p.icon }}</mat-icon>
+                              <span class="truncate">{{ p.name }}</span>
+                            </button>
+                          }
+                        </div>
+                      </div>
+
+                      <!-- Interaction Mode & Input -->
+                      <div class="bg-zinc-900/60 border border-zinc-800/80 p-3.5 rounded-xl flex flex-col gap-3">
+                        <div>
+                          <label for="coachModeSelect" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1">Interaction Goal</label>
+                          <select
+                            id="coachModeSelect"
+                            [value]="coachInteractionType()"
+                            (change)="coachInteractionType.set($any($event.target).value); coachAuditResult.set(null)"
+                            class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-teal-500"
+                          >
+                            <option value="call_prep">Pre-Call Prep & Disarming Opener</option>
+                            <option value="objection_response">Objection Annihilation</option>
+                            <option value="cringe_check">Anti-Slop Email / Pitch Audit</option>
+                            <option value="closing_move">High-Stakes Sovereign Close</option>
+                            <option value="live_drill">Practice Drill with BEEP</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label for="coachProspectInputArea" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1">
+                            {{ coachInteractionType() === 'cringe_check' ? 'Draft Message to Audit' : 'Context / Prospect Hesitation' }}
+                          </label>
+                          <textarea
+                            id="coachProspectInputArea"
+                            [value]="coachProspectInput()"
+                            (input)="coachProspectInput.set($any($event.target).value)"
+                            rows="2"
+                            placeholder="e.g., Prospect said: 'We are evaluating competitors and need 3 months'..."
+                            class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-teal-500"
+                          ></textarea>
+                        </div>
+
+                        <div class="flex items-center justify-between pt-1">
+                          <button
+                            type="button"
+                            (click)="coachInteractionType() === 'cringe_check' ? runLeadCringeAudit() : requestLeadCoaching()"
+                            [disabled]="personalityService.isLoading()"
+                            class="w-full bg-teal-500 hover:bg-teal-400 disabled:opacity-50 text-zinc-950 font-bold px-4 py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md cursor-pointer transition-all"
+                          >
+                            <mat-icon class="text-[16px]">{{ personalityService.isLoading() ? 'autorenew' : 'psychology' }}</mat-icon>
+                            <span>{{ personalityService.isLoading() ? 'Analyzing Prospect Context...' : (coachInteractionType() === 'cringe_check' ? 'Audit Draft for Cringe' : 'Summon Coaching Tip') }}</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <!-- Output: Cringe Result -->
+                      @if (coachAuditResult(); as audit) {
+                        <div class="p-3.5 bg-purple-950/30 border border-purple-800/40 rounded-xl space-y-2.5">
+                          <div class="flex justify-between items-center">
+                            <span class="text-[11px] font-bold text-purple-300">Cringe Rating: {{ audit.cringeScore }}%</span>
+                            <span class="text-[9px] font-mono text-zinc-400">{{ audit.flaggedPhrases.length || 0 }} cliches flagged</span>
+                          </div>
+                          <p class="text-xs text-zinc-300 italic">"{{ audit.roast }}"</p>
+                          <div class="p-2.5 bg-black/40 rounded-lg border border-teal-500/20 text-xs text-teal-200">
+                            <span class="text-[9px] uppercase font-bold text-teal-400 block mb-1">Human Rewrite:</span>
+                            {{ audit.rewrite }}
+                          </div>
+                        </div>
+                      }
+
+                      <!-- Output: Active Coaching Tip -->
+                      @if (personalityService.currentTip(); as tip) {
+                        <div class="space-y-3">
+                          <!-- BEEP Sarcastic Note -->
+                          <div class="p-3 bg-purple-900/20 border border-purple-500/30 rounded-xl flex items-start gap-2.5">
+                            <span class="text-lg">🤖</span>
+                            <div class="text-xs text-zinc-200">
+                              <span class="text-[10px] font-bold text-purple-300 uppercase block">BEEP's Deadpan Diagnosis</span>
+                              <p class="italic text-zinc-300 text-[11px] mt-0.5">"{{ tip.beepCommentary }}"</p>
+                            </div>
+                          </div>
+
+                          <!-- Tactical Suggestion -->
+                          <div class="p-3 bg-teal-950/20 border border-teal-500/30 rounded-xl space-y-1.5">
+                            <span class="text-[10px] font-bold text-teal-400 uppercase tracking-wider block">Recommended Human Move</span>
+                            <p class="text-xs text-zinc-200 leading-relaxed">{{ tip.coachingTip }}</p>
+                          </div>
+
+                          <!-- Witty Retort -->
+                          <div class="p-3 bg-zinc-900/80 border border-zinc-800 rounded-xl space-y-1.5">
+                            <div class="flex items-center justify-between">
+                              <span class="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">What to Say / Send</span>
+                              <button
+                                type="button"
+                                (click)="copyRetort(tip.wittyRetort)"
+                                class="text-[10px] text-teal-400 hover:text-teal-300 flex items-center gap-1 cursor-pointer"
+                              >
+                                <mat-icon class="text-[12px]">content_copy</mat-icon> Copy
+                              </button>
+                            </div>
+                            <p class="text-xs text-white font-mono bg-black/40 p-2 rounded border border-white/5">{{ tip.wittyRetort }}</p>
+                          </div>
+
+                          <!-- Psychological Insight -->
+                          <div class="p-2.5 rounded-lg bg-zinc-950/40 border border-zinc-800 text-[11px] text-zinc-400">
+                            <strong class="text-amber-400 font-semibold">Psych Insight:</strong> {{ tip.psychologicalInsight }}
                           </div>
                         </div>
                       }
                     </div>
-                  } @else {
-                    <div class="flex flex-col items-center justify-center text-center py-12 px-4 opacity-50">
-                      <mat-icon class="text-[32px] text-zinc-600 mb-3">history_toggle_off</mat-icon>
-                      <p class="text-xs text-zinc-400">No recent activity logged for this prospect.</p>
-                    </div>
                   }
+
                 </div>
               </div>
             }
@@ -827,8 +1300,13 @@ export class LeadsComponent implements OnInit {
   leadService = inject(LeadService);
   appwrite = inject(Appwrite);
   fb = inject(FormBuilder);
+  personalityService = inject(SalesPersonalityService);
 
-  viewMode = signal<'board' | 'list' | 'map'>('board');
+  viewMode = signal<'board' | 'list' | 'analytics' | 'map'>('board');
+  showAiEngine = signal<boolean>(false);
+  selectedValueTier = signal<string>('All');
+  selectedWinOddsTier = signal<string>('All');
+  selectedPreset = signal<string>('all');
   showModal = signal<boolean>(false);
   showImportModal = signal<boolean>(false);
   showExportModal = signal<boolean>(false);
@@ -837,21 +1315,99 @@ export class LeadsComponent implements OnInit {
   exportFilterDateTo = '';
   isSubmitting = signal<boolean>(false);
   editingId = signal<string | null>(null);
-  
+  activeExtendedTab = signal<'timeline' | 'tasks' | 'intelligence' | 'coaching'>('timeline');
+  coachInteractionType = signal<InteractionType>('call_prep');
+  coachProspectInput = signal<string>('');
+  coachAuditResult = signal<CringeAuditResult | null>(null);
+  showLogActivityForm = signal<boolean>(false);
+  isAssigningTask = signal<boolean>(false);
+  isLoggingActivity = signal<boolean>(false);
+
+  currentEditingLead = computed(() => {
+    const id = this.editingId();
+    if (!id) return null;
+    return this.leadService.leads().find(l => l.$id === id) || null;
+  });
+
+  editingLeadTasks = computed(() => {
+    const id = this.editingId();
+    if (!id) return [];
+    const lead = this.currentEditingLead();
+    const allTasks = this.appwrite.tasks();
+    return allTasks.filter(t => 
+      t.leadId === id ||
+      (lead && t.leadName && t.leadName.toLowerCase() === lead.name.toLowerCase()) ||
+      (lead && t.title && t.title.toLowerCase().includes(lead.name.toLowerCase()))
+    );
+  });
+
   editingLeadHistory = computed(() => {
     const id = this.editingId();
     if (!id) return [];
     const lead = this.leadService.leads().find(l => l.$id === id);
     if (!lead) return [];
-    if (lead.history && lead.history.length > 0) {
-      return lead.history;
+
+    const items: { type: string; date: string; content: string }[] = [];
+
+    if (lead.activities && lead.activities.length > 0) {
+      lead.activities.forEach(act => {
+        let typeStr = 'Activity';
+        switch (act.type) {
+          case 'demo_request': typeStr = 'Demo Requested'; break;
+          case 'meeting_held': typeStr = 'Meeting Held'; break;
+          case 'webinar_attend': typeStr = 'Webinar Attended'; break;
+          case 'resource_download': typeStr = 'Asset Downloaded'; break;
+          case 'email_click': typeStr = 'Email Clicked'; break;
+          case 'email_open': typeStr = 'Email Opened'; break;
+          case 'pricing_view': typeStr = 'Pricing Page'; break;
+          case 'website_visit': typeStr = 'Website Session'; break;
+        }
+        items.push({
+          type: typeStr,
+          date: act.timestamp,
+          content: `${act.detail} (+${act.points} pts)`
+        });
+      });
     }
-    return [
-      { type: 'Status Changed', date: 'Yesterday, 2:30 PM', content: `Moved to ${lead.status} stage.` },
-      { type: 'Email Received', date: '2 days ago, 10:15 AM', content: 'Follow-up regarding the upcoming demo. Requested pricing details.' },
-      { type: 'Note Added', date: 'Last week', content: 'Met at the regional tech conference. Showed high intent in the enterprise tier.' },
-      { type: 'Lead Created', date: lead.createdAt || 'Unknown', content: `Prospect logged via ${lead.source}.` }
-    ];
+
+    if (lead.history && lead.history.length > 0) {
+      lead.history.forEach(h => {
+        items.push(h);
+      });
+    }
+
+    if (items.length === 0) {
+      items.push(
+        { type: 'Status Changed', date: 'Yesterday, 2:30 PM', content: `Moved to ${lead.status} stage.` },
+        { type: 'Email Received', date: '2 days ago, 10:15 AM', content: 'Follow-up regarding the upcoming demo. Requested pricing details.' },
+        { type: 'Note Added', date: 'Last week', content: 'Met at the regional tech conference. Showed high intent in the enterprise tier.' },
+        { type: 'Lead Created', date: lead.createdAt || 'Unknown', content: `Prospect logged via ${lead.source}.` }
+      );
+    }
+
+    return items;
+  });
+
+  getScorePillClass(category: string): string {
+    switch (category) {
+      case 'Hot':
+        return 'bg-red-500/10 text-red-400 border-red-500/30';
+      case 'Warm':
+        return 'bg-amber-500/10 text-amber-400 border-amber-500/30';
+      default:
+        return 'bg-blue-500/10 text-blue-400 border-blue-500/30';
+    }
+  }
+
+  leadTaskForm: FormGroup = this.fb.group({
+    title: ['', Validators.required],
+    priority: ['Medium', Validators.required],
+    dueDate: ['']
+  });
+
+  leadActivityForm: FormGroup = this.fb.group({
+    type: ['Call Logged', Validators.required],
+    detail: ['', Validators.required]
   });
 
   getHistoryIconColorClass(type: string): string {
@@ -911,12 +1467,22 @@ export class LeadsComponent implements OnInit {
     return this.leadService.leads().reduce((sum, lead) => sum + (lead.value || 0), 0);
   });
 
+  stalledDealsCount = computed(() => {
+    return this.leadService.leads().filter(l => {
+      const isWorking = l.status === 'Contacted' || l.status === 'Qualified' || l.status === 'Proposal' || l.status === 'Negotiation';
+      return isWorking && (l.activities?.length || 0) <= 1 && (l.score || 0) < 60;
+    }).length;
+  });
+
   hasActiveFilters = computed(() => {
     return this.searchQuery().trim() !== '' ||
       this.selectedStatusFilter() !== 'All' ||
       this.selectedPriorityFilter() !== 'All' ||
       this.selectedSourceFilter() !== 'All' ||
       this.selectedDateFilter() !== 'All' ||
+      this.selectedValueTier() !== 'All' ||
+      this.selectedWinOddsTier() !== 'All' ||
+      this.selectedPreset() !== 'all' ||
       this.selectedSortBy() !== 'newest';
   });
 
@@ -927,6 +1493,9 @@ export class LeadsComponent implements OnInit {
     const priority = this.selectedPriorityFilter();
     const source = this.selectedSourceFilter();
     const dateFilter = this.selectedDateFilter();
+    const valueTier = this.selectedValueTier();
+    const winOddsTier = this.selectedWinOddsTier();
+    const preset = this.selectedPreset();
     const sortBy = this.selectedSortBy();
 
     // Search query filter
@@ -956,6 +1525,38 @@ export class LeadsComponent implements OnInit {
       leads = leads.filter(l => l.source === source);
     }
 
+    // Value Tier filter
+    if (valueTier !== 'All') {
+      if (valueTier === 'micro') {
+        leads = leads.filter(l => (l.value || 0) < 25000);
+      } else if (valueTier === 'mid') {
+        leads = leads.filter(l => (l.value || 0) >= 25000 && (l.value || 0) < 75000);
+      } else if (valueTier === 'enterprise') {
+        leads = leads.filter(l => (l.value || 0) >= 75000 && (l.value || 0) < 150000);
+      } else if (valueTier === 'whale') {
+        leads = leads.filter(l => (l.value || 0) >= 150000);
+      }
+    }
+
+    // Win Odds Tier filter
+    if (winOddsTier !== 'All') {
+      if (winOddsTier === 'high') {
+        leads = leads.filter(l => (l.score || 0) >= 70);
+      } else if (winOddsTier === 'moderate') {
+        leads = leads.filter(l => (l.score || 0) >= 45 && (l.score || 0) < 70);
+      } else if (winOddsTier === 'at_risk') {
+        leads = leads.filter(l => (l.score || 0) < 45);
+      }
+    }
+
+    // Presets
+    if (preset === 'stalled') {
+      leads = leads.filter(l => {
+        const isWorking = l.status === 'Contacted' || l.status === 'Qualified' || l.status === 'Proposal' || l.status === 'Negotiation';
+        return isWorking && (l.activities?.length || 0) <= 1 && (l.score || 0) < 60;
+      });
+    }
+
     // Expected Close Date filter
     if (dateFilter !== 'All') {
       const todayStr = new Date().toISOString().slice(0, 10);
@@ -978,6 +1579,9 @@ export class LeadsComponent implements OnInit {
 
     // Sorting
     leads.sort((a, b) => {
+      if (sortBy === 'score_desc') {
+        return (b.score || 0) - (a.score || 0);
+      }
       if (sortBy === 'value_desc') {
         return (b.value || 0) - (a.value || 0);
       }
@@ -993,6 +1597,9 @@ export class LeadsComponent implements OnInit {
         if (!b.expectedCloseDate) return -1;
         return a.expectedCloseDate.localeCompare(b.expectedCloseDate);
       }
+      if (sortBy === 'name_asc') {
+        return (a.name || '').localeCompare(b.name || '');
+      }
       if (sortBy === 'oldest') {
         return (a.createdAt || '0').localeCompare(b.createdAt || '0');
       }
@@ -1003,13 +1610,47 @@ export class LeadsComponent implements OnInit {
     return leads;
   });
 
+  applyPreset(preset: string) {
+    this.selectedPreset.set(preset);
+    if (preset === 'high_odds') {
+      this.selectedWinOddsTier.set('high');
+      this.selectedValueTier.set('All');
+      this.selectedDateFilter.set('All');
+    } else if (preset === 'stalled') {
+      this.selectedWinOddsTier.set('All');
+      this.selectedValueTier.set('All');
+      this.selectedDateFilter.set('All');
+    } else if (preset === 'whales') {
+      this.selectedValueTier.set('whale');
+      this.selectedWinOddsTier.set('All');
+      this.selectedDateFilter.set('All');
+    } else if (preset === 'closing_month') {
+      this.selectedDateFilter.set('this_month');
+      this.selectedValueTier.set('All');
+      this.selectedWinOddsTier.set('All');
+    } else {
+      this.clearFilters();
+    }
+  }
+
   clearFilters() {
     this.searchQuery.set('');
     this.selectedStatusFilter.set('All');
     this.selectedPriorityFilter.set('All');
     this.selectedSourceFilter.set('All');
     this.selectedDateFilter.set('All');
+    this.selectedValueTier.set('All');
+    this.selectedWinOddsTier.set('All');
+    this.selectedPreset.set('all');
     this.selectedSortBy.set('newest');
+  }
+
+  onAutonomousTasksAdded(count: number) {
+    this.appwrite.addNotification({
+      title: 'Autonomous Tasks Deployed',
+      message: `Successfully synthesized and scheduled ${count} high-priority remediation tasks in the Task Ledger.`,
+      type: 'success'
+    });
   }
 
   qualifiedRatio = computed(() => {
@@ -1121,6 +1762,7 @@ export class LeadsComponent implements OnInit {
   ngOnInit() {
     this.leadService.loadLeads();
     this.route.queryParams.subscribe(params => {
+      if (params['q']) { this.searchQuery.set(params['q']); }
       if (params['action'] === 'create' || params['action'] === 'new') {
         this.openAddModal();
         this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
@@ -1140,13 +1782,15 @@ export class LeadsComponent implements OnInit {
     this.showModal.set(true);
   }
 
-  editLead(lead: Lead) {
+  async editLead(lead: Lead) {
     if (!lead.$id) return;
     
     // Simulate real-time presence
     this.appwrite.simulateUserEditing(lead.$id, true);
     
     this.editingId.set(lead.$id);
+    this.activeExtendedTab.set('timeline');
+    this.showLogActivityForm.set(false);
     this.leadForm.patchValue({
       name: lead.name,
       email: lead.email,
@@ -1157,9 +1801,148 @@ export class LeadsComponent implements OnInit {
       value: lead.value,
       expectedCloseDate: lead.expectedCloseDate || '',
       industry: lead.industry || '',
-      region: lead.region || ''
+      region: lead.region || '',
+      companySize: lead.companySize || '',
+      websiteActivity: lead.websiteActivity || '',
+      emailEngagement: lead.emailEngagement || ''
     });
     this.showModal.set(true);
+
+    // Fetch extended details (tasks, activities, scoring) from server API
+    try {
+      const res = await fetch(`/api/leads/${lead.$id}/extended`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.lead && data.score) {
+          this.leadService.leads.update(leads => 
+            leads.map(l => l.$id === lead.$id ? {
+              ...l,
+              ...data.lead,
+              score: data.score.score,
+              scoreFactors: data.score.scoreFactors,
+              grade: data.score.grade,
+              scoreCategory: data.score.scoreCategory
+            } : l)
+          );
+        }
+      }
+    } catch {
+      // Gracefully continue with local state
+    }
+  }
+
+  async addLeadTask() {
+    if (this.leadTaskForm.invalid) return;
+    const lead = this.currentEditingLead();
+    if (!lead || !lead.$id) return;
+
+    this.isAssigningTask.set(true);
+    try {
+      const formVal = this.leadTaskForm.value;
+      const taskData = {
+        title: formVal.title,
+        leadId: lead.$id,
+        leadName: lead.name,
+        priority: formVal.priority || 'Medium',
+        category: 'Outreach',
+        dueDate: formVal.dueDate || new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0],
+        status: 'todo',
+        completed: false
+      };
+      await this.appwrite.addTask(taskData);
+      this.leadTaskForm.reset({
+        title: '',
+        priority: 'Medium',
+        dueDate: ''
+      });
+      this.appwrite.addNotification({
+        title: 'Task Assigned',
+        message: `Task assigned to ${lead.name}`,
+        isRead: false,
+        type: 'success'
+      });
+    } catch (e) {
+      console.error('Failed to assign task for lead:', e);
+    } finally {
+      this.isAssigningTask.set(false);
+    }
+  }
+
+  async toggleLeadTask(task: { $id?: string; completed?: boolean }) {
+    if (!task || !task.$id) return;
+    try {
+      await this.appwrite.toggleTaskCompleted(task.$id, !task.completed);
+    } catch (e) {
+      console.error('Failed to toggle task:', e);
+    }
+  }
+
+  async requestLeadCoaching(): Promise<void> {
+    const lead = this.currentEditingLead();
+    if (!lead) return;
+    await this.personalityService.getCoachingTip(
+      lead as unknown as Record<string, unknown>,
+      this.coachInteractionType(),
+      this.coachProspectInput()
+    );
+  }
+
+  async runLeadCringeAudit(): Promise<void> {
+    const text = this.coachProspectInput();
+    if (!text.trim()) return;
+    const lead = this.currentEditingLead();
+    const res = await this.personalityService.auditCringe(text, lead ? `${lead.name} (${lead.company || lead.industry || ''})` : '');
+    this.coachAuditResult.set(res);
+  }
+
+  copyRetort(text: string): void {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+      this.personalityService.playCrystallineChime();
+    }
+  }
+
+  quickLogActivityType(type: 'Call Logged' | 'Meeting' | 'Email Sent' | 'Note Added') {
+    this.leadActivityForm.patchValue({ type });
+    this.showLogActivityForm.set(true);
+  }
+
+  async logLeadActivity() {
+    if (this.leadActivityForm.invalid) return;
+    const lead = this.currentEditingLead();
+    if (!lead || !lead.$id) return;
+
+    this.isLoggingActivity.set(true);
+    try {
+      const { type, detail } = this.leadActivityForm.value;
+      
+      let mappedType: 'website_visit' | 'pricing_view' | 'email_open' | 'email_click' | 'resource_download' | 'webinar_attend' | 'demo_request' | 'meeting_held' = 'meeting_held';
+      if (type.includes('Call')) mappedType = 'meeting_held';
+      else if (type.includes('Email')) mappedType = 'email_click';
+      else if (type.includes('Note')) mappedType = 'pricing_view';
+
+      await this.leadService.recordLeadActivity(lead.$id, mappedType, detail);
+      
+      // Also sync to backend activities endpoint
+      await fetch(`/api/leads/${lead.$id}/activities`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, detail })
+      });
+
+      this.leadActivityForm.reset({ type: 'Call Logged', detail: '' });
+      this.showLogActivityForm.set(false);
+      this.appwrite.addNotification({
+        title: 'Activity Logged',
+        message: `${type} recorded for ${lead.name}`,
+        isRead: false,
+        type: 'success'
+      });
+    } catch (e) {
+      console.error('Failed to log lead activity:', e);
+    } finally {
+      this.isLoggingActivity.set(false);
+    }
   }
 
   closeModal() {
