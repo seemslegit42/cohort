@@ -790,7 +790,7 @@ export interface AutomatedSequence {
 
               <!-- Footer Signature -->
               <div class="text-[11px] text-zinc-500 border-t border-zinc-850 pt-2 font-mono">
-                Sent via ΛΞVOS Automated Outbound Engine &bull; Zero-Spam Compliance &bull; Unsubscribe Enabled
+                Sent via lxv Automated Outbound Engine &bull; Zero-Spam Compliance &bull; Unsubscribe Enabled
               </div>
 
             </div>

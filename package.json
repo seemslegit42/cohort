@@ -1,6 +1,7 @@
 {
-  "name": "ai-studio-angular-app",
+  "name": "crm",
   "version": "0.0.0",
+  "packageManager": "bun@1.4.2",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
@@ -8,6 +9,8 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
+    "test:server": "bun test ./src/server",
+    "db:setup": "bun scripts/setup-database.ts",
     "lint": "ng lint",
     "serve:ssr:app": "node dist/app/server/server.mjs"
   },
@@ -26,6 +29,7 @@
     "@angular/ssr": "^21.0.0",
     "@google/genai": "^2.4.0",
     "@libsql/client": "^0.18.0",
+    "agentfs-sdk": "^0.6.4",
     "appwrite": "^26.1.0",
     "chart.js": "^4.5.1",
     "dotenv": "^17.4.2",

@@ -47,7 +47,7 @@ interface ObjectionPreset {
                 Sales Personality Sanctum
               </h1>
               <p class="text-xs md:text-sm text-[#8C94A8]" style="font-family: 'Lexend', sans-serif;">
-                Context-aware, witty, human-centric sales coaching · Powered by Gemini 3.8 Flash & Turso libSQL
+                Context-aware sales coaching · Gemini 3.8 Flash · AgentFS LibSQL (.agentfs per team)
               </p>
             </div>
           </div>

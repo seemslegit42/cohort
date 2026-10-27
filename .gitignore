@@ -45,3 +45,8 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+
+# AgentFS local LibSQL (agent / AI persistence — not committed)
+.agentfs/
+agent_tenant_*.db
+*.db-journal

@@ -678,6 +678,7 @@ export class DockComponent {
       await this.leadService.createLead({
         name: val.name,
         email: val.email,
+        company: val.company,
         value: Number(val.value) || 0,
         status: val.status,
         source: val.source,

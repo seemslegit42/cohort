@@ -8,6 +8,7 @@ import express from 'express';
 import { join } from 'node:path';
 import { db } from './server/db';
 import { GoogleGenAI } from '@google/genai';
+import { DEFAULT_AGENT_TENANT, recordAgentTool } from './server/agentfs';
 import * as turso from './server/turso';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
@@ -71,12 +72,12 @@ if (aiApiKey) {
         }
       }
     });
-    console.log('[ΛΞVOS server] GoogleGenAI successfully initialized.');
+    console.log('[lxv server] GoogleGenAI successfully initialized.');
   } catch (err) {
-    console.error('[ΛΞVOS server] Failed to initialize GoogleGenAI client:', err);
+    console.error('[lxv server] Failed to initialize GoogleGenAI client:', err);
   }
 } else {
-  console.warn('[ΛΞVOS server] GEMINI_API_KEY environment variable is not set. AI features will fallback to simulated responses.');
+  console.warn('[lxv server] GEMINI_API_KEY environment variable is not set. AI features will fallback to simulated responses.');
 }
 
 // AI Low-Latency Endpoint (gemini-3.1-flash-lite) with Caching
@@ -98,7 +99,7 @@ app.post('/api/gemini/generate-lite', async (req, res) => {
   if (!ai) {
     console.warn('GEMINI_API_KEY not configured, using smart fallback.');
     res.json({
-      text: `[Fallback Response (API Key Not Set)]\n\nBased on your prompt "${prompt}", here is a generated sales asset:\n\nSubject: Partnering to optimize performance\n\nDear Partner,\n\nI hope you are doing well. I wanted to reach out regarding how we can streamline your team's current workspace operations. By integrating modern CRM pipeline workflows, you can eliminate manual tracking, increase response speed by 40%, and achieve greater alignment across all sectors.\n\nLet's schedule a brief 5-minute call next week to explore how this can benefit your organization.\n\nBest regards,\nSales Representative\nΛΞVOS Team`
+      text: `[Fallback Response (API Key Not Set)]\n\nBased on your prompt "${prompt}", here is a generated sales asset:\n\nSubject: Partnering to optimize performance\n\nDear Partner,\n\nI hope you are doing well. I wanted to reach out regarding how we can streamline your team's current workspace operations. By integrating modern CRM pipeline workflows, you can eliminate manual tracking, increase response speed by 40%, and achieve greater alignment across all sectors.\n\nLet's schedule a brief 5-minute call next week to explore how this can benefit your organization.\n\nBest regards,\nSales Representative\nlxv Team`
     });
     return;
   }
@@ -762,6 +763,33 @@ app.get('/api/lead-scoring/weights', (req, res) => {
   res.json({ weights: DEFAULT_WEIGHTS });
 });
 
+app.post('/api/chat', async (req, res) => {
+  try {
+    const { dealId, message, user, teamId } = req.body;
+    if (!teamId) {
+      res.status(400).json({ error: 'teamId is required' });
+      return;
+    }
+    if (!dealId || !message || !user) {
+      res.status(400).json({ error: 'dealId, message, and user are required' });
+      return;
+    }
+    const saved = await db.chatMessages.create(
+      {
+        dealId,
+        message,
+        user,
+        timestamp: new Date().toISOString(),
+        teamId,
+      },
+      teamId
+    );
+    res.status(201).json({ message: saved });
+  } catch {
+    res.status(500).json({ error: 'Failed to save chat message' });
+  }
+});
+
 collections.forEach((collection) => {
   const table = db[collection as keyof typeof db];
   
@@ -834,9 +862,19 @@ collections.forEach((collection) => {
 
   app.post(`/api/${collection}`, async (req, res) => {
     try {
-      const item = await table.create(req.body);
+      const teamId = req.body?.teamId;
+      if (!teamId) {
+        res.status(400).json({ error: 'teamId is required' });
+        return;
+      }
+      const item = await table.create(req.body, teamId);
       res.status(201).json({ item });
-    } catch {
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '';
+      if (message === 'teamId is required') {
+        res.status(400).json({ error: 'teamId is required' });
+        return;
+      }
       res.status(500).json({ error: `Failed to create ${collection}` });
     }
   });
@@ -901,9 +939,9 @@ app.post('/api/nextcloud/calendar', async (req, res): Promise<void> => {
   }
 });
 
-// Initialize Turso agent SQLite schema on server startup
-turso.initTenantTursoSchema('default').catch((err) => {
-  console.warn('[Turso Init] Warning initializing agent tenant database:', err);
+// Agent / AI persistence: AgentFS SDK → `.agentfs/{tenant}.db` (not Appwrite)
+turso.initTenantTursoSchema(DEFAULT_AGENT_TENANT).catch((err) => {
+  console.warn('[AgentFS] Warning initializing agent LibSQL schema:', err);
 });
 
 // AI Sales Personality Coaching Endpoint (Powered by gemini-3.8-flash & Turso AgentFS)
@@ -913,8 +951,16 @@ app.post('/api/gemini/sales-personality/coach', async (req, res) => {
     interactionType = 'call_prep',
     userInput = '',
     persona = 'reluctant_saviour',
-    tenantKey = 'default'
+    tenantKey = DEFAULT_AGENT_TENANT
   } = req.body;
+
+  const toolStartedAt = Date.now() / 1000;
+  const toolParams = {
+    leadId: lead.$id,
+    interactionType,
+    persona,
+    userInputPreview: String(userInput || '').slice(0, 200),
+  };
 
   const leadName = lead.name || lead.company || 'Prospective Partner';
   const leadTitle = lead.jobTitle || 'Executive';
@@ -962,6 +1008,7 @@ Provide a structured JSON response strictly adhering to this format:
     humanCentricRewrite: `Hey ${leadName} - saw ${leadCompany}'s recent focus on pipeline velocity. Built a 2-minute video on where similar teams lose 30% of their follow-ups. Worth a peek, or should I leave you in peace?`
   };
 
+  let coachToolError: string | undefined;
   if (ai) {
     try {
       const response = await ai.models.generateContent({
@@ -989,12 +1036,26 @@ Provide a structured JSON response strictly adhering to this format:
         console.warn('Could not parse Gemini JSON response, using fallback format');
       }
     } catch (error) {
+      coachToolError = error instanceof Error ? error.message : 'gemini_request_failed';
       console.error('Error generating sales personality coaching:', error);
     }
   }
 
-  // Persist into Turso AI Agent database (LibSQL / SQLite parameterized queries)
+  try {
+    await recordAgentTool(
+      tenantKey,
+      'sales_personality_coach',
+      toolStartedAt,
+      toolParams,
+      resultData,
+      coachToolError
+    );
+  } catch (toolErr) {
+    console.warn('[AgentFS] Could not record coach tool call:', toolErr);
+  }
+
   const logId = `coach_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  const now = new Date().toISOString();
   try {
     await turso.insertCoachingLog(tenantKey, {
       id: logId,
@@ -1009,10 +1070,28 @@ Provide a structured JSON response strictly adhering to this format:
       cringe_score: resultData.cringeScore,
       flagged_cliches: JSON.stringify(resultData.flaggedCliches),
       beep_commentary: resultData.beepCommentary,
-      created_at: new Date().toISOString()
+      created_at: now
+    });
+    await turso.appendConversationHistory(tenantKey, {
+      id: `${logId}_user`,
+      session_id: logId,
+      lead_id: lead.$id ? String(lead.$id) : null,
+      role: 'user',
+      content: userInput || interactionType,
+      reasoning_log: null,
+      timestamp: now,
+    });
+    await turso.appendConversationHistory(tenantKey, {
+      id: `${logId}_assistant`,
+      session_id: logId,
+      lead_id: lead.$id ? String(lead.$id) : null,
+      role: 'assistant',
+      content: JSON.stringify(resultData),
+      reasoning_log: selectedPersona.slice(0, 120),
+      timestamp: now,
     });
   } catch (dbErr) {
-    console.warn('[Turso Storage Warning] Could not persist coaching log:', dbErr);
+    console.warn('[AgentFS] Could not persist coaching log:', dbErr);
   }
 
   res.json({
@@ -1026,7 +1105,8 @@ Provide a structured JSON response strictly adhering to this format:
 
 // AI Cringe Detector / Anti-Slop Audit Endpoint
 app.post('/api/gemini/sales-personality/cringe-audit', async (req, res) => {
-  const { text = '', leadContext = '' } = req.body;
+  const { text = '', leadContext = '', tenantKey = DEFAULT_AGENT_TENANT } = req.body;
+  const cringeStartedAt = Date.now() / 1000;
 
   if (!text.trim()) {
     res.status(400).json({ error: 'Text content is required for audit' });
@@ -1041,6 +1121,7 @@ app.post('/api/gemini/sales-personality/cringe-audit', async (req, res) => {
     roast: 'BEEP: "Reading this made my cooling fan spin up to 100% just to survive the secondhand embarrassment. We are burning this draft immediately."'
   };
 
+  let cringeToolError: string | undefined;
   if (ai) {
     try {
       const response = await ai.models.generateContent({
@@ -1072,23 +1153,59 @@ Respond in JSON with:
         roast: parsed.roast || auditResult.roast
       };
     } catch (err) {
+      cringeToolError = err instanceof Error ? err.message : 'gemini_request_failed';
       console.error('Error during cringe audit:', err);
     }
+  }
+
+  try {
+    await recordAgentTool(
+      tenantKey,
+      'sales_personality_cringe_audit',
+      cringeStartedAt,
+      { leadContext, textPreview: text.slice(0, 200) },
+      auditResult,
+      cringeToolError
+    );
+  } catch (toolErr) {
+    console.warn('[AgentFS] Could not record cringe audit tool call:', toolErr);
+  }
+
+  const auditId = `cringe_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  const auditTime = new Date().toISOString();
+  try {
+    await turso.insertCoachingLog(tenantKey, {
+      id: auditId,
+      lead_id: 'cringe_audit',
+      lead_name: leadContext || 'Draft audit',
+      persona: 'reluctant_saviour',
+      interaction_type: 'cringe_check',
+      user_input: text,
+      coaching_tip: auditResult.rewrite,
+      witty_retort: auditResult.roast,
+      psychological_insight: auditResult.verdict,
+      cringe_score: auditResult.cringeScore,
+      flagged_cliches: JSON.stringify(auditResult.flaggedPhrases),
+      beep_commentary: auditResult.roast,
+      created_at: auditTime,
+    });
+  } catch (dbErr) {
+    console.warn('[AgentFS] Could not persist cringe audit:', dbErr);
   }
 
   res.json(auditResult);
 });
 
-// Fetch Turso AI Agent coaching logs for tenant
+// Agent coaching logs (LibSQL / AgentFS — not Appwrite)
 app.get('/api/agent/coaching-logs', async (req, res) => {
-  const tenantKey = (req.query['tenant'] as string) || 'default';
+  const tenantKey = (req.query['tenant'] as string) || DEFAULT_AGENT_TENANT;
   const limit = req.query['limit'] ? parseInt(req.query['limit'] as string, 10) : 25;
 
   try {
     const logs = await turso.getCoachingLogs(tenantKey, limit);
     res.json({ logs });
   } catch (error) {
-    console.error('Error fetching coaching logs from Turso:', error);
+    console.error('Error fetching coaching logs from AgentFS LibSQL:', error);
     res.status(500).json({ error: (error as Error).message });
   }
 });
@@ -1096,7 +1213,7 @@ app.get('/api/agent/coaching-logs', async (req, res) => {
 // Rate Turso AI coaching log feedback (+1 or -1)
 app.post('/api/agent/coaching-logs/:id/rate', async (req, res) => {
   const { id } = req.params;
-  const { rating = 1, tenantKey = 'default' } = req.body;
+  const { rating = 1, tenantKey = DEFAULT_AGENT_TENANT } = req.body;
 
   try {
     await turso.rateCoachingLog(tenantKey, id, rating);

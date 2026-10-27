@@ -28,11 +28,18 @@ const createQueryBuilder = <T>(): QueryBuilder<T> => ({
 });
 
 const tableIdMap: Record<string, Record<string, string>> = Object.create(null);
-tableIdMap["leadwave-main"] = Object.create(null);
-tableIdMap["leadwave-main"]["Contracts"] = "contracts";
-tableIdMap["leadwave-main"]["Contacts"] = "contacts";
-tableIdMap["leadwave-main"]["Tasks"] = "tasks";
-tableIdMap["leadwave-main"]["Notifications"] = "notifications";
+tableIdMap["crm-main"] = Object.create(null);
+tableIdMap["crm-main"]["Leads"] = "leads";
+tableIdMap["crm-main"]["Contacts"] = "contacts";
+tableIdMap["crm-main"]["Tasks"] = "tasks";
+tableIdMap["crm-main"]["Notes"] = "notes";
+tableIdMap["crm-main"]["Notifications"] = "notifications";
+tableIdMap["crm-main"]["Contracts"] = "contracts";
+tableIdMap["crm-main"]["Emails"] = "emails";
+tableIdMap["crm-main"]["Events"] = "events";
+tableIdMap["crm-main"]["Chat Messages"] = "chatMessages";
+tableIdMap["crm-main"]["Email Workflows"] = "email_workflows";
+tableIdMap["crm-main"]["Newsletter Subscribers"] = "newsletter_subscribers";
 
 const tablesWithRelationships = new Set<string>();
 

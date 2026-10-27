@@ -299,7 +299,7 @@ import { Appwrite } from './appwrite';
             <ul class="space-y-2 text-[11px] text-zinc-500 pl-4 list-decimal leading-relaxed">
               <li>Create a project in the Appwrite Console.</li>
               <li>Under <span class="text-zinc-400">Platforms</span>, add a Web app platform and insert your hosted CRM domain namespace.</li>
-              <li>Create a database with ID <code class="text-zinc-300 font-mono">leadwave-main</code>.</li>
+              <li>Create a database with ID <code class="text-zinc-300 font-mono">crm-main</code>.</li>
               <li>Inside your database, create the following collections:
                 <code class="text-zinc-300 font-mono">contracts</code>, <code class="text-zinc-300 font-mono">contacts</code>, <code class="text-zinc-300 font-mono">tasks</code>, and <code class="text-zinc-300 font-mono">notifications</code>.
               </li>

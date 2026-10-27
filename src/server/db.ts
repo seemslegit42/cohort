@@ -1,5 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Client, Databases as TablesDB, Query, ID, Permission, Role } from 'node-appwrite';
+import { Client, Databases as TablesDB, Query, ID } from 'node-appwrite';
+import {
+  APPWRITE_DATABASE_ID,
+  buildRowPermissions,
+  mapFromAppwrite,
+  mapToAppwrite,
+} from './appwrite-schema';
 
 let client: Client;
 let tablesDB: TablesDB;
@@ -9,7 +15,7 @@ function getClient() {
     client = new Client()
       .setEndpoint(process.env['APPWRITE_ENDPOINT'] || 'https://tor.cloud.appwrite.io/v1')
       .setProject(process.env['APPWRITE_PROJECT_ID'] || '6990e2830030cacccd98');
-      
+
     if (process.env['APPWRITE_API_KEY']) {
       client.setKey(process.env['APPWRITE_API_KEY']);
     }
@@ -24,50 +30,20 @@ function getTablesDB() {
   return tablesDB;
 }
 
-const DATABASE_ID = process.env['APPWRITE_DATABASE_ID'] || 'leadwave-main';
-
-function mapToAppwrite(data: any) {
-  const { teamId, createdBy, ...rest } = data;
-  return {
-    teamId: teamId || null,
-    createdBy: createdBy || null,
-    dataPayload: JSON.stringify(rest)
-  };
-}
-
-function mapFromAppwrite<T>(doc: any): T {
-  let payload = {};
-  if (doc.dataPayload) {
-    try {
-      payload = JSON.parse(doc.dataPayload);
-    } catch {
-      // ignore parse error
-    }
-  }
-  return {
-    ...payload,
-    $id: doc.$id,
-    $createdAt: doc.$createdAt,
-    $updatedAt: doc.$updatedAt,
-    teamId: doc.teamId,
-    createdBy: doc.createdBy
-  } as T;
-}
+const DATABASE_ID = process.env['APPWRITE_DATABASE_ID'] || APPWRITE_DATABASE_ID;
 
 function createTable<T>(tableId: string) {
   return {
     async create(data: Omit<T, '$id' | '$createdAt' | '$updatedAt'>, teamId?: string) {
       const db = getTablesDB();
-      const permissions = teamId ? [
-        Permission.read(Role.team(teamId)),
-        Permission.write(Role.team(teamId))
-      ] : [
-        Permission.read(Role.any()),
-        Permission.write(Role.any())
-      ];
-      
-      const mapped = mapToAppwrite(data);
-      if (teamId) mapped.teamId = teamId;
+      const payload = data as Record<string, unknown>;
+      const resolvedTeamId = teamId || (payload['teamId'] as string | undefined);
+      if (!resolvedTeamId) {
+        throw new Error('teamId is required');
+      }
+
+      const mapped = mapToAppwrite(tableId, { ...payload, teamId: resolvedTeamId });
+      const permissions = buildRowPermissions(tableId, resolvedTeamId, payload);
 
       const doc = await db.createDocument(
         DATABASE_ID,
@@ -76,14 +52,14 @@ function createTable<T>(tableId: string) {
         mapped,
         permissions
       );
-      return mapFromAppwrite<T>(doc);
+      return mapFromAppwrite<T>(tableId, doc);
     },
 
     async get(id: string) {
       const db = getTablesDB();
       try {
         const doc = await db.getDocument(DATABASE_ID, tableId, id);
-        return mapFromAppwrite<T>(doc);
+        return mapFromAppwrite<T>(tableId, doc);
       } catch {
         return null;
       }
@@ -94,9 +70,9 @@ function createTable<T>(tableId: string) {
       try {
         const response = await db.listDocuments(DATABASE_ID, tableId, [
           ...queries,
-          Query.orderDesc('$createdAt')
+          Query.orderDesc('$createdAt'),
         ]);
-        return response.documents.map(mapFromAppwrite<T>);
+        return response.documents.map((doc) => mapFromAppwrite<T>(tableId, doc));
       } catch (err) {
         console.error(`Error listing ${tableId}:`, err);
         return [];
@@ -109,21 +85,40 @@ function createTable<T>(tableId: string) {
 
     async update(id: string, data: Partial<T>) {
       const db = getTablesDB();
-      // First get the existing doc to merge payload
-      const existing = await this.get(id) as any;
+      const existing = await this.get(id) as Record<string, unknown> | null;
       if (!existing) throw new Error('Not found');
 
-      // Remove immutable columns from new data
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { $id: _id, $createdAt: _c, $updatedAt: _u, createdBy: _cb, teamId: _t, ...updateData } = data as any;
-      
-      // Merge with existing
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { $id: _eId, $createdAt: _eC, $updatedAt: _eU, createdBy: eCb, teamId: eTi, ...existingData } = existing;
-      const merged = { ...existingData, ...updateData, createdBy: eCb, teamId: eTi };
+      const {
+        $id: _id,
+        $createdAt: _c,
+        $updatedAt: _u,
+        ...existingData
+      } = existing as Record<string, unknown> & {
+        $id?: string;
+        $createdAt?: string;
+        $updatedAt?: string;
+      };
 
-      const doc = await db.updateDocument(DATABASE_ID, tableId, id, mapToAppwrite(merged));
-      return mapFromAppwrite<T>(doc);
+      const updatePayload = data as Record<string, unknown>;
+      const {
+        $id: _uId,
+        $createdAt: _uC,
+        $updatedAt: _uU,
+        ...updateData
+      } = updatePayload as Record<string, unknown> & {
+        $id?: string;
+        $createdAt?: string;
+        $updatedAt?: string;
+      };
+
+      const merged = { ...existingData, ...updateData };
+      const doc = await db.updateDocument(
+        DATABASE_ID,
+        tableId,
+        id,
+        mapToAppwrite(tableId, merged as Record<string, any>)
+      );
+      return mapFromAppwrite<T>(tableId, doc);
     },
 
     async delete(id: string) {
@@ -143,7 +138,8 @@ export const db = {
   notes: createTable<any>('notes'),
   events: createTable<any>('events'),
   emails: createTable<any>('emails'),
-  workflows: createTable<any>('workflows'),
+  workflows: createTable<any>('email_workflows'),
+  newsletter_subscribers: createTable<any>('newsletter_subscribers'),
   campaigns: createTable<any>('campaigns'),
-  sequences: createTable<any>('sequences')
+  sequences: createTable<any>('sequences'),
 };

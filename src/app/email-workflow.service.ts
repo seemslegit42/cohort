@@ -129,7 +129,7 @@ const DEFAULT_WORKFLOWS: EmailWorkflow[] = [
         delayValue: 0,
         delayUnit: 'minutes',
         subject: 'Tailored architecture evaluation for {{lead.company}} ({{lead.dealValue}})',
-        body: `Hi {{lead.firstName}},\n\nThanks for reaching out to ΛΞVOS regarding your {{lead.industry}} infrastructure goals.\n\nI reviewed {{lead.company}}'s requirements and put together a tailored evaluation framework covering multi-tenant data isolation and real-time Appwrite orchestration:\n\n👉 Review Scoping Blueprint: {{deal.scopeUrl}}\n\nAre you available for a 15-minute sync with our solutions engineering team this Thursday?\n\nBest regards,\n{{rep.name}}\n{{rep.email}}`,
+        body: `Hi {{lead.firstName}},\n\nThanks for reaching out to lxv regarding your {{lead.industry}} infrastructure goals.\n\nI reviewed {{lead.company}}'s requirements and put together a tailored evaluation framework covering multi-tenant data isolation and real-time Appwrite orchestration:\n\n👉 Review Scoping Blueprint: {{deal.scopeUrl}}\n\nAre you available for a 15-minute sync with our solutions engineering team this Thursday?\n\nBest regards,\n{{rep.name}}\n{{rep.email}}`,
         previewText: 'Custom architecture review for {{lead.company}}',
         abTest: {
           enabled: true,
@@ -321,7 +321,7 @@ export class EmailWorkflowService {
     this.isLoading.set(true);
     this.error.set(null);
     const teamId = this.appwrite.activeTeam()?.$id || 'laevos-crm';
-    const dbId = this.appwrite.config().databaseId || 'leadwave-main';
+    const dbId = this.appwrite.config().databaseId || 'crm-main';
     const collectionId = 'email_workflows';
 
     try {
@@ -386,7 +386,7 @@ export class EmailWorkflowService {
       this.unsubscribeRealtime = null;
     }
 
-    const dbId = this.appwrite.config().databaseId || 'leadwave-main';
+    const dbId = this.appwrite.config().databaseId || 'crm-main';
     const channel = `databases.${dbId}.collections.email_workflows.documents`;
 
     try {
@@ -407,7 +407,7 @@ export class EmailWorkflowService {
   async createWorkflow(workflow: Partial<EmailWorkflow>): Promise<EmailWorkflow> {
     this.isSaving.set(true);
     const teamId = this.appwrite.activeTeam()?.$id || 'laevos-crm';
-    const dbId = this.appwrite.config().databaseId || 'leadwave-main';
+    const dbId = this.appwrite.config().databaseId || 'crm-main';
     const collectionId = 'email_workflows';
 
     const newWorkflow: EmailWorkflow = {
@@ -498,7 +498,7 @@ export class EmailWorkflowService {
   async updateWorkflow(id: string, updates: Partial<EmailWorkflow>): Promise<EmailWorkflow> {
     this.isSaving.set(true);
     const teamId = this.appwrite.activeTeam()?.$id || 'laevos-crm';
-    const dbId = this.appwrite.config().databaseId || 'leadwave-main';
+    const dbId = this.appwrite.config().databaseId || 'crm-main';
     const collectionId = 'email_workflows';
 
     const current = this.workflows().find(w => w.$id === id);
@@ -548,7 +548,7 @@ export class EmailWorkflowService {
 
   async deleteWorkflow(id: string): Promise<void> {
     const teamId = this.appwrite.activeTeam()?.$id || 'laevos-crm';
-    const dbId = this.appwrite.config().databaseId || 'leadwave-main';
+    const dbId = this.appwrite.config().databaseId || 'crm-main';
     const collectionId = 'email_workflows';
 
     try {

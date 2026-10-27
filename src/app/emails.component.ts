@@ -986,13 +986,13 @@ export class EmailsComponent implements OnInit {
     let body = '';
 
     if (data.goal === 'intro') {
-      subject = `Enterprise Architecture Initiative / ${data.companyName} x ΛΞVOS`;
-      body = `Dear ${data.clientName},\n\nI hope this email finds you well.\n\nI am contacting you from ΛΞVOS Enterprise Solutions regarding your current infrastructure roadmap. We have architected a dedicated edge data system that directly resolves relationship latency and contract governance.\n\nKey value milestones aligned to ${data.companyName}:\n- ${data.valueProposition}\n- Dedicated high-throughput SLA guarantees\n- Direct integration into your existing authentication pipelines\n\nCould we coordinate a brief 10-minute briefing next Wednesday at 10 AM PST to walk through the custom architecture?\n\nSincerely,\n${this.reviewerName()}\nΛΞVOS Enterprise Operations`;
+      subject = `Enterprise Architecture Initiative / ${data.companyName} x lxv`;
+      body = `Dear ${data.clientName},\n\nI hope this email finds you well.\n\nI am contacting you from lxv Enterprise Solutions regarding your current infrastructure roadmap. We have architected a dedicated edge data system that directly resolves relationship latency and contract governance.\n\nKey value milestones aligned to ${data.companyName}:\n- ${data.valueProposition}\n- Dedicated high-throughput SLA guarantees\n- Direct integration into your existing authentication pipelines\n\nCould we coordinate a brief 10-minute briefing next Wednesday at 10 AM PST to walk through the custom architecture?\n\nSincerely,\n${this.reviewerName()}\nlxv Enterprise Operations`;
     } else if (data.goal === 'proposal') {
       subject = `Master SLA & Partnership Proposal for ${data.companyName}`;
-      body = `Dear ${data.clientName},\n\nFollowing our executive review cycle, please find our finalized Master SLA contract ready for review.\n\nAs discussed for ${data.dealName || 'your account'}:\n- ${data.valueProposition}\n- Complete compliance and security guarantees\n\nPlease let me know if your legal team has any preliminary items to address before final execution.\n\nWith respect,\n${this.reviewerName()}\nContracts Group, ΛΞVOS`;
+      body = `Dear ${data.clientName},\n\nFollowing our executive review cycle, please find our finalized Master SLA contract ready for review.\n\nAs discussed for ${data.dealName || 'your account'}:\n- ${data.valueProposition}\n- Complete compliance and security guarantees\n\nPlease let me know if your legal team has any preliminary items to address before final execution.\n\nWith respect,\n${this.reviewerName()}\nContracts Group, lxv`;
     } else if (data.goal === 'followup') {
-      subject = `Follow-Up: Next Steps for ${data.companyName} x ΛΞVOS`;
+      subject = `Follow-Up: Next Steps for ${data.companyName} x lxv`;
       body = `Hi ${data.clientName},\n\nGreat connecting with you during our recent review session.\n\nTo help ${data.companyName} execute your next phase smoothly, we've outlined the core parameters:\n- ${data.valueProposition}\n\nLet me know what day works best this week for a prompt 15-minute follow-up.\n\nBest,\n${this.reviewerName()}`;
     } else {
       subject = `Strategic Update & Roadmap for ${data.companyName}`;

@@ -1,12 +1,12 @@
 import { Client, TablesDB, Permission, Role } from 'node-appwrite';
 
 const client = new Client()
-    .setEndpoint(process.env.APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1')
+    .setEndpoint(process.env.APPWRITE_ENDPOINT || 'https://tor.cloud.appwrite.io/v1')
     .setProject(process.env.APPWRITE_PROJECT_ID)
     .setKey(process.env.APPWRITE_API_KEY);
 
 const tablesDB = new TablesDB(client);
-const databaseId = 'leadwave-main';
+const databaseId = 'crm-main';
 
 async function setupNewsletterDatabase() {
     console.log('Starting Newsletter DB setup...');

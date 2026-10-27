@@ -228,7 +228,7 @@ export interface DashboardWidget {
                        <i class="ti ti-sparkles text-teal-400 text-[18px] animate-pulse"></i>
                     </div>
                     <div>
-                      <h3 class="text-sm font-bold text-white tracking-wide font-display">ΛΞVOS Oracle Intelligence</h3>
+                      <h3 class="text-sm font-bold text-white tracking-wide font-display">lxv Oracle Intelligence</h3>
                       <p class="text-[10px] text-teal-400 uppercase tracking-widest font-semibold">Strategic Recommendation</p>
                     </div>
                   </div>

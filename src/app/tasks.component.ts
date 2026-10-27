@@ -12,6 +12,9 @@ export interface TaskItem {
   priority?: string;
   dueDate?: string;
   description?: string;
+  completed: boolean;
+  leadId?: string;
+  leadName?: string;
 }
 
 @Component({

@@ -836,7 +836,7 @@ export class SalesPerformanceComponent {
   }
 
   exportExecutiveSummary() {
-    const text = `ΛΞVOS SALES PERFORMANCE BRIEFING (${this.timeRange().toUpperCase()})\n` +
+    const text = `lxv SALES PERFORMANCE BRIEFING (${this.timeRange().toUpperCase()})\n` +
       `Total Revenue: ${this.formatCurrency(this.totalRevenue())}\n` +
       `Quota Attainment: ${this.quotaAttainmentPct()}%\n` +
       `Deals Won: ${this.dealsWonCount()}\n` +

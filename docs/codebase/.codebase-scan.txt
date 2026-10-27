@@ -1,0 +1,308 @@
+
+=== DIRECTORY TREE (max depth 3, source files only) ===
+.agentfs
+.agentfs/laevos-crm.db
+.agentfs/laevos-crm.db-shm
+.agentfs/laevos-crm.db-wal
+.agentfs/test-tenant.db
+.agentfs/test-tenant.db-wal
+.agentfs/test-tenant2.db
+.agentfs/test-tenant2.db-wal
+.angular
+.angular/cache
+.angular/cache/21.2.28
+.angular/cache/21.2.28/app
+.env.example
+.gitignore
+.postcssrc.json
+README.md
+SYSTEM_DOCUMENTATION.md
+agent_tenant_default.db
+angular.json
+appwrite-functions
+appwrite-functions/newsletter-signup
+appwrite-functions/newsletter-signup/package.json
+appwrite-functions/newsletter-signup/src
+appwrite-functions/newsletter-signup/src/index.js
+appwrite.config.json
+appwrite.json
+assets
+assets/.aistudio
+assets/.aistudio/.gitignore
+bun.lock
+docs
+docs/codebase
+docs/codebase/.codebase-scan.txt
+eslint.config.js
+metadata.json
+package.json
+public
+public/favicon.ico
+scripts
+scripts/setup-database.js
+scripts/setup-database.ts
+scripts/setup-newsletter-db.js
+src
+src/app
+src/app/agent-insights.ts
+src/app/ai-copilot-drawer.component.ts
+src/app/app.config.server.ts
+src/app/app.config.ts
+src/app/app.css
+src/app/app.html
+src/app/app.routes.server.ts
+src/app/app.routes.ts
+src/app/app.spec.ts
+src/app/app.ts
+src/app/appwrite.ts
+src/app/automations.component.ts
+src/app/cadences.component.ts
+src/app/calendar.component.ts
+src/app/campaigns.component.ts
+src/app/chart-card.component.ts
+src/app/clients.component.ts
+src/app/command-palette.component.ts
+src/app/contacts.component.ts
+src/app/contract-suite.component.ts
+src/app/dashboard.component.ts
+src/app/data-table.component.ts
+src/app/deal-rooms.component.ts
+src/app/deployment-checklist.component.ts
+src/app/dock.component.ts
+src/app/email-marketing.service.ts
+src/app/email-workflow.service.ts
+src/app/email-workflows.component.ts
+src/app/emails.component.ts
+src/app/forecast.component.ts
+src/app/kanban-board.component.ts
+src/app/kpi-card.component.ts
+src/app/lead-import.component.ts
+src/app/lead-map.component.ts
+src/app/lead-scoring.component.ts
+src/app/lead.service.ts
+src/app/leads.component.ts
+src/app/newsletter.component.ts
+src/app/nextcloud-calendar.service.ts
+src/app/notes.component.ts
+src/app/notifications-drawer.component.ts
+src/app/notifications.component.ts
+src/app/pipeline-ai-engine.component.ts
+src/app/pipeline-charts.component.ts
+src/app/pipeline-signals.component.ts
+src/app/recharts.component.ts
+src/app/reports.component.ts
+src/app/revops-simulator.component.ts
+src/app/sales-performance.component.ts
+src/app/sales-personality.component.ts
+src/app/sales-personality.service.ts
+src/app/scheduler.component.ts
+src/app/settings.component.ts
+src/app/sidebar.component.ts
+src/app/systems.component.ts
+src/app/tasks.component.ts
+src/app/workflows.component.ts
+src/index.html
+src/lib
+src/lib/appwrite.ts
+src/lib/node-appwrite-stub.ts
+src/main.server.ts
+src/main.ts
+src/server
+src/server/agentfs.spec.ts
+src/server/agentfs.ts
+src/server/appwrite-mapper.spec.ts
+src/server/appwrite-schema.ts
+src/server/db.ts
+src/server/turso.ts
+src/server.ts
+src/styles.css
+tsconfig.app.json
+tsconfig.json
+tsconfig.spec.json
+
+=== STACK DETECTION (manifest files) ===
+
+--- package.json ---
+{
+  "name": "crm",
+  "version": "0.0.0",
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve",
+    "dev": "cross-env ng serve --port=3000 --host=0.0.0.0 --allowed-hosts=true ${DISABLE_HMR:+--live-reload=false}",
+    "build": "ng build",
+    "watch": "ng build --watch --configuration development",
+    "test": "ng test",
+    "test:server": "bun test ./src/server",
+    "lint": "ng lint",
+    "serve:ssr:app": "node dist/app/server/server.mjs"
+  },
+  "private": true,
+  "dependencies": {
+    "@angular/cdk": "^21.0.0",
+    "@angular/common": "^21.0.0",
+    "@angular/compiler": "^21.0.0",
+    "@angular/core": "^21.0.0",
+    "@angular/forms": "^21.0.0",
+    "@angular/google-maps": "^21.2.14",
+    "@angular/material": "^21.0.0",
+    "@angular/platform-browser": "^21.0.0",
+    "@angular/platform-server": "^21.0.0",
+    "@angular/router": "^21.0.0",
+    "@angular/ssr": "^21.0.0",
+    "@google/genai": "^2.4.0",
+    "@libsql/client": "^0.18.0",
+    "agentfs-sdk": "^0.6.4",
+    "appwrite": "^26.1.0",
+    "chart.js": "^4.5.1",
+    "dotenv": "^17.4.2",
+    "express": "^5.1.0",
+    "motion": "^12.23.24",
+    "node-appwrite": "^26.2.0",
+    "rxjs": "~7.8.0",
+    "tslib": "^2.3.0"
+  },
+  "devDependencies": {
+    "@angular/build": "^21.0.0",
+    "@angular/cli": "^21.0.0",
+    "@angular/compiler-cli": "^21.0.0",
+    "@tailwindcss/postcss": "^4.1.12",
+    "@types/express": "^5.0.1",
+    "@types/node": "^20.17.19",
+    "angular-eslint": "21.1.0",
+    "cross-env": "^10.1.0",
+    "eslint": "^9.39.1",
+    "jsdom": "^27.0.0",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^4.1.12",
+    "typescript": "~5.9.2",
+    "typescript-eslint": "8.47.0",
+    "vitest": "^4.0.0"
+  }
+}
+
+
+=== ENTRY POINTS ===
+Found: src/main.ts
+Found: src/server.ts
+
+=== LINTING AND FORMATTING CONFIG ===
+Found: eslint.config.js
+Found: tsconfig.json
+
+=== ENVIRONMENT VARIABLE TEMPLATES ===
+--- .env.example ---
+# GEMINI_API_KEY: Required for Gemini AI API calls.
+# AI Studio automatically injects this at runtime from user secrets.
+# Users configure this via the Secrets panel in the AI Studio UI.
+GEMINI_API_KEY="MY_GEMINI_API_KEY"
+
+# APP_URL: The URL where this applet is hosted.
+# AI Studio automatically injects this at runtime with the Cloud Run service URL.
+# Used for self-referential links, OAuth callbacks, and API endpoints.
+APP_URL="localhost"
+
+# Appwrite Configurations
+NEXT_PUBLIC_APPWRITE_ENDPOINT="https://tor.cloud.appwrite.io/v1"
+NEXT_PUBLIC_APPWRITE_PROJECT_ID="6990e2830030cacccd98"
+NEXT_PUBLIC_APPWRITE_DATABASE_ID="crm-main"
+
+# Node-Appwrite Server SDK API Key (required ONLY for scripts/setup-database.js script)
+APPWRITE_API_KEY=""
+
+APPWRITE_PROJECT_ID="6990e2830030cacccd98"
+APPWRITE_PROJECT_NAME="lxv"
+APPWRITE_ENDPOINT="https://tor.cloud.appwrite.io/v1"
+APPWRITE_API_KEY=""
+
+# Agent / AI persistence: @libsql/client (domain SQL) + agentfs-sdk (audit/kv/fs) on one SQLite DB per tenant.
+# CRM data stays on Appwrite only.
+AGENT_DEFAULT_TENANT="laevos-crm"
+# AGENTFS_DIR=".agentfs"
+# Local file (default): server uses file:.agentfs/{tenant}.db — no URL required.
+# AGENT_LIBSQL_URL="file:.agentfs/laevos-crm.db"
+# Turso Cloud (optional): same URL/token for LibSQL + AgentFS cloud sync
+# AGENT_LIBSQL_URL="libsql://your-db.turso.io"
+# AGENT_LIBSQL_AUTH_TOKEN=""
+# Legacy Turso env names (still supported for remote LibSQL)
+# TURSO_DATABASE_URL=""
+# TURSO_AUTH_TOKEN=""
+
+=== TODO / FIXME / HACK (production code only, test dirs excluded) ===
+src/app/tasks.component.ts:117: <!-- TODO Column -->
+
+=== GIT RECENT COMMITS (last 20) ===
+b9859d4 feat: add sales performance analytics and modules
+3cbbc52 feat(newsletter): update permissions and remove quick add button
+5fa076e feat: implement email workflow system
+2769b64 feat: enhance lead scoring and forecasting models
+62111a2 feat: add core modules and navigation for contract suite
+4864a37 feat: implement local workspace and lead-scoring route
+daf8735 feat: add campaigns module and command palette
+a255c84 feat: add quick add functionality and lead filters
+03db4ac feat(newsletter): add newsletter module and db setup
+8b807f1 changes were made
+e7d3e62 some shit changed, yo
+8259b2c refactor(systems): remove system architecture topology section
+a102fc5 feat: initialize Angular project structure
+cc4b3ba Initial commit
+
+=== HIGH-CHURN FILES (last 90 days, top 20) ===
+   5 src/app/app.routes.ts
+   5 src/app/sidebar.component.ts
+   4 src/app/app.ts
+   4 src/app/command-palette.component.ts
+   4 src/app/dashboard.component.ts
+   4 src/app/leads.component.ts
+   3 src/app/campaigns.component.ts
+   3 src/app/deal-rooms.component.ts
+   3 src/app/dock.component.ts
+   3 src/app/lead-scoring.component.ts
+   3 src/app/lead.service.ts
+   3 src/app/tasks.component.ts
+   3 src/app/cadences.component.ts
+   3 src/app/forecast.component.ts
+   2 bun.lock
+   2 package.json
+   2 src/app/appwrite.ts
+   2 src/app/emails.component.ts
+   2 src/app/recharts.component.ts
+   2 src/server.ts
+
+=== MONOREPO SIGNALS ===
+No monorepo signals detected.
+
+=== CODE METRICS ===
+Total files scanned: 101
+Total lines of code: 39076
+
+Files by language:
+  TypeScript: 67
+  Other: 30
+  JavaScript: 4
+
+Top 10 largest files:
+.angular/cache/21.2.28/app/angular-compiler.db: 3860.0KB
+bun.lock: 201.3KB
+.agentfs/test-tenant2.db-wal: 156.9KB
+.agentfs/test-tenant.db-wal: 140.9KB
+src/app/leads.component.ts: 114.2KB
+src/app/contacts.component.ts: 97.5KB
+src/app/campaigns.component.ts: 95.6KB
+.agentfs/laevos-crm.db: 92.0KB
+src/app/cadences.component.ts: 89.3KB
+src/app/systems.component.ts: 64.6KB
+
+=== CI/CD PIPELINES ===
+No CI/CD pipelines detected.
+
+=== CONTAINERS & ORCHESTRATION ===
+No containerization configs detected.
+
+=== SECURITY & COMPLIANCE ===
+No security configs detected.
+
+=== PERFORMANCE & TESTING ===
+No performance testing configs detected.
+
+=== SCAN COMPLETE ===

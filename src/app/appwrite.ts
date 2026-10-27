@@ -17,7 +17,7 @@ export interface AppwriteConfig {
 const DEFAULT_CONFIG: AppwriteConfig = {
   endpoint: 'https://tor.cloud.appwrite.io/v1',
   projectId: '6990e2830030cacccd98',
-  databaseId: 'leadwave-main',
+  databaseId: 'crm-main',
   contractsCollectionId: 'contracts',
   contactsCollectionId: 'contacts',
   tasksCollectionId: 'tasks',
@@ -172,7 +172,7 @@ export class Appwrite {
     if (this.userTeams().length === 0) {
       const defaultTeam: any = {
         $id: 'laevos-workspace',
-        name: 'ΛΞVOS Workspace',
+        name: 'lxv Workspace',
         total: 1
       };
       this.userTeams.set([defaultTeam]);
@@ -244,7 +244,7 @@ export class Appwrite {
         this.activeTeam.set(response.teams[0]);
       } else {
         // Automatically create a default workspace team if none exists
-        await this.createWorkspaceTeam('ΛΞVOS Default Workspace');
+        await this.createWorkspaceTeam('lxv Default Workspace');
       }
     } catch {
       this.initDefaultLocalTeam();
@@ -1132,7 +1132,8 @@ export class Appwrite {
     const payload = {
       dealId,
       message,
-      user
+      user,
+      teamId: this.activeTeam()?.$id || 'laevos-crm',
     };
 
     try {
@@ -1408,8 +1409,8 @@ export class Appwrite {
           contactId: 'mock-c1',
           dealId: 'deal-azure-mig',
           dealName: 'Azure Cloud Migration SLA ($450k)',
-          subject: 'Strategic Cloud Portal Proposal - ΛΞVOS Workspace', 
-          body: 'Dear Bill,\n\nFollowing our executive briefing, please find attached the revised technical specifications for the multi-tenant architecture.\n\nAll security postures and encryption parameters have been validated by our security team.\n\nLooking forward to our sync this Thursday.\n\nBest regards,\nSales Engineering\nΛΞVOS Inc',
+          subject: 'Strategic Cloud Portal Proposal - lxv Workspace', 
+          body: 'Dear Bill,\n\nFollowing our executive briefing, please find attached the revised technical specifications for the multi-tenant architecture.\n\nAll security postures and encryption parameters have been validated by our security team.\n\nLooking forward to our sync this Thursday.\n\nBest regards,\nSales Engineering\nlxv Inc',
           status: 'Replied', 
           direction: 'outbound',
           humanApproved: true,

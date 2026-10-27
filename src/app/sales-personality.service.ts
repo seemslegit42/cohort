@@ -1,4 +1,5 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
+import { Appwrite } from './appwrite';
 
 export type SalesPersonaKey = 'reluctant_saviour' | 'empathetic_strategist' | 'challenger_oracle' | 'zen_closer';
 
@@ -51,6 +52,8 @@ export interface CoachingLogItem {
   providedIn: 'root'
 })
 export class SalesPersonalityService {
+  private readonly appwrite = inject(Appwrite);
+
   readonly activePersona = signal<SalesPersonaKey>('reluctant_saviour');
   readonly currentTip = signal<CoachingResponse | null>(null);
   readonly isLoading = signal<boolean>(false);
@@ -89,6 +92,10 @@ export class SalesPersonalityService {
     }
   ];
 
+  private agentTenantKey(): string {
+    return this.appwrite.activeTeam()?.$id || 'laevos-crm';
+  }
+
   async getCoachingTip(
     lead: Record<string, unknown>,
     interactionType: InteractionType,
@@ -108,7 +115,7 @@ export class SalesPersonalityService {
           interactionType,
           userInput,
           persona: selectedPersona,
-          tenantKey: 'default'
+          tenantKey: this.agentTenantKey(),
         })
       });
 
@@ -138,7 +145,11 @@ export class SalesPersonalityService {
       const response = await fetch('/api/gemini/sales-personality/cringe-audit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, leadContext })
+        body: JSON.stringify({
+          text,
+          leadContext,
+          tenantKey: this.agentTenantKey(),
+        })
       });
 
       if (!response.ok) {
@@ -159,7 +170,8 @@ export class SalesPersonalityService {
 
   async loadRecentLogs(): Promise<void> {
     try {
-      const res = await fetch('/api/agent/coaching-logs?tenant=default&limit=15');
+      const tenant = encodeURIComponent(this.agentTenantKey());
+      const res = await fetch(`/api/agent/coaching-logs?tenant=${tenant}&limit=15`);
       if (res.ok) {
         const json = await res.json();
         if (Array.isArray(json.logs)) {
@@ -167,7 +179,7 @@ export class SalesPersonalityService {
         }
       }
     } catch (err) {
-      console.warn('Could not load Turso coaching logs:', err);
+      console.warn('Could not load AgentFS coaching logs:', err);
     }
   }
 
@@ -176,14 +188,14 @@ export class SalesPersonalityService {
       await fetch(`/api/agent/coaching-logs/${id}/rate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rating, tenantKey: 'default' })
+        body: JSON.stringify({ rating, tenantKey: this.agentTenantKey() })
       });
       // Update local signal state
       this.recentLogs.update(logs =>
         logs.map(item => item.id === id ? { ...item, feedback_rating: rating } : item)
       );
     } catch (err) {
-      console.warn('Failed to submit feedback rating to Turso:', err);
+      console.warn('Failed to submit feedback rating to AgentFS:', err);
     }
   }
 

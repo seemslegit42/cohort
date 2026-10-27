@@ -41,7 +41,7 @@ import { Router } from '@angular/router';
             </p>
           </div>
           <div class="pt-8 border-t border-zinc-800/50 flex items-center gap-2 text-xs text-zinc-600 font-bold">
-            <mat-icon class="text-[14px]">lock</mat-icon> Powered by ΛΞVOS Scheduling
+            <mat-icon class="text-[14px]">lock</mat-icon> Powered by lxv Scheduling
           </div>
         </div>
 

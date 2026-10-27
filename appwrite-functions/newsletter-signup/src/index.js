@@ -30,7 +30,7 @@ export default async ({ req, res, log, error }) => {
     .setKey(process.env.APPWRITE_API_KEY);
 
   const tablesDB = new TablesDB(client);
-  const databaseId = 'leadwave-main';
+  const databaseId = 'crm-main';
 
   // Initialize Resend
   const resend = new Resend(process.env.RESEND_API_KEY);

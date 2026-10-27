@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { FormsModule } from '@angular/forms';
 import { Appwrite } from './appwrite';
-import { Models } from 'appwrite';
+import { Models, Permission, Role } from 'appwrite';
 
 interface NewsletterSubscriber extends Models.Document {
   email: string;
@@ -225,7 +225,7 @@ export class NewsletterComponent implements OnInit {
   async loadSubscribers() {
     this.isLoading.set(true);
     try {
-      const response = await this.appwrite.databases.listDocuments('leadwave-main', 'newsletter_subscribers');
+      const response = await this.appwrite.databases.listDocuments('crm-main', 'newsletter_subscribers');
       this.subscribers.set(response.documents as unknown as NewsletterSubscriber[]);
     } catch (err) {
       const error = err as { code?: number, message?: string };
@@ -272,18 +272,26 @@ export class NewsletterComponent implements OnInit {
       } else {
         // Create new via Appwrite DB SDK directly (since this is internal CRM management)
         // Alternatively we could call our Appwrite Function, but we'll use DB directly for CRM admins
-        const teamId = 'team-1'; // Mock team ID for now, in a real app would come from auth context
-        
-        // Use ID.unique() from appwrite package if imported, or just let backend handle it if calling function.
-        // We will call the database directly for now.
-        const res = await this.appwrite.databases.createDocument('leadwave-main', 'newsletter_subscribers', 'unique()', {
-          email: this.currentSubscriber.email,
-          status: this.currentSubscriber.status,
-          firstName: this.currentSubscriber.firstName || '',
-          lastName: this.currentSubscriber.lastName || '',
-          source: this.currentSubscriber.source || 'manual',
-          teamId: teamId
-        });
+        const teamId = this.appwrite.activeTeam()?.$id || 'laevos-crm';
+
+        const res = await this.appwrite.databases.createDocument(
+          'crm-main',
+          'newsletter_subscribers',
+          'unique()',
+          {
+            email: this.currentSubscriber.email,
+            status: this.currentSubscriber.status,
+            firstName: this.currentSubscriber.firstName || '',
+            lastName: this.currentSubscriber.lastName || '',
+            source: this.currentSubscriber.source || 'manual',
+            teamId,
+          },
+          [
+            Permission.read(Role.team(teamId)),
+            Permission.update(Role.team(teamId, 'admin')),
+            Permission.delete(Role.team(teamId, 'owner')),
+          ]
+        );
         
         this.subscribers.update(subs => [res as unknown as NewsletterSubscriber, ...subs]);
         
@@ -312,7 +320,7 @@ export class NewsletterComponent implements OnInit {
   async toggleStatus(sub: NewsletterSubscriber) {
     const newStatus = sub.status === 'subscribed' ? 'unsubscribed' : 'subscribed';
     try {
-      await this.appwrite.databases.updateDocument('leadwave-main', 'newsletter_subscribers', sub.$id, {
+      await this.appwrite.databases.updateDocument('crm-main', 'newsletter_subscribers', sub.$id, {
         status: newStatus
       });
       
@@ -332,7 +340,7 @@ export class NewsletterComponent implements OnInit {
     if (!confirm('Are you sure you want to delete this subscriber?')) return;
     
     try {
-      await this.appwrite.databases.deleteDocument('leadwave-main', 'newsletter_subscribers', id);
+      await this.appwrite.databases.deleteDocument('crm-main', 'newsletter_subscribers', id);
       this.subscribers.update(subs => subs.filter(s => s.$id !== id));
       
       this.appwrite.addNotification({

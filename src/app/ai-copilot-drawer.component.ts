@@ -240,7 +240,7 @@ interface ChatMessage {
           </button>
         </form>
         <p class="text-[9px] text-zinc-600 text-center mt-2 font-sans select-none">
-          Powered by Gemini Dual-Engine Core &bull; Secured with ΛΞVOS Privacy standards
+          Powered by Gemini Dual-Engine Core &bull; Secured with lxv Privacy standards
         </p>
       </div>
 
