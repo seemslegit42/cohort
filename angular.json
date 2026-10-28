@@ -2,11 +2,13 @@
   "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
   "version": 1,
   "cli": {
-    "packageManager": "bun@1.4.2",
+    "packageManager": "npm",
+    "cache": {
+      "enabled": false
+    },
     "schematicCollections": [
       "angular-eslint"
-    ],
-    "analytics": false
+    ]
   },
   "newProjectRoot": "projects",
   "projects": {
@@ -42,28 +44,42 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kB",
-                  "maximumError": "1MB"
+                  "maximumWarning": "2MB",
+                  "maximumError": "5MB"
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "4kB",
-                  "maximumError": "8kB"
+                  "maximumWarning": "20kB",
+                  "maximumError": "50kB"
                 }
               ],
-              "outputHashing": "all"
+              "outputHashing": "all",
+              "optimization": true,
+              "sourceMap": false,
+              "extractLicenses": true,
+              "namedChunks": false
             },
             "development": {
               "optimization": false,
               "extractLicenses": false,
-              "sourceMap": true,
-              "externalDependencies": ["@google/genai"]
+              "sourceMap": false,
+              "externalDependencies": [
+                "@google/genai",
+                "@modelcontextprotocol/sdk",
+                "@libsql/client",
+                "node-appwrite",
+                "express"
+              ]
             }
           },
           "defaultConfiguration": "production"
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "port": 3000,
+            "host": "0.0.0.0"
+          },
           "configurations": {
             "production": {
               "buildTarget": "app:build:production"

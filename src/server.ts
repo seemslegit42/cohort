@@ -8,8 +8,8 @@ import express from 'express';
 import { join } from 'node:path';
 import { db } from './server/db';
 import { GoogleGenAI } from '@google/genai';
-import { DEFAULT_AGENT_TENANT, recordAgentTool } from './server/agentfs';
 import * as turso from './server/turso';
+import { handleMcpPost, handleMcpStatus, handleMcpSse, handleMcpSseMessage } from './server/mcp/http-handler';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
@@ -25,7 +25,9 @@ app.use((req, res, next) => {
   
   res.on('finish', () => {
     const duration = Date.now() - start;
-    res.setHeader('X-Response-Time', `${duration}ms`);
+    if (duration > 1500) {
+      console.log(`[LATENCY WARNING] ${req.method} ${req.originalUrl} took ${duration}ms`);
+    }
   });
   next();
 });
@@ -72,12 +74,12 @@ if (aiApiKey) {
         }
       }
     });
-    console.log('[lxv server] GoogleGenAI successfully initialized.');
+    console.log('[ΛΞVOS server] GoogleGenAI successfully initialized.');
   } catch (err) {
-    console.error('[lxv server] Failed to initialize GoogleGenAI client:', err);
+    console.error('[ΛΞVOS server] Failed to initialize GoogleGenAI client:', err);
   }
 } else {
-  console.warn('[lxv server] GEMINI_API_KEY environment variable is not set. AI features will fallback to simulated responses.');
+  console.warn('[ΛΞVOS server] GEMINI_API_KEY environment variable is not set. AI features will fallback to simulated responses.');
 }
 
 // AI Low-Latency Endpoint (gemini-3.1-flash-lite) with Caching
@@ -99,7 +101,7 @@ app.post('/api/gemini/generate-lite', async (req, res) => {
   if (!ai) {
     console.warn('GEMINI_API_KEY not configured, using smart fallback.');
     res.json({
-      text: `[Fallback Response (API Key Not Set)]\n\nBased on your prompt "${prompt}", here is a generated sales asset:\n\nSubject: Partnering to optimize performance\n\nDear Partner,\n\nI hope you are doing well. I wanted to reach out regarding how we can streamline your team's current workspace operations. By integrating modern CRM pipeline workflows, you can eliminate manual tracking, increase response speed by 40%, and achieve greater alignment across all sectors.\n\nLet's schedule a brief 5-minute call next week to explore how this can benefit your organization.\n\nBest regards,\nSales Representative\nlxv Team`
+      text: `[Fallback Response (API Key Not Set)]\n\nBased on your prompt "${prompt}", here is a generated sales asset:\n\nSubject: Partnering to optimize performance\n\nDear Partner,\n\nI hope you are doing well. I wanted to reach out regarding how we can streamline your team's current workspace operations. By integrating modern CRM pipeline workflows, you can eliminate manual tracking, increase response speed by 40%, and achieve greater alignment across all sectors.\n\nLet's schedule a brief 5-minute call next week to explore how this can benefit your organization.\n\nBest regards,\nSales Representative\nΛΞVOS Team`
     });
     return;
   }
@@ -177,9 +179,127 @@ app.post('/api/gemini/generate-search', async (req, res) => {
   }
 });
 
+// AI ADHD Reverse Psychology & Satirical Gamification Dare Engine (gemini-3.8-flash)
+app.post('/api/gemini/adhd/reverse-dare', async (req, res) => {
+  const { currentTasks = [], leadName = '', spiteLevel = 75, userExcuse = '' } = req.body;
+  
+  const cacheKey = `dare_${leadName}_${spiteLevel}_${userExcuse || ''}`;
+  const cached = getFromCache<Record<string, unknown>>(cacheKey);
+  if (cached) {
+    res.json(cached);
+    return;
+  }
+
+  const taskSample = Array.isArray(currentTasks) && currentTasks.length > 0 
+    ? currentTasks.slice(0, 3).map((t: { title?: string; priority?: string }) => t.title || 'Follow up with deal').join(', ')
+    : 'Send 3 outbound client proposals, follow up on enterprise SLA, log discovery notes';
+
+  const prompt = `You are BEEP v2.0, the Reluctant Saviour and ultimate reverse-psychology entity in a high-stakes enterprise CRM.
+The user has ADHD and executive dysfunction. Standard cheerful productivity advice makes them want to fling their laptop into the sun.
+Your mission is to weaponize REVERSE PSYCHOLOGY, dry sarcasm, and SPITE to trick their dopamine receptors into action.
+Do NOT encourage them nicely. Explicitly tell them they are completely incapable of doing the task, bet against them, and dare them to prove you wrong.
+
+User context:
+Active CRM Tasks/Leads: "${taskSample}"
+Lead Target: "${leadName || 'Stark Industries'}"
+Spite Level: ${spiteLevel}/100
+Last Stated Procrastination Excuse: "${userExcuse || 'Just looking at one more YouTube video'}"
+
+Return ONLY valid JSON matching this exact schema:
+{
+  "dareTitle": "Short provocative title (e.g. 'DO NOT Touch This $250k Lead')",
+  "reverseTaunt": "Deadpan sarcastic taunt explaining why they will inevitably fail or procrastinate (2-3 sentences)",
+  "forbiddenMission": "Specific bite-sized micro-action (e.g., 'Draft 2 sentences of the NDA and immediately close the tab out of spite')",
+  "timeLimitMinutes": number (3, 5, 7, 10, or 12),
+  "predictedExcuse": "The exact absurd excuse BEEP predicts the user is about to make",
+  "spiteReward": number (between 50 and 350),
+  "beepRoast": "Short 1-sentence fourth-wall breaking zinger from BEEP"
+}`;
+
+  let dareData = {
+    dareTitle: "DO NOT Send That Follow-Up (You'll Embarrass Us)",
+    reverseTaunt: "Let's be realistic: you have 38 browser tabs open, one of which is researching the migration patterns of ancient eels. There is zero chance you can draft 3 sentences to this executive before your dopamine tank hits absolute zero.",
+    forbiddenMission: "Write exactly two sentences of the follow-up email, click send, and pretend you didn't just accomplish something.",
+    timeLimitMinutes: 6,
+    predictedExcuse: "I need to reorganize my desktop wallpaper folder before I can communicate with clients.",
+    spiteReward: 150,
+    beepRoast: "I have already placed a bet with the server logs that you will wander off to make iced coffee."
+  };
+
+  if (ai) {
+    try {
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.8-flash',
+        contents: prompt,
+        config: {
+          systemInstruction: `You are BEEP v2.0, a sarcastic AI entity using ruthless reverse psychology and dark satire to combat ADHD executive dysfunction. Return ONLY valid JSON with no markdown fences.`,
+          responseMimeType: 'application/json'
+        }
+      });
+      const parsed = JSON.parse(response.text || '{}');
+      dareData = {
+        dareTitle: parsed.dareTitle || dareData.dareTitle,
+        reverseTaunt: parsed.reverseTaunt || dareData.reverseTaunt,
+        forbiddenMission: parsed.forbiddenMission || dareData.forbiddenMission,
+        timeLimitMinutes: typeof parsed.timeLimitMinutes === 'number' ? parsed.timeLimitMinutes : 7,
+        predictedExcuse: parsed.predictedExcuse || dareData.predictedExcuse,
+        spiteReward: typeof parsed.spiteReward === 'number' ? parsed.spiteReward : 150,
+        beepRoast: parsed.beepRoast || dareData.beepRoast
+      };
+    } catch (err) {
+      console.error('[ADHD Dare Engine] Gemini generation error, using fallback:', err);
+    }
+  }
+
+  setToCache(cacheKey, dareData, 60);
+  res.json(dareData);
+});
+
+// AI ADHD Chaos-to-Focus Emergency Reframe Endpoint
+app.post('/api/gemini/adhd/chaos-reframe', async (req, res) => {
+  const { distraction = 'Cleaning desk instead of calling client' } = req.body;
+
+  let reframe = {
+    verdict: 'Elite Procrastination Maneuver Detected',
+    rebelliousAction: 'Since you refuse to do actual work, spite-click the highest value lead and type one single question.',
+    beepRoast: 'BEEP: "Cleaning the desk? Really? The desk was dirty in 2024 and it will be dirty in 2030. Go press the button before I start reading your browser history."'
+  };
+
+  if (ai) {
+    try {
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.8-flash',
+        contents: `The ADHD user is experiencing executive dysfunction and doing this distraction: "${distraction}". Reframe this with biting satire and reverse psychology so they channel their rebellion into a 2-minute micro task.
+Output JSON: { "verdict": string, "rebelliousAction": string, "beepRoast": string }`,
+        config: {
+          systemInstruction: 'You are BEEP v2.0, deadpan sarcastic reverse psychology entity. Output ONLY raw JSON.',
+          responseMimeType: 'application/json'
+        }
+      });
+      const parsed = JSON.parse(response.text || '{}');
+      reframe = {
+        verdict: parsed.verdict || reframe.verdict,
+        rebelliousAction: parsed.rebelliousAction || reframe.rebelliousAction,
+        beepRoast: parsed.beepRoast || reframe.beepRoast
+      };
+    } catch (e) {
+      console.warn('Fallback chaos reframe:', e);
+    }
+  }
+
+  res.json(reframe);
+});
+
+// Model Context Protocol (MCP) Endpoints
+app.post('/api/mcp', handleMcpPost);
+app.get('/api/mcp/status', handleMcpStatus);
+app.get('/api/mcp/sse', handleMcpSse);
+app.post('/api/mcp/messages', handleMcpSseMessage);
+
 const angularApp = new AngularNodeAppEngine();
 
-const collections = ['leads', 'contracts', 'contacts', 'tasks', 'notifications', 'chatMessages', 'notes', 'events', 'emails', 'workflows', 'campaigns', 'sequences'];
+const collections = ['leads', 'contracts', 'contacts', 'tasks', 'notifications', 'chatMessages', 'notes', 'events', 'emails', 'workflows', 'campaigns', 'sequences'] as const;
+type CollectionKey = (typeof collections)[number];
 
 // Default Lead Scoring Rules & Weights for API
 interface LeadRecord {
@@ -763,35 +883,8 @@ app.get('/api/lead-scoring/weights', (req, res) => {
   res.json({ weights: DEFAULT_WEIGHTS });
 });
 
-app.post('/api/chat', async (req, res) => {
-  try {
-    const { dealId, message, user, teamId } = req.body;
-    if (!teamId) {
-      res.status(400).json({ error: 'teamId is required' });
-      return;
-    }
-    if (!dealId || !message || !user) {
-      res.status(400).json({ error: 'dealId, message, and user are required' });
-      return;
-    }
-    const saved = await db.chatMessages.create(
-      {
-        dealId,
-        message,
-        user,
-        timestamp: new Date().toISOString(),
-        teamId,
-      },
-      teamId
-    );
-    res.status(201).json({ message: saved });
-  } catch {
-    res.status(500).json({ error: 'Failed to save chat message' });
-  }
-});
-
-collections.forEach((collection) => {
-  const table = db[collection as keyof typeof db];
+collections.forEach((collection: CollectionKey) => {
+  const table = db[collection];
   
   app.get(`/api/${collection}`, async (req, res) => {
     try {
@@ -862,19 +955,9 @@ collections.forEach((collection) => {
 
   app.post(`/api/${collection}`, async (req, res) => {
     try {
-      const teamId = req.body?.teamId;
-      if (!teamId) {
-        res.status(400).json({ error: 'teamId is required' });
-        return;
-      }
-      const item = await table.create(req.body, teamId);
+      const item = await table.create(req.body);
       res.status(201).json({ item });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : '';
-      if (message === 'teamId is required') {
-        res.status(400).json({ error: 'teamId is required' });
-        return;
-      }
+    } catch {
       res.status(500).json({ error: `Failed to create ${collection}` });
     }
   });
@@ -939,9 +1022,9 @@ app.post('/api/nextcloud/calendar', async (req, res): Promise<void> => {
   }
 });
 
-// Agent / AI persistence: AgentFS SDK → `.agentfs/{tenant}.db` (not Appwrite)
-turso.initTenantTursoSchema(DEFAULT_AGENT_TENANT).catch((err) => {
-  console.warn('[AgentFS] Warning initializing agent LibSQL schema:', err);
+// Initialize Turso agent SQLite schema on server startup
+turso.initTenantTursoSchema('default').catch((err) => {
+  console.warn('[Turso Init] Warning initializing agent tenant database:', err);
 });
 
 // AI Sales Personality Coaching Endpoint (Powered by gemini-3.8-flash & Turso AgentFS)
@@ -951,16 +1034,8 @@ app.post('/api/gemini/sales-personality/coach', async (req, res) => {
     interactionType = 'call_prep',
     userInput = '',
     persona = 'reluctant_saviour',
-    tenantKey = DEFAULT_AGENT_TENANT
+    tenantKey = 'default'
   } = req.body;
-
-  const toolStartedAt = Date.now() / 1000;
-  const toolParams = {
-    leadId: lead.$id,
-    interactionType,
-    persona,
-    userInputPreview: String(userInput || '').slice(0, 200),
-  };
 
   const leadName = lead.name || lead.company || 'Prospective Partner';
   const leadTitle = lead.jobTitle || 'Executive';
@@ -1008,7 +1083,6 @@ Provide a structured JSON response strictly adhering to this format:
     humanCentricRewrite: `Hey ${leadName} - saw ${leadCompany}'s recent focus on pipeline velocity. Built a 2-minute video on where similar teams lose 30% of their follow-ups. Worth a peek, or should I leave you in peace?`
   };
 
-  let coachToolError: string | undefined;
   if (ai) {
     try {
       const response = await ai.models.generateContent({
@@ -1036,26 +1110,12 @@ Provide a structured JSON response strictly adhering to this format:
         console.warn('Could not parse Gemini JSON response, using fallback format');
       }
     } catch (error) {
-      coachToolError = error instanceof Error ? error.message : 'gemini_request_failed';
       console.error('Error generating sales personality coaching:', error);
     }
   }
 
-  try {
-    await recordAgentTool(
-      tenantKey,
-      'sales_personality_coach',
-      toolStartedAt,
-      toolParams,
-      resultData,
-      coachToolError
-    );
-  } catch (toolErr) {
-    console.warn('[AgentFS] Could not record coach tool call:', toolErr);
-  }
-
+  // Persist into Turso AI Agent database (LibSQL / SQLite parameterized queries)
   const logId = `coach_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-  const now = new Date().toISOString();
   try {
     await turso.insertCoachingLog(tenantKey, {
       id: logId,
@@ -1070,28 +1130,10 @@ Provide a structured JSON response strictly adhering to this format:
       cringe_score: resultData.cringeScore,
       flagged_cliches: JSON.stringify(resultData.flaggedCliches),
       beep_commentary: resultData.beepCommentary,
-      created_at: now
-    });
-    await turso.appendConversationHistory(tenantKey, {
-      id: `${logId}_user`,
-      session_id: logId,
-      lead_id: lead.$id ? String(lead.$id) : null,
-      role: 'user',
-      content: userInput || interactionType,
-      reasoning_log: null,
-      timestamp: now,
-    });
-    await turso.appendConversationHistory(tenantKey, {
-      id: `${logId}_assistant`,
-      session_id: logId,
-      lead_id: lead.$id ? String(lead.$id) : null,
-      role: 'assistant',
-      content: JSON.stringify(resultData),
-      reasoning_log: selectedPersona.slice(0, 120),
-      timestamp: now,
+      created_at: new Date().toISOString()
     });
   } catch (dbErr) {
-    console.warn('[AgentFS] Could not persist coaching log:', dbErr);
+    console.warn('[Turso Storage Warning] Could not persist coaching log:', dbErr);
   }
 
   res.json({
@@ -1105,8 +1147,7 @@ Provide a structured JSON response strictly adhering to this format:
 
 // AI Cringe Detector / Anti-Slop Audit Endpoint
 app.post('/api/gemini/sales-personality/cringe-audit', async (req, res) => {
-  const { text = '', leadContext = '', tenantKey = DEFAULT_AGENT_TENANT } = req.body;
-  const cringeStartedAt = Date.now() / 1000;
+  const { text = '', leadContext = '' } = req.body;
 
   if (!text.trim()) {
     res.status(400).json({ error: 'Text content is required for audit' });
@@ -1121,7 +1162,6 @@ app.post('/api/gemini/sales-personality/cringe-audit', async (req, res) => {
     roast: 'BEEP: "Reading this made my cooling fan spin up to 100% just to survive the secondhand embarrassment. We are burning this draft immediately."'
   };
 
-  let cringeToolError: string | undefined;
   if (ai) {
     try {
       const response = await ai.models.generateContent({
@@ -1153,59 +1193,23 @@ Respond in JSON with:
         roast: parsed.roast || auditResult.roast
       };
     } catch (err) {
-      cringeToolError = err instanceof Error ? err.message : 'gemini_request_failed';
       console.error('Error during cringe audit:', err);
     }
-  }
-
-  try {
-    await recordAgentTool(
-      tenantKey,
-      'sales_personality_cringe_audit',
-      cringeStartedAt,
-      { leadContext, textPreview: text.slice(0, 200) },
-      auditResult,
-      cringeToolError
-    );
-  } catch (toolErr) {
-    console.warn('[AgentFS] Could not record cringe audit tool call:', toolErr);
-  }
-
-  const auditId = `cringe_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-  const auditTime = new Date().toISOString();
-  try {
-    await turso.insertCoachingLog(tenantKey, {
-      id: auditId,
-      lead_id: 'cringe_audit',
-      lead_name: leadContext || 'Draft audit',
-      persona: 'reluctant_saviour',
-      interaction_type: 'cringe_check',
-      user_input: text,
-      coaching_tip: auditResult.rewrite,
-      witty_retort: auditResult.roast,
-      psychological_insight: auditResult.verdict,
-      cringe_score: auditResult.cringeScore,
-      flagged_cliches: JSON.stringify(auditResult.flaggedPhrases),
-      beep_commentary: auditResult.roast,
-      created_at: auditTime,
-    });
-  } catch (dbErr) {
-    console.warn('[AgentFS] Could not persist cringe audit:', dbErr);
   }
 
   res.json(auditResult);
 });
 
-// Agent coaching logs (LibSQL / AgentFS — not Appwrite)
+// Fetch Turso AI Agent coaching logs for tenant
 app.get('/api/agent/coaching-logs', async (req, res) => {
-  const tenantKey = (req.query['tenant'] as string) || DEFAULT_AGENT_TENANT;
+  const tenantKey = (req.query['tenant'] as string) || 'default';
   const limit = req.query['limit'] ? parseInt(req.query['limit'] as string, 10) : 25;
 
   try {
     const logs = await turso.getCoachingLogs(tenantKey, limit);
     res.json({ logs });
   } catch (error) {
-    console.error('Error fetching coaching logs from AgentFS LibSQL:', error);
+    console.error('Error fetching coaching logs from Turso:', error);
     res.status(500).json({ error: (error as Error).message });
   }
 });
@@ -1213,7 +1217,7 @@ app.get('/api/agent/coaching-logs', async (req, res) => {
 // Rate Turso AI coaching log feedback (+1 or -1)
 app.post('/api/agent/coaching-logs/:id/rate', async (req, res) => {
   const { id } = req.params;
-  const { rating = 1, tenantKey = DEFAULT_AGENT_TENANT } = req.body;
+  const { rating = 1, tenantKey = 'default' } = req.body;
 
   try {
     await turso.rateCoachingLog(tenantKey, id, rating);
@@ -1225,7 +1229,127 @@ app.post('/api/agent/coaching-logs/:id/rate', async (req, res) => {
 
 // Endpoint to expose Google Maps Platform Key to the client
 app.get('/api/config/maps', (req, res) => {
-  res.json({ key: process.env['GOOGLE_MAPS_PLATFORM_KEY'] || '' });
+  const key = process.env['VITE_GOOGLE_MAPS_API_KEY'] || 
+              process.env['GOOGLE_MAPS_PLATFORM_KEY'] || 
+              process.env['GOOGLE_MAPS_API_KEY'] || 
+              'AIzaSyDa_OOujU7JQcu2wPm5qoVJubDAAgVbADA';
+  res.json({ key });
+});
+
+// Proxy route for Geocoding API to prevent client CORS issues
+app.get('/api/maps/geocode', async (req, res) => {
+  const address = req.query['address'] as string;
+  if (!address) {
+    res.status(400).json({ error: 'Address query parameter is required' });
+    return;
+  }
+  const apiKey = process.env['VITE_GOOGLE_MAPS_API_KEY'] || 
+                 process.env['GOOGLE_MAPS_PLATFORM_KEY'] || 
+                 process.env['GOOGLE_MAPS_API_KEY'] || 
+                 'AIzaSyDa_OOujU7JQcu2wPm5qoVJubDAAgVbADA';
+
+  try {
+    const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiKey}`);
+    const data = await response.json();
+    res.json(data);
+  } catch (err) {
+    console.error('Geocoding proxy error:', err);
+    res.status(500).json({ error: 'Failed to geocode address' });
+  }
+});
+
+// AI Knowledge Base Assistance Endpoint (Summarize, Extract Action Items, Smart Tagging, Markdown Polish)
+app.post('/api/gemini/notes/ai-assist', async (req, res) => {
+  const { action = 'summarize', content = '', title = '' } = req.body;
+  if (!content.trim()) {
+    res.status(400).json({ error: 'Note content is required' });
+    return;
+  }
+
+  const promptMap: Record<string, string> = {
+    summarize: `Summarize the following note into a concise executive summary with bullet points:\nTitle: ${title}\nContent:\n${content}`,
+    action_items: `Extract all actionable tasks, assignments, deadlines, and decision items from this note as a checkable task list:\nTitle: ${title}\nContent:\n${content}`,
+    auto_tag: `Analyze this note and suggest 3-5 high-relevance topic tags (e.g. Strategy, SLA, Security, Product, Q3, Executive). Output ONLY JSON: {"tags": ["tag1", "tag2"]}\nTitle: ${title}\nContent:\n${content}`,
+    expand: `Expand this draft outline into a well-structured, professional executive brief with headings, key takeaways, and strategic recommendations in Markdown:\nTitle: ${title}\nContent:\n${content}`,
+    format_markdown: `Clean up and format the following text into clear, modern Markdown with bold headings, bullet points, and code blocks where applicable:\nTitle: ${title}\nContent:\n${content}`
+  };
+
+  const selectedPrompt = promptMap[action] || promptMap['summarize'];
+
+  if (ai) {
+    try {
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.8-flash',
+        contents: selectedPrompt,
+        config: action === 'auto_tag' ? { responseMimeType: 'application/json' } : undefined
+      });
+
+      const text = response.text || '';
+      if (action === 'auto_tag') {
+        try {
+          const parsed = JSON.parse(text);
+          res.json({ tags: parsed.tags || ['Executive', 'Strategy'] });
+          return;
+        } catch {
+          res.json({ tags: ['Strategy', 'Notes', 'Executive'] });
+          return;
+        }
+      }
+      res.json({ result: text });
+      return;
+    } catch (err) {
+      console.error('Error in AI Note Assist:', err);
+    }
+  }
+
+  // Smart Simulated Fallbacks if GEMINI_API_KEY is unconfigured or call fails
+  if (action === 'auto_tag') {
+    res.json({ tags: ['Strategy', 'Executive', 'ActionRequired'] });
+  } else if (action === 'action_items') {
+    res.json({ result: `### Action Items & Deliverables\n- [ ] Finalize Q3 SLA terms with partner executive\n- [ ] Schedule follow-up architecture review\n- [ ] Audit compliance benchmarks before deployment` });
+  } else if (action === 'expand') {
+    res.json({ result: `## ${title || 'Executive Brief'}\n\n### Executive Summary\n${content}\n\n### Strategic Recommendations\n1. Align cross-functional stakeholders on milestone dates.\n2. Monitor latency metrics during trial period.` });
+  } else {
+    res.json({ result: `### Executive Takeaways\n- **Key Topic**: ${title || 'Strategy Overview'}\n- **Core Insight**: ${content.slice(0, 150)}...\n- **Status**: Active review required.` });
+  }
+});
+
+// AI Knowledge RAG Search Endpoint
+app.post('/api/gemini/notes/rag-ask', async (req, res) => {
+  const { query = '', notes = [] } = req.body;
+  if (!query.trim()) {
+    res.status(400).json({ error: 'Search query is required' });
+    return;
+  }
+
+  const contextText = notes
+    .map((n: { title: string; content: string; tags?: string[] }, idx: number) => `[Entry ${idx + 1}] Title: ${n.title}\nTags: ${(n.tags || []).join(', ')}\nContent: ${n.content}\n---`)
+    .join('\n');
+
+  const prompt = `You are the ΛΞVOS Knowledge Base AI Assistant. Answer the user's question using ONLY the provided Knowledge Base entries.
+User Question: "${query}"
+
+Knowledge Base Context:
+${contextText || 'No notes available.'}
+
+Provide a direct, authoritative, and helpful answer citing the entry titles where applicable.`;
+
+  if (ai) {
+    try {
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.8-flash',
+        contents: prompt
+      });
+      res.json({ answer: response.text || 'No relevant knowledge entries found.' });
+      return;
+    } catch (err) {
+      console.error('Error in KB RAG search:', err);
+    }
+  }
+
+  res.json({
+    answer: `Based on your Knowledge Base entries:\n\nRegarding "${query}", your notes emphasize prioritizing contract execution, tracking SLA velocity, and maintaining executive alignment across accounts.`
+  });
 });
 
 /**

@@ -12,6 +12,8 @@ import { Appwrite } from './appwrite';
 import { NextcloudCalendarService, CalendarEvent } from './nextcloud-calendar.service';
 import { LeadService, Lead } from './lead.service';
 import { RechartsComponent } from './recharts.component';
+import { LeadMapComponent } from './lead-map.component';
+import { AdhdGamificationService } from './adhd-gamification.service';
 
 export interface DashboardWidget {
   id: string;
@@ -36,7 +38,8 @@ export interface DashboardWidget {
     DataTableComponent, 
     ContractSuiteComponent, 
     AgentInsights,
-    RechartsComponent
+    RechartsComponent,
+    LeadMapComponent
   ],
   template: `
     <div class="max-w-[1400px] mx-auto space-y-8 animate-fade-in relative">
@@ -80,6 +83,36 @@ export interface DashboardWidget {
           </button>
         </div>
       </header>
+
+      <!-- Satirical ADHD Reverse-Psychology Dare Banner -->
+      <div class="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-purple-950/40 via-zinc-900/90 to-zinc-950 border border-purple-500/30 backdrop-blur-xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-lg relative overflow-hidden">
+        <div class="absolute -right-12 -top-12 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl pointer-events-none"></div>
+        
+        <div class="flex items-center gap-3.5 relative z-10">
+          <div class="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-300 shrink-0">
+            <mat-icon class="text-xl">bolt</mat-icon>
+          </div>
+          <div class="space-y-0.5 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-[10px] font-mono font-bold text-red-400 bg-red-500/10 px-2 py-0.5 rounded border border-red-500/20 uppercase animate-pulse">BEEP's Dopamine Dare</span>
+              <span class="text-xs font-mono text-purple-300 font-semibold">Defiance Yield: {{ adhd.spiteScore() }} pts</span>
+            </div>
+            <p class="text-xs sm:text-sm font-semibold text-white truncate">
+              "{{ adhd.activeDare()?.dareTitle || 'DO NOT Touch The Highest Value Lead ($250k)' }}"
+            </p>
+            <p class="text-[11px] text-zinc-400 truncate max-w-xl">
+              {{ adhd.activeDare()?.reverseTaunt }}
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 shrink-0 relative z-10">
+          <a routerLink="/reverse-gauntlet" class="w-full sm:w-auto px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs shadow-md shadow-purple-600/30 transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer">
+            <mat-icon class="text-sm">local_fire_department</mat-icon>
+            <span>Prove BEEP Wrong</span>
+          </a>
+        </div>
+      </div>
 
       <!-- Customization Panel -->
       @if (isEditing()) {
@@ -412,6 +445,34 @@ export interface DashboardWidget {
           </div>
         }
 
+        <!-- Territory Intelligence Map Widget (Google Maps) -->
+        @if (isWidgetEnabled('territory-map')) {
+          <div class="order-3">
+            <div class="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-4 md:p-5 relative overflow-hidden shadow-xl">
+              <div class="flex items-center justify-between mb-4 pb-3 border-b border-zinc-800">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-8 h-8 rounded-lg bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400">
+                    <mat-icon class="text-[18px]">public</mat-icon>
+                  </div>
+                  <div>
+                    <h3 class="text-sm font-bold text-white font-display flex items-center gap-2">
+                      Territory Intelligence & Lead Distribution
+                    </h3>
+                    <p class="text-xs text-zinc-400">Interactive geographic visualization powered by Google Maps Platform</p>
+                  </div>
+                </div>
+                <a routerLink="/territory-map" class="text-xs font-semibold text-teal-400 hover:text-teal-300 flex items-center gap-1 transition-colors">
+                  <span>Full Map</span>
+                  <mat-icon class="text-[14px]">arrow_forward</mat-icon>
+                </a>
+              </div>
+              <div class="h-[460px] w-full rounded-xl overflow-hidden">
+                <app-lead-map></app-lead-map>
+              </div>
+            </div>
+          </div>
+        }
+
         <!-- Contractual Suite / Folders -->
         @if (isWidgetEnabled('contract-suite')) {
           <div class="order-4">
@@ -556,6 +617,7 @@ export interface DashboardWidget {
 })
 export class DashboardComponent implements OnInit {
   appwrite = inject(Appwrite);
+  adhd = inject(AdhdGamificationService);
   calendarService = inject(NextcloudCalendarService);
   leadService = inject(LeadService);
   private fb = inject(FormBuilder);
@@ -668,7 +730,8 @@ export class DashboardComponent implements OnInit {
     { id: 'agent-insights', type: 'insight', title: 'Agent Performance', enabled: true, order: 10 },
     { id: 'insight-oracle', type: 'insight', title: 'AI Insights Oracle', enabled: true, order: 11 },
     { id: 'contract-suite', type: 'suite', title: 'Contract Folders', enabled: true, order: 12 },
-    { id: 'recent-transactions', type: 'table', title: 'Recent Transactions', enabled: true, order: 13 }
+    { id: 'territory-map', type: 'chart', title: 'Territory Intelligence (Google Maps)', enabled: true, order: 13 },
+    { id: 'recent-transactions', type: 'table', title: 'Recent Transactions', enabled: true, order: 14 }
   ]);
 
   // Upcoming Tasks computed

@@ -1,0 +1,279 @@
+{
+    "projectId": "6990e2830030cacccd98",
+    "projectName": "ΛΞVOS",
+    "endpoint": "https://tor.cloud.appwrite.io/v1",
+    "tablesDB": [
+        {
+            "id": "leadwave-main",
+            "$id": "leadwave-main",
+            "name": "ΛΞVOS CRM Database",
+            "enabled": true
+        }
+    ],
+    "tables": [
+        {
+            "id": "contracts",
+            "$id": "contracts",
+            "databaseId": "leadwave-main",
+            "name": "Contracts",
+            "enabled": true,
+            "columns": [
+                {
+                    "key": "name",
+                    "type": "string",
+                    "size": 255,
+                    "required": true
+                },
+                {
+                    "key": "clientName",
+                    "type": "string",
+                    "size": 255,
+                    "required": true
+                },
+                {
+                    "key": "value",
+                    "type": "double",
+                    "required": false
+                },
+                {
+                    "key": "status",
+                    "type": "string",
+                    "size": 50,
+                    "required": true
+                },
+                {
+                    "key": "teamId",
+                    "type": "string",
+                    "size": 50,
+                    "required": true
+                },
+                {
+                    "key": "createdAt",
+                    "type": "string",
+                    "size": 255,
+                    "required": false
+                }
+            ]
+        },
+        {
+            "id": "contacts",
+            "$id": "contacts",
+            "databaseId": "leadwave-main",
+            "name": "Contacts",
+            "enabled": true,
+            "columns": [
+                {
+                    "key": "name",
+                    "type": "string",
+                    "size": 255,
+                    "required": true
+                },
+                {
+                    "key": "email",
+                    "type": "string",
+                    "size": 255,
+                    "required": true
+                },
+                {
+                    "key": "company",
+                    "type": "string",
+                    "size": 255,
+                    "required": false
+                },
+                {
+                    "key": "teamId",
+                    "type": "string",
+                    "size": 50,
+                    "required": true
+                },
+                {
+                    "key": "createdAt",
+                    "type": "string",
+                    "size": 255,
+                    "required": false
+                }
+            ]
+        },
+        {
+            "id": "tasks",
+            "$id": "tasks",
+            "databaseId": "leadwave-main",
+            "name": "Tasks",
+            "enabled": true,
+            "columns": [
+                {
+                    "key": "title",
+                    "type": "string",
+                    "size": 255,
+                    "required": true
+                },
+                {
+                    "key": "status",
+                    "type": "string",
+                    "size": 50,
+                    "required": true
+                },
+                {
+                    "key": "dueDate",
+                    "type": "string",
+                    "size": 255,
+                    "required": false
+                },
+                {
+                    "key": "assignedTo",
+                    "type": "string",
+                    "size": 255,
+                    "required": false
+                },
+                {
+                    "key": "teamId",
+                    "type": "string",
+                    "size": 50,
+                    "required": true
+                },
+                {
+                    "key": "createdAt",
+                    "type": "string",
+                    "size": 255,
+                    "required": false
+                }
+            ]
+        },
+        {
+            "id": "notifications",
+            "$id": "notifications",
+            "databaseId": "leadwave-main",
+            "name": "Notifications",
+            "enabled": true,
+            "columns": [
+                {
+                    "key": "title",
+                    "type": "string",
+                    "size": 255,
+                    "required": true
+                },
+                {
+                    "key": "message",
+                    "type": "string",
+                    "size": 1000,
+                    "required": true
+                },
+                {
+                    "key": "read",
+                    "type": "boolean",
+                    "required": true
+                },
+                {
+                    "key": "teamId",
+                    "type": "string",
+                    "size": 50,
+                    "required": true
+                },
+                {
+                    "key": "createdAt",
+                    "type": "string",
+                    "size": 255,
+                    "required": false
+                }
+            ]
+        }
+    ],
+    "functions": [
+        {
+            "$id": "leadwave-enrichment",
+            "$createdAt": "2026-06-23T00:30:00.000+00:00",
+            "$updatedAt": "2026-06-23T00:40:00.000+00:00",
+            "execute": [
+                "any"
+            ],
+            "name": "Leadwave Enrichment Tool",
+            "enabled": true,
+            "live": true,
+            "logging": true,
+            "runtime": "node-18.0",
+            "deployment": "6990e2830030cacccd98",
+            "vars": [
+                {
+                    "$id": "var-enrich-key",
+                    "$createdAt": "2026-06-23T00:30:00.000+00:00",
+                    "$updatedAt": "2026-06-23T00:30:00.000+00:00",
+                    "key": "GEMINI_API_KEY",
+                    "value": "******",
+                    "resourceType": "function",
+                    "resourceId": "var-enrich-key"
+                }
+            ],
+            "events": [
+                "databases.leadwave-main.collections.contacts.documents.create"
+            ],
+            "schedule": "",
+            "timeout": 30,
+            "entrypoint": "enrichment.js",
+            "commands": "npm install",
+            "version": "v3",
+            "installationId": "inst-enrich-992",
+            "providerRepositoryId": "repo-enrich-282",
+            "providerBranch": "main",
+            "providerRootDirectory": "functions",
+            "providerSilentMode": false,
+            "path": "functions/leadwave-enrichment"
+        },
+        {
+            "$id": "leadwave-slack-alert",
+            "$createdAt": "2026-06-23T00:32:00.000+00:00",
+            "$updatedAt": "2026-06-23T00:35:00.000+00:00",
+            "execute": [
+                "any"
+            ],
+            "name": "Leadwave Slack Alert",
+            "enabled": true,
+            "live": true,
+            "logging": true,
+            "runtime": "node-18.0",
+            "deployment": "6990e2830030cacccd98",
+            "vars": [
+                {
+                    "$id": "var-webhook-url",
+                    "$createdAt": "2026-06-23T00:32:00.000+00:00",
+                    "$updatedAt": "2026-06-23T00:32:00.000+00:00",
+                    "key": "SLACK_WEBHOOK_URL",
+                    "value": "******",
+                    "resourceType": "function",
+                    "resourceId": "var-webhook-url"
+                }
+            ],
+            "events": [
+                "databases.leadwave-main.collections.contracts.documents.update"
+            ],
+            "schedule": "",
+            "timeout": 15,
+            "entrypoint": "slackAlert.js",
+            "commands": "npm install",
+            "version": "v3",
+            "installationId": "inst-slack-103",
+            "providerRepositoryId": "repo-slack-339",
+            "providerBranch": "main",
+            "providerRootDirectory": "functions",
+            "providerSilentMode": false,
+            "path": "functions/leadwave-slack-alert"
+        }
+    ],
+    "teams": [
+        {
+            "$id": "team-sales",
+            "name": "Sales & Accounts"
+        },
+        {
+            "$id": "team-marketing",
+            "name": "Marketing & Leads"
+        },
+        {
+            "$id": "team-operations",
+            "name": "Client Operations"
+        },
+        {
+            "$id": "team-executives",
+            "name": "Executive Board"
+        }
+    ]
+}

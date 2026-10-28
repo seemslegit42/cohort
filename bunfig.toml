@@ -1,0 +1,5 @@
+[resolve]
+alias = { "appwrite" = "./node_modules/appwrite" }
+
+[test]
+preload = ["./src/test-setup.ts"]

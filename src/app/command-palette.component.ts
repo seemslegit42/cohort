@@ -854,6 +854,16 @@ export class CommandPaletteComponent implements OnDestroy {
       action: () => { this.router.navigate(['/contracts']); }
     },
     {
+      id: 'nav-mcp-server',
+      category: 'Navigation',
+      title: 'Go to MCP Server Console',
+      subtitle: 'Inspect Model Context Protocol tools, resources, and client connections',
+      icon: 'hub',
+      iconBg: 'bg-zinc-800',
+      iconColor: 'text-teal-400',
+      action: () => { this.router.navigate(['/mcp-server']); }
+    },
+    {
       id: 'nav-notes',
       category: 'Navigation',
       title: 'Go to Knowledge Base & Notes',

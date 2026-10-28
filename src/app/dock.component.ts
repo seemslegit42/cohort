@@ -470,6 +470,15 @@ export class DockComponent {
       shortcut: '5',
       title: 'Sales Personality (BEEP)',
       gnoseologyQuote: 'BEEP v2.0 intervenes to eradicate desperate corporate cringe.'
+    },
+    {
+      id: 'reverse-gauntlet',
+      path: '/reverse-gauntlet',
+      label: 'Spite',
+      icon: 'ti-bolt',
+      shortcut: '6',
+      title: 'ADHD Reverse Gauntlet',
+      gnoseologyQuote: 'Weaponize pure defiance against executive dysfunction.'
     }
   ];
 

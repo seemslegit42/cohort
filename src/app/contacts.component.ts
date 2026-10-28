@@ -4,8 +4,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Appwrite } from './appwrite';
 import { Router } from '@angular/router';
-import { LeadService } from './lead.service';
+import { LeadService, Lead } from './lead.service';
 import { EmailMarketingService, EmailMarketingProvider } from './email-marketing.service';
+import { LeadMapComponent } from './lead-map.component';
 
 export interface ContactDeal {
   id: string;
@@ -32,7 +33,7 @@ export interface ContactRecord {
   selector: 'app-contacts',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, MatIconModule, ReactiveFormsModule],
+  imports: [CommonModule, MatIconModule, ReactiveFormsModule, LeadMapComponent],
   template: `
     <div class="max-w-[1600px] mx-auto space-y-6 animate-fade-in px-2 md:px-0 h-full flex flex-col">
       
@@ -253,6 +254,14 @@ export interface ContactRecord {
               title="Grid Cards View">
               <mat-icon class="text-sm">grid_view</mat-icon>
             </button>
+            <button 
+              type="button"
+              (click)="viewMode.set('map')"
+              [class]="viewMode() === 'map' ? 'bg-zinc-800 text-teal-400' : 'text-zinc-500 hover:text-white'"
+              class="p-1 rounded-lg transition-colors cursor-pointer"
+              title="Google Maps View">
+              <mat-icon class="text-sm">map</mat-icon>
+            </button>
           </div>
         </div>
       </div>
@@ -408,7 +417,7 @@ export interface ContactRecord {
                 </tbody>
               </table>
             </div>
-          } @else {
+          } @else if (viewMode() === 'grid') {
             <!-- Card Grid View -->
             <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-3.5 overflow-y-auto custom-scrollbar flex-1">
               @for (c of filteredContacts(); track c.$id) {
@@ -486,6 +495,11 @@ export interface ContactRecord {
                   </div>
                 </div>
               }
+            </div>
+          } @else if (viewMode() === 'map') {
+            <!-- Google Maps Territory View -->
+            <div class="h-full w-full min-h-[550px] p-1 flex-1 flex flex-col">
+              <app-lead-map [leads]="contactsAsLeads()"></app-lead-map>
             </div>
           }
         </div>
@@ -1197,7 +1211,7 @@ export interface ContactRecord {
 
             <div class="space-y-3 text-xs">
               <div>
-                <label class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5">Destination Provider</label>
+                <span class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5">Destination Provider</span>
                 <div class="grid grid-cols-3 gap-2">
                   <button 
                     type="button"
@@ -1337,7 +1351,49 @@ export class ContactsComponent {
   activeTierFilter = signal<string>('All');
   activeAddressFilter = signal<string>('All');
   sortBy = signal<string>('name');
-  viewMode = signal<'table' | 'grid'>('table');
+  viewMode = signal<'table' | 'grid' | 'map'>('table');
+
+  contactsAsLeads = computed<Lead[]>(() => {
+    return this.filteredContacts().map((c) => {
+      let lat = 37.7749;
+      let lng = -122.4194;
+      const addr = (c.address || '').toLowerCase();
+      if (addr.includes('redmond') || addr.includes('wa') || addr.includes('98052')) {
+        lat = 47.6740; lng = -122.1215;
+      } else if (addr.includes('mission street') || addr.includes('san francisco') || addr.includes('94105')) {
+        lat = 37.7897; lng = -122.3972;
+      } else if (addr.includes('howard street')) {
+        lat = 37.7879; lng = -122.3963;
+      } else if (addr.includes('18th street') || addr.includes('94110')) {
+        lat = 37.7619; lng = -122.4172;
+      } else if (addr.includes('santa clara') || addr.includes('san tomas')) {
+        lat = 37.3708; lng = -121.9639;
+      } else if (addr.includes('hawthorne') || addr.includes('rocket road')) {
+        lat = 33.9207; lng = -118.3278;
+      } else if (addr.includes('new york') || addr.includes('ny')) {
+        lat = 40.7128; lng = -74.0060;
+      } else if (addr.includes('austin') || addr.includes('tx')) {
+        lat = 30.2672; lng = -97.7431;
+      } else if (addr.includes('london') || addr.includes('uk')) {
+        lat = 51.5074; lng = -0.1278;
+      }
+
+      return {
+        $id: c.$id,
+        name: c.name,
+        company: c.company,
+        email: c.email || '',
+        phone: c.phone || '',
+        source: 'Directory',
+        status: c.status === 'Customer' ? 'Closed' : c.status === 'Opportunity' ? 'Negotiation' : 'Qualified',
+        value: c.dealValue || 50000,
+        region: c.address ? c.address.split(',').slice(-2).join(',').trim() : 'North America',
+        jobTitle: 'Corporate Relationship',
+        lat,
+        lng
+      } as Lead;
+    });
+  });
 
   selectedContact = signal<ContactRecord | null>(null);
   selectedTone = signal<string>('Executive');

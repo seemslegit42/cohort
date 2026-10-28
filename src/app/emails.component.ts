@@ -166,7 +166,7 @@ export interface EmailRecord {
                     class="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-2.5 text-xs text-zinc-200 focus:outline-none focus:border-purple-500/50 cursor-pointer">
                     <option value="">-- Choose Pipeline Deal (Optional) --</option>
                     @for (lead of leadService.leads(); track lead.$id) {
-                      <option [value]="lead.$id">{{ lead.name }} (&#36;{{ lead.value?.toLocaleString() || '0' }}) — {{ lead.status }}</option>
+                      <option [value]="lead.$id">{{ lead.name }} (&#36;{{ lead.value.toLocaleString() }}) — {{ lead.status }}</option>
                     }
                   </select>
                 </div>
@@ -634,7 +634,7 @@ export interface EmailRecord {
                   class="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-teal-500/50 cursor-pointer">
                   <option value="">-- Select Deal --</option>
                   @for (lead of leadService.leads(); track lead.$id) {
-                    <option [value]="lead.$id">{{ lead.name }} (&#36;{{ lead.value?.toLocaleString() || '0' }})</option>
+                    <option [value]="lead.$id">{{ lead.name }} (&#36;{{ lead.value.toLocaleString() }})</option>
                   }
                 </select>
               </div>

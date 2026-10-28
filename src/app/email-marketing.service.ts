@@ -1,7 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { Appwrite } from './appwrite';
-import { LeadService, Lead } from './lead.service';
+import { LeadService } from './lead.service';
 
 export type EmailMarketingProvider = 'mailchimp' | 'sendgrid' | 'hubspot';
 
@@ -365,8 +364,7 @@ export class EmailMarketingService {
         const added = Math.floor(Math.random() * 8) + 2;
         const updated = count - added;
 
-        const now = new Date();
-        const timeString = 'Just now';
+        const timeString = new Date().toLocaleTimeString();
 
         // Update provider timestamp and count
         this.providers.update(curr => ({
@@ -390,7 +388,7 @@ export class EmailMarketingService {
           recordsUpdated: updated,
           recordsSkipped: 0,
           status: 'success',
-          details: `Synchronized ${count} contacts with ${provName} audience (${added} newly subscribed, ${updated} enriched with LTV and stage metadata).`
+          details: `Synchronized ${count} contacts (${audienceFilter} filter) with ${provName} audience (${added} newly subscribed, ${updated} enriched with LTV and stage metadata).`
         };
 
         this.syncLogs.update(logs => [newLog, ...logs]);

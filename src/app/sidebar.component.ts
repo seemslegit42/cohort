@@ -70,6 +70,13 @@ import { Appwrite } from './appwrite';
         </a>
 
         <div class="text-xs font-semibold text-zinc-600 uppercase tracking-wider mb-3 px-3 mt-8">Revenue & Strategy</div>
+        <a routerLink="/reverse-gauntlet" routerLinkActive="bg-purple-950/40 text-purple-200 shadow-sm border border-purple-500/40" class="flex items-center justify-between px-3 py-2.5 rounded-xl text-zinc-300 hover:text-white hover:bg-zinc-900 transition-all group">
+          <div class="flex items-center gap-3">
+            <mat-icon class="text-[20px] w-5 h-5 text-purple-400 group-hover:rotate-12 transition-transform">bolt</mat-icon>
+            <span class="font-medium text-sm">Reverse Gauntlet (ADHD)</span>
+          </div>
+          <span class="bg-red-500/10 text-red-400 border border-red-500/20 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md animate-pulse">DO NOT CLICK</span>
+        </a>
         <a routerLink="/sales-personality" routerLinkActive="bg-zinc-900/60 text-white shadow-sm border border-zinc-800" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all">
           <mat-icon class="text-[20px] w-5 h-5 text-teal-400">psychology_alt</mat-icon>
           <span class="font-medium text-sm">Sales Personality (BEEP)</span>
@@ -138,12 +145,23 @@ import { Appwrite } from './appwrite';
           <mat-icon class="text-[20px] w-5 h-5 flex items-center justify-center bg-amber-500/20 text-amber-400 p-0.5 rounded">group_add</mat-icon>
           <span class="font-medium text-sm">Leads Pipeline</span>
         </a>
+        <a routerLink="/territory-map" routerLinkActive="bg-zinc-900/60 text-white shadow-sm border border-zinc-800" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all">
+          <mat-icon class="text-[20px] w-5 h-5 flex items-center justify-center bg-emerald-500/20 text-emerald-400 p-0.5 rounded">map</mat-icon>
+          <span class="font-medium text-sm">Territory Map</span>
+        </a>
         <a routerLink="/contacts" routerLinkActive="bg-zinc-900/60 text-white shadow-sm border border-zinc-800" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all">
           <mat-icon class="text-[20px] w-5 h-5 flex items-center justify-center bg-teal-500/20 text-teal-400 p-0.5 rounded">people</mat-icon>
           <span class="font-medium text-sm">Contacts</span>
         </a>
 
-        <div class="text-xs font-semibold text-zinc-600 uppercase tracking-wider mb-3 px-3 mt-8">Systems</div>
+        <div class="text-xs font-semibold text-zinc-600 uppercase tracking-wider mb-3 px-3 mt-8">Systems & Integrations</div>
+        <a routerLink="/mcp-server" routerLinkActive="bg-zinc-900/60 text-white shadow-sm border border-zinc-800" class="flex items-center justify-between px-3 py-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all">
+          <div class="flex items-center gap-3">
+            <mat-icon class="text-[20px] w-5 h-5 flex items-center justify-center bg-teal-500/20 text-teal-300 p-0.5 rounded">hub</mat-icon>
+            <span class="font-medium text-sm">MCP Server</span>
+          </div>
+          <span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-mono font-bold px-2 py-0.5 rounded-md">v1.0</span>
+        </a>
         <a routerLink="/systems" routerLinkActive="bg-zinc-900/60 text-white shadow-sm border border-zinc-800" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all">
           <mat-icon class="text-[20px] w-5 h-5 flex items-center justify-center bg-teal-500/20 text-teal-400 p-0.5 rounded">dns</mat-icon>
           <span class="font-medium text-sm">Systems Hub</span>

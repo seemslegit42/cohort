@@ -412,8 +412,8 @@ export interface AutomatedCampaign {
 
                 <div class="space-y-3">
                   <div>
-                    <label class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5">Target CRM Cohort</label>
-                    <select [(ngModel)]="syncCohortSelection" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-teal-500/50">
+                    <label for="syncCohortSelection" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5">Target CRM Cohort</label>
+                    <select id="syncCohortSelection" [(ngModel)]="syncCohortSelection" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-teal-500/50">
                       <option value="all">All Contacts & Leads ({{ totalAvailableContacts() }} records)</option>
                       <option value="opportunities">Active Opportunities & Deals Only</option>
                       <option value="high_value">High Value Enterprise ($100k+ LTV)</option>
@@ -422,8 +422,8 @@ export interface AutomatedCampaign {
                   </div>
 
                   <div>
-                    <label class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5">Destination Provider</label>
-                    <select [(ngModel)]="syncTargetProvider" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-teal-500/50">
+                    <label for="syncTargetProvider" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5">Destination Provider</label>
+                    <select id="syncTargetProvider" [(ngModel)]="syncTargetProvider" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-teal-500/50">
                       <option value="mailchimp">Mailchimp (Enterprise Growth List)</option>
                       <option value="sendgrid">SendGrid (High Intent SaaS Leads)</option>
                       <option value="hubspot">HubSpot (Marketing Contacts Tier 1)</option>
@@ -542,10 +542,10 @@ export interface AutomatedCampaign {
               <!-- Provider & Audience Bar -->
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5">
+                  <label for="bulkDraftProvider" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5">
                     Delivery Service Gateway
                   </label>
-                  <select [(ngModel)]="bulkDraft.provider" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-purple-500/60 font-medium">
+                  <select id="bulkDraftProvider" [(ngModel)]="bulkDraft.provider" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-purple-500/60 font-medium">
                     <option value="sendgrid">SendGrid Marketing API (v3)</option>
                     <option value="mailchimp">Mailchimp Audience Gateway</option>
                     <option value="hubspot">HubSpot Marketing Contacts</option>
@@ -553,10 +553,10 @@ export interface AutomatedCampaign {
                 </div>
 
                 <div>
-                  <label class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5">
+                  <label for="bulkDraftTargetAudience" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5">
                     Target Recipient Audience
                   </label>
-                  <select [(ngModel)]="bulkDraft.targetAudience" (change)="updateEstimatedRecipients()" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-purple-500/60 font-medium">
+                  <select id="bulkDraftTargetAudience" [(ngModel)]="bulkDraft.targetAudience" (change)="updateEstimatedRecipients()" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-purple-500/60 font-medium">
                     <option value="Enterprise Accounts ($100k+ Pipeline)">Enterprise Accounts ($100k+ Pipeline)</option>
                     <option value="All Qualified Inbound Leads">All Qualified Inbound Leads</option>
                     <option value="Active Opportunities in Negotiation">Active Opportunities in Negotiation</option>
@@ -569,29 +569,29 @@ export interface AutomatedCampaign {
               <!-- Title, Subject & Preheader -->
               <div class="space-y-4">
                 <div>
-                  <label class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5">Internal Campaign Name</label>
-                  <input type="text" [(ngModel)]="bulkDraft.title" placeholder="e.g., Q3 Enterprise Architecture Dossier" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-purple-500/60" />
+                  <label for="bulkDraftTitle" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5">Internal Campaign Name</label>
+                  <input id="bulkDraftTitle" type="text" [(ngModel)]="bulkDraft.title" placeholder="e.g., Q3 Enterprise Architecture Dossier" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-purple-500/60" />
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5">Subject Line</label>
-                    <input type="text" [(ngModel)]="bulkDraft.subject" placeholder="e.g., The Sovereign Architecture: Upgrading Your Core Infrastructure" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-purple-500/60" />
+                    <label for="bulkDraftSubject" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5">Subject Line</label>
+                    <input id="bulkDraftSubject" type="text" [(ngModel)]="bulkDraft.subject" placeholder="e.g., The Sovereign Architecture: Upgrading Your Core Infrastructure" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-purple-500/60" />
                   </div>
                   <div>
-                    <label class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5">Preheader Preview</label>
-                    <input type="text" [(ngModel)]="bulkDraft.preheader" placeholder="e.g., Benchmark dossier for CIOs navigating hybrid databases" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-purple-500/60" />
+                    <label for="bulkDraftPreheader" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5">Preheader Preview</label>
+                    <input id="bulkDraftPreheader" type="text" [(ngModel)]="bulkDraft.preheader" placeholder="e.g., Benchmark dossier for CIOs navigating hybrid databases" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-purple-500/60" />
                   </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5">Sender Identity Name</label>
-                    <input type="text" [(ngModel)]="bulkDraft.senderName" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-purple-500/60" />
+                    <label for="bulkDraftSenderName" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5">Sender Identity Name</label>
+                    <input id="bulkDraftSenderName" type="text" [(ngModel)]="bulkDraft.senderName" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-purple-500/60" />
                   </div>
                   <div>
-                    <label class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5">Sender Email Address</label>
-                    <input type="email" [(ngModel)]="bulkDraft.senderEmail" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-purple-500/60" />
+                    <label for="bulkDraftSenderEmail" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5">Sender Email Address</label>
+                    <input id="bulkDraftSenderEmail" type="email" [(ngModel)]="bulkDraft.senderEmail" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-purple-500/60" />
                   </div>
                 </div>
               </div>
@@ -599,7 +599,7 @@ export interface AutomatedCampaign {
               <!-- Dynamic Merge Tags Bar -->
               <div>
                 <div class="flex items-center justify-between mb-1.5">
-                  <label class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Dynamic Merge Tags</label>
+                  <span class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Dynamic Merge Tags</span>
                   <span class="text-[10px] text-zinc-500 font-mono">Click to insert at cursor</span>
                 </div>
                 <div class="flex flex-wrap gap-2">
@@ -623,8 +623,9 @@ export interface AutomatedCampaign {
 
               <!-- Email Body (Text / HTML) -->
               <div>
-                <label class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5">Broadcast Body (HTML or Plain Text)</label>
+                <label for="bulkDraftHtmlContent" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5">Broadcast Body (HTML or Plain Text)</label>
                 <textarea 
+                  id="bulkDraftHtmlContent"
                   [(ngModel)]="bulkDraft.htmlContent"
                   rows="9"
                   placeholder="Draft your high-impact message here..."
@@ -1149,18 +1150,18 @@ export interface AutomatedCampaign {
 
             <div class="space-y-3 text-xs">
               <div>
-                <label class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">API Key / Access Token</label>
-                <input type="password" [(ngModel)]="providerFormKey" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-white font-mono" />
+                <label for="providerFormKey" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">API Key / Access Token</label>
+                <input id="providerFormKey" type="password" [(ngModel)]="providerFormKey" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-white font-mono" />
               </div>
 
               <div>
-                <label class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Target Audience / List ID</label>
-                <input type="text" [(ngModel)]="providerFormListId" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-white font-mono" />
+                <label for="providerFormListId" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Target Audience / List ID</label>
+                <input id="providerFormListId" type="text" [(ngModel)]="providerFormListId" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-white font-mono" />
               </div>
 
               <div>
-                <label class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Sync Frequency</label>
-                <select [(ngModel)]="providerFormFrequency" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-white">
+                <label for="providerFormFrequency" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Sync Frequency</label>
+                <select id="providerFormFrequency" [(ngModel)]="providerFormFrequency" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-white">
                   <option value="realtime">Real-Time (On Every CRM Contact Save)</option>
                   <option value="hourly">Hourly Automated Batch</option>
                   <option value="daily">Daily Midnight Batch</option>
@@ -1285,13 +1286,13 @@ export interface AutomatedCampaign {
 
             <div class="space-y-4 text-xs">
               <div>
-                <label class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Campaign Name</label>
-                <input type="text" [(ngModel)]="draftName" placeholder="e.g. Enterprise Re-engagement Sequence" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-white" />
+                <label for="draftName" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Campaign Name</label>
+                <input id="draftName" type="text" [(ngModel)]="draftName" placeholder="e.g. Enterprise Re-engagement Sequence" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-white" />
               </div>
 
               <div>
-                <label class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Trigger Event</label>
-                <select [(ngModel)]="draftTriggerType" (change)="onTriggerChange()" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-white">
+                <label for="draftTriggerType" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Trigger Event</label>
+                <select id="draftTriggerType" [(ngModel)]="draftTriggerType" (change)="onTriggerChange()" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-white">
                   @for (opt of triggerOptions; track opt.type) {
                     <option [value]="opt.type">{{ opt.label }}</option>
                   }
@@ -1299,18 +1300,18 @@ export interface AutomatedCampaign {
               </div>
 
               <div>
-                <label class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Target Audience</label>
-                <input type="text" [(ngModel)]="draftAudience" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-white" />
+                <label for="draftAudience" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Target Audience</label>
+                <input id="draftAudience" type="text" [(ngModel)]="draftAudience" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-white" />
               </div>
 
               <div>
-                <label class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Initial Touchpoint Subject</label>
-                <input type="text" [(ngModel)]="draftStepSubject" placeholder="Quick question regarding your cloud migration" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-white" />
+                <label for="draftStepSubject" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Initial Touchpoint Subject</label>
+                <input id="draftStepSubject" type="text" [(ngModel)]="draftStepSubject" placeholder="Quick question regarding your cloud migration" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-white" />
               </div>
 
               <div>
-                <label class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Initial Email Body</label>
-                <textarea [(ngModel)]="draftStepBody" rows="4" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-white font-mono text-xs"></textarea>
+                <label for="draftStepBody" class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Initial Email Body</label>
+                <textarea id="draftStepBody" [(ngModel)]="draftStepBody" rows="4" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-white font-mono text-xs"></textarea>
               </div>
             </div>
 

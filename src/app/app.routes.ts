@@ -62,6 +62,14 @@ export const routes: Routes = [
     loadComponent: () => import('./leads.component').then(m => m.LeadsComponent)
   },
   {
+    path: 'territory-map',
+    loadComponent: () => import('./lead-map.component').then(m => m.LeadMapComponent)
+  },
+  {
+    path: 'lead-map',
+    loadComponent: () => import('./lead-map.component').then(m => m.LeadMapComponent)
+  },
+  {
     path: 'contacts',
     loadComponent: () => import('./contacts.component').then(m => m.ContactsComponent)
   },
@@ -118,7 +126,23 @@ export const routes: Routes = [
     loadComponent: () => import('./sales-personality.component').then(m => m.SalesPersonalityComponent)
   },
   {
+    path: 'reverse-gauntlet',
+    loadComponent: () => import('./adhd-gamification.component').then(m => m.AdhdGamificationComponent)
+  },
+  {
+    path: 'dopamine-hedge',
+    loadComponent: () => import('./adhd-gamification.component').then(m => m.AdhdGamificationComponent)
+  },
+  {
+    path: 'chaos-matrix',
+    loadComponent: () => import('./adhd-gamification.component').then(m => m.AdhdGamificationComponent)
+  },
+  {
     path: 'performance',
     loadComponent: () => import('./sales-performance.component').then(m => m.SalesPerformanceComponent)
+  },
+  {
+    path: 'mcp-server',
+    loadComponent: () => import('./mcp-server.component').then(m => m.MCPServerComponent)
   }
 ];
