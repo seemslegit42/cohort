@@ -5,8 +5,8 @@ Angular 21 standalone-component CRM (zoneless, SSR) + Express backend in `src/se
 ## Commands
 
 - Install: `bun install` (CI uses `--frozen-lockfile`)
-- Dev server: `bun run dev` (port 3000, host 0.0.0.0)
-- Build: `bun run build` → `dist/app` (SSR)
+- Dev server: `bun run dev` — **`ng build --watch`** (parallel) + **`bun --hot scripts/dev-server.ts`** (`Bun.serve` on :3000 with **`development: { hmr, console }`**, embedded `/api`). Optional faster Angular rebuilds: `bun run dev:angular` (`ng serve` + Bun hot API). Production SSR: `bun run build` then `bun run serve:ssr:app` or `bun run compile:ssr`.
+- Build: `bun run build` → **production SSR** (slow: browser + server bundle + minify). Quick compile check: `bun run build:fast` (static CSR, no server graph). Daily work: `bun run dev`.
 - Serve SSR: `bun run serve:ssr:app`
 - Lint: `bun run lint` (ESLint + angular-eslint)
 - Angular tests: `bun run test` (Vitest via ng)

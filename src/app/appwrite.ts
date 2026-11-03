@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, no-empty, @typescript-eslint/consistent-indexed-object-style */
 import { Injectable, signal, effect } from '@angular/core';
 import { Client, Account, Databases, Teams, Realtime, ID, Query, Permission, Role, Functions, Storage } from 'appwrite';
+import { apiFetch, type ApiFetchInit } from '../lib/api-client';
 
 export interface AppwriteConfig {
   endpoint: string;
@@ -90,6 +91,39 @@ export class Appwrite {
     });
   }
 
+  /** Same-origin CRM API — HttpOnly session cookie + tenant header. */
+  private api(input: string, init: ApiFetchInit = {}): Promise<Response> {
+    const teamId =
+      init.teamId !== undefined ? init.teamId : (this.activeTeam()?.$id ?? undefined);
+    return apiFetch(input, { ...init, teamId });
+  }
+
+  private async hydrateFromBackendSession(): Promise<void> {
+    const res = await apiFetch('/api/auth/me', { teamId: this.activeTeam()?.$id });
+    if (!res.ok) {
+      const body = (await res.json().catch(() => ({}))) as { error?: string };
+      throw new Error(body.error ?? 'Session not established');
+    }
+    const data = (await res.json()) as { user: unknown; activeTeamId?: string | null };
+    this.currentUser.set(data.user);
+    await this.loadUserTeams();
+  }
+
+  /** Client SDK session for Realtime (backend cookie does not populate browser SDK). */
+  private async ensureClientSession(email: string, password: string): Promise<void> {
+    try {
+      await this.account.get();
+      return;
+    } catch {
+      /* no browser session yet */
+    }
+    try {
+      await this.account.createEmailPasswordSession({ email, password });
+    } catch {
+      /* may already exist */
+    }
+  }
+
   private loadConfig(): AppwriteConfig {
     if (typeof localStorage !== 'undefined') {
       const saved = localStorage.getItem('laevos_appwrite_config');
@@ -152,20 +186,21 @@ export class Appwrite {
     }
   }
 
-  // check active user session
+  // check active user session (SSR HttpOnly cookie via /api/auth/me)
   async checkSession() {
     try {
-      const user = await this.account.get();
-      this.currentUser.set(user);
-      if (user && user.$id) {
+      const res = await apiFetch('/api/auth/me', { teamId: this.activeTeam()?.$id });
+      if (res.ok) {
+        const data = (await res.json()) as { user: unknown };
+        this.currentUser.set(data.user);
         await this.loadUserTeams();
-      } else {
-        this.initDefaultLocalTeam();
+        return;
       }
     } catch {
-      this.currentUser.set(null);
-      this.initDefaultLocalTeam();
+      /* fall through */
     }
+    this.currentUser.set(null);
+    this.initDefaultLocalTeam();
   }
 
   private initDefaultLocalTeam() {
@@ -180,48 +215,73 @@ export class Appwrite {
     }
   }
 
-  // Authenticate user (Email and Password)
+  // Authenticate user (Email and Password) — server sets a_session_<PROJECT_ID> cookie
   async login(email: string, password: string) {
     this.isConnecting.set(true);
     this.errorMsg.set(null);
     try {
-      await this.account.createEmailPasswordSession(email, password);
-      const user = await this.account.get();
-      this.currentUser.set(user);
-      await this.loadUserTeams();
-      return user;
-    } catch (e: any) {
-      this.errorMsg.set(e.message || 'Login failed Check email/password');
+      const res = await apiFetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error ?? 'Login failed Check email/password');
+      }
+      await this.hydrateFromBackendSession();
+      await this.ensureClientSession(email, password);
+      return this.currentUser();
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Login failed Check email/password';
+      this.errorMsg.set(message);
       throw e;
     } finally {
       this.isConnecting.set(false);
     }
   }
 
-  // Register user
+  // Register user (server-side Users API + session cookie)
   async register(email: string, password: string, name: string) {
     this.isConnecting.set(true);
     this.errorMsg.set(null);
     try {
-      const newUserId = ID.unique();
-      await this.account.create(newUserId, email, password, name);
-      // login automatically
-      return await this.login(email, password);
-    } catch (e: any) {
-      this.errorMsg.set(e.message || 'Registration failed');
+      const res = await apiFetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, name }),
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error ?? 'Registration failed');
+      }
+      await this.hydrateFromBackendSession();
+      await this.ensureClientSession(email, password);
+      return this.currentUser();
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Registration failed';
+      this.errorMsg.set(message);
       throw e;
     } finally {
       this.isConnecting.set(false);
     }
   }
 
-  // Logout current session
+  // Logout current session (backend cookie + client SDK)
   async logout() {
     this.isConnecting.set(true);
     try {
-      await this.account.deleteSession('current');
+      await apiFetch('/api/auth/logout', {
+        method: 'POST',
+        teamId: this.activeTeam()?.$id,
+      });
+      try {
+        await this.account.deleteSession({ sessionId: 'current' });
+      } catch (e) {
+        console.warn('Delete session issue:', e);
+      }
     } catch (e) {
-      console.warn('Delete session issue:', e);
+      console.warn('Backend logout issue:', e);
     } finally {
       this.currentUser.set(null);
       this.userTeams.set([]);
@@ -238,12 +298,27 @@ export class Appwrite {
       return;
     }
     try {
+      const res = await this.api('/api/auth/teams');
+      if (res.ok) {
+        const data = (await res.json()) as { teams?: unknown[] };
+        const teams = data.teams ?? [];
+        this.userTeams.set(teams);
+        if (teams.length > 0) {
+          this.activeTeam.set(teams[0]);
+        } else {
+          await this.createWorkspaceTeam('lxv Default Workspace');
+        }
+        return;
+      }
+    } catch {
+      /* try client SDK fallback */
+    }
+    try {
       const response = await this.teams.list();
       this.userTeams.set(response.teams);
       if (response.teams.length > 0) {
         this.activeTeam.set(response.teams[0]);
       } else {
-        // Automatically create a default workspace team if none exists
         await this.createWorkspaceTeam('lxv Default Workspace');
       }
     } catch {
@@ -722,7 +797,7 @@ export class Appwrite {
     // Helper to query API and handle missing collections gracefully
     const queryCollection = async (collId: string, signalSetter: (val: any[]) => void) => {
       try {
-        const response = await fetch(`/api/${collId}`);
+        const response = await this.api(`/api/${collId}`);
         if (!response.ok) throw new Error('Failed to fetch');
         const data = await response.json();
         signalSetter(data.items || data[collId] || []);
@@ -750,7 +825,7 @@ export class Appwrite {
   async autoProvisionDatabase() {
     this.isConnecting.set(true);
     try {
-      const response = await fetch('/api/contracts');
+      const response = await this.api('/api/contracts');
       if (response.ok) {
         this.errorMsg.set('Backend connected successfully!');
       } else {
@@ -770,7 +845,7 @@ export class Appwrite {
     const payload = { ...data, teamId };
 
     try {
-      const response = await fetch('/api/contracts', {
+      const response = await this.api('/api/contracts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -793,7 +868,7 @@ export class Appwrite {
         this.contracts.update(arr => arr.map(doc => doc.$id === documentId ? { ...doc, status } : doc));
         return { $id: documentId, status };
       }
-      const response = await fetch(`/api/contracts/${documentId}`, {
+      const response = await this.api(`/api/contracts/${documentId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status })
@@ -812,7 +887,7 @@ export class Appwrite {
   async deleteContract(documentId: string) {
     try {
       if (!documentId.startsWith('mock-')) {
-        await fetch(`/api/contracts/${documentId}`, { method: 'DELETE' });
+        await this.api(`/api/contracts/${documentId}`, { method: 'DELETE' });
       }
     } catch (e) {
       console.warn('Failed cloud delete, fallback local delete:', e);
@@ -827,7 +902,7 @@ export class Appwrite {
     const teamId = team?.$id || 'laevos-crm';
     const payload = { ...data, teamId };
     try {
-      const response = await fetch('/api/contacts', {
+      const response = await this.api('/api/contacts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -849,7 +924,7 @@ export class Appwrite {
         this.contacts.update(arr => arr.map(doc => doc.$id === documentId ? { ...doc, ...updates } : doc));
         return { $id: documentId, ...updates };
       }
-      const response = await fetch(`/api/contacts/${documentId}`, {
+      const response = await this.api(`/api/contacts/${documentId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)
@@ -868,7 +943,7 @@ export class Appwrite {
   async deleteContact(documentId: string) {
     try {
       if (!documentId.startsWith('mock-')) {
-        await fetch(`/api/contacts/${documentId}`, { method: 'DELETE' });
+        await this.api(`/api/contacts/${documentId}`, { method: 'DELETE' });
       }
     } catch (e) {
       console.warn('Failed cloud delete, fallback local delete:', e);
@@ -882,7 +957,7 @@ export class Appwrite {
     const teamId = team?.$id || 'laevos-crm';
     const payload = { ...data, teamId, completed: false };
     try {
-      const response = await fetch('/api/tasks', {
+      const response = await this.api('/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -904,7 +979,7 @@ export class Appwrite {
         this.tasks.update(arr => arr.map(doc => doc.$id === documentId ? { ...doc, ...updates } : doc));
         return { $id: documentId, ...updates };
       }
-      const response = await fetch(`/api/tasks/${documentId}`, {
+      const response = await this.api(`/api/tasks/${documentId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)
@@ -922,7 +997,7 @@ export class Appwrite {
   async deleteTask(documentId: string) {
     try {
       if (!documentId.startsWith('mock-')) {
-        await fetch(`/api/tasks/${documentId}`, { method: 'DELETE' });
+        await this.api(`/api/tasks/${documentId}`, { method: 'DELETE' });
       }
     } catch (e) {
       console.warn('Failed cloud delete, fallback local delete:', e);
@@ -935,7 +1010,7 @@ export class Appwrite {
     const team = this.activeTeam();
     const teamId = team?.$id || 'laevos-crm';
     try {
-      const response = await fetch('/api/notes', {
+      const response = await this.api('/api/notes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...data, teamId })
@@ -958,7 +1033,7 @@ export class Appwrite {
         this.notes.update(arr => arr.map(doc => doc.$id === documentId ? { ...doc, ...updates } : doc));
         return { $id: documentId, ...updates };
       }
-      const response = await fetch(`/api/notes/${documentId}`, {
+      const response = await this.api(`/api/notes/${documentId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)
@@ -976,7 +1051,7 @@ export class Appwrite {
   async deleteNote(documentId: string) {
     try {
       if (!documentId.startsWith('mock-')) {
-        await fetch(`/api/notes/${documentId}`, { method: 'DELETE' });
+        await this.api(`/api/notes/${documentId}`, { method: 'DELETE' });
       }
     } catch (e) {
       console.warn('Failed cloud delete, fallback local delete:', e);
@@ -991,7 +1066,7 @@ export class Appwrite {
         this.tasks.update(arr => arr.map(doc => doc.$id === documentId ? { ...doc, completed } : doc));
         return { $id: documentId, completed };
       }
-      const response = await fetch(`/api/tasks/${documentId}`, {
+      const response = await this.api(`/api/tasks/${documentId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ completed })
@@ -1009,7 +1084,7 @@ export class Appwrite {
   async addEmail(data: any) {
     const teamId = this.activeTeam()?.$id || 'laevos-crm';
     try {
-      const response = await fetch('/api/emails', {
+      const response = await this.api('/api/emails', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...data, teamId })
@@ -1031,7 +1106,7 @@ export class Appwrite {
   async deleteEmail(documentId: string) {
     try {
       if (!documentId.startsWith('mock-') && !documentId.startsWith('mail-')) {
-        await fetch(`/api/emails/${documentId}`, { method: 'DELETE' });
+        await this.api(`/api/emails/${documentId}`, { method: 'DELETE' });
       }
     } catch (e) {
       console.warn('Fallback delete email:', e);
@@ -1044,7 +1119,7 @@ export class Appwrite {
     const team = this.activeTeam();
     const teamId = team?.$id || 'laevos-crm';
     try {
-      const response = await fetch('/api/events', {
+      const response = await this.api('/api/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...data, teamId })
@@ -1064,7 +1139,7 @@ export class Appwrite {
   async deleteEvent(documentId: string) {
     try {
       if (!documentId.startsWith('mock-')) {
-        await fetch(`/api/events/${documentId}`, { method: 'DELETE' });
+        await this.api(`/api/events/${documentId}`, { method: 'DELETE' });
       }
     } catch (e) {
       console.warn('Failed cloud delete, fallback local delete:', e);
@@ -1079,7 +1154,7 @@ export class Appwrite {
         this.notifications.update(arr => arr.map(n => n.$id === documentId ? { ...n, isRead: true } : n));
         return { $id: documentId, isRead: true };
       }
-      const response = await fetch(`/api/notifications/${documentId}`, {
+      const response = await this.api(`/api/notifications/${documentId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isRead: true })
@@ -1097,7 +1172,7 @@ export class Appwrite {
   async deleteNotification(documentId: string) {
     try {
       if (!documentId.startsWith('mock-')) {
-        await fetch(`/api/notifications/${documentId}`, { method: 'DELETE' });
+        await this.api(`/api/notifications/${documentId}`, { method: 'DELETE' });
       }
     } catch (e) {
       console.warn('Failed cloud delete, fallback local delete:', e);
@@ -1111,7 +1186,7 @@ export class Appwrite {
     const teamId = team?.$id || 'laevos-crm';
     const payload = { ...data, teamId, isRead: false };
     try {
-      const response = await fetch('/api/notifications', {
+      const response = await this.api('/api/notifications', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -1137,7 +1212,7 @@ export class Appwrite {
     };
 
     try {
-      const response = await fetch('/api/chat', {
+      const response = await this.api('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -1170,7 +1245,7 @@ export class Appwrite {
           user: { id: 'sarah', name: 'Sarah Jenkins', avatar: 'https://api.dicebear.com/7.x/notionists/svg?seed=Sarah' }
         };
 
-        fetch('/api/chat', {
+        this.api('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(replyPayload)

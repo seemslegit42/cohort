@@ -1,6 +1,7 @@
-import { Client, Databases as TablesDB, Permission, Role } from 'node-appwrite';
 import * as dotenv from 'dotenv';
 import { resolve } from 'path';
+import { Databases as TablesDB, Permission, Role } from 'node-appwrite';
+import { getAdminClient } from '../src/server/appwrite-clients';
 import {
   APPWRITE_DATABASE_ID,
   APPWRITE_TABLES,
@@ -9,16 +10,9 @@ import {
 } from '../src/server/appwrite-schema';
 
 dotenv.config({ path: resolve(process.cwd(), '.env.local') });
+dotenv.config({ path: resolve(process.cwd(), '.env') });
 
-const client = new Client()
-  .setEndpoint(process.env.APPWRITE_ENDPOINT || 'https://tor.cloud.appwrite.io/v1')
-  .setProject(process.env.APPWRITE_PROJECT_ID || '6990e2830030cacccd98');
-
-if (process.env.APPWRITE_API_KEY) {
-  client.setKey(process.env.APPWRITE_API_KEY);
-}
-
-const tablesDB = new TablesDB(client);
+const tablesDB = new TablesDB(getAdminClient());
 const databaseId = process.env.APPWRITE_DATABASE_ID || APPWRITE_DATABASE_ID;
 
 async function createColumn(tableId: string, column: ColumnSpec): Promise<void> {

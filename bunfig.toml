@@ -1,5 +1,18 @@
-[resolve]
-alias = { "appwrite" = "./node_modules/appwrite" }
+# Bun runtime + package manager settings for lxv CRM
+# https://bun.com/docs/runtime/bunfig
+
+[install]
+auto = "disable"
+prefer = "offline"
+saveTextLockfile = true
+
+[run]
+# Equivalent to prefixing scripts with `bun --bun` (node → bun for child processes)
+bun = true
+shell = "system"
 
 [test]
 preload = ["./src/test-setup.ts"]
+
+[resolve]
+alias = { "appwrite" = "./node_modules/appwrite" }

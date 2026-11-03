@@ -1,35 +1,26 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Client, Databases as TablesDB, Query, ID, Permission, Role } from 'node-appwrite';
+import { Databases as TablesDB, Query, ID } from 'node-appwrite';
+import { getAdminClient } from './appwrite-clients';
+import { APPWRITE_DATABASE_ID_ENV, type CrmCollectionId } from './config';
+import {
+  buildRowPermissions,
+  mapFromAppwrite,
+  mapToAppwrite,
+  type AppwriteTableId,
+} from './appwrite-schema';
+import { allowDemoData, AppwriteUnavailableError } from './env';
+import { appendTeamIdQuery } from './team-query';
 
-let client: Client;
 let tablesDB: TablesDB;
-
-function getClient() {
-  if (!client) {
-    client = new Client()
-      .setEndpoint(process.env['APPWRITE_ENDPOINT'] || 'https://tor.cloud.appwrite.io/v1')
-      .setProject(process.env['APPWRITE_PROJECT_ID'] || '6990e2830030cacccd98');
-      
-    if (process.env['APPWRITE_API_KEY']) {
-      client.setKey(process.env['APPWRITE_API_KEY']);
-    }
-  }
-  return client;
-}
 
 function getTablesDB() {
   if (!tablesDB) {
-    tablesDB = new TablesDB(getClient());
+    tablesDB = new TablesDB(getAdminClient());
   }
   return tablesDB;
 }
 
-const DATABASE_ID = process.env['APPWRITE_DATABASE_ID'] || 'leadwave-main';
-
-// In-Memory Fallback Cache to ensure 100% operational resilience when Appwrite DB is pending/unreachable
 const localStore = new Map<string, Map<string, any>>();
-let hasLoggedDbMissing = false;
-let isAttemptingDbCreation = false;
 
 function getLocalTable(tableId: string): Map<string, any> {
   if (!localStore.has(tableId)) {
@@ -38,182 +29,209 @@ function getLocalTable(tableId: string): Map<string, any> {
   return localStore.get(tableId)!;
 }
 
-async function tryEnsureDatabase(db: TablesDB): Promise<boolean> {
-  if (isAttemptingDbCreation || !process.env['APPWRITE_API_KEY']) {
-    return false;
+function resolveTeamId(explicit: string | undefined, dataTeamId: unknown): string {
+  const t = explicit || (typeof dataTeamId === 'string' ? dataTeamId : '');
+  if (!t) {
+    throw new Error('teamId is required');
   }
-  isAttemptingDbCreation = true;
-  try {
-    await db.create(DATABASE_ID, 'ΛΞVOS CRM Database');
-    console.log(`[Appwrite DB] Auto-created database '${DATABASE_ID}' successfully.`);
-    return true;
-  } catch {
-    return false;
-  } finally {
-    isAttemptingDbCreation = false;
-  }
+  return t;
 }
 
-function mapToAppwrite(data: any) {
-  const { teamId, createdBy, ...rest } = data;
-  return {
-    teamId: teamId || null,
-    createdBy: createdBy || null,
-    dataPayload: JSON.stringify(rest)
-  };
-}
-
-function mapFromAppwrite<T>(doc: any): T {
-  let payload = {};
-  if (doc.dataPayload) {
-    try {
-      payload = JSON.parse(doc.dataPayload);
-    } catch {
-      // ignore parse error
-    }
+function handleDbError(err: unknown): never {
+  if (allowDemoData()) {
+    throw err;
   }
-  return {
-    ...payload,
-    $id: doc.$id,
-    $createdAt: doc.$createdAt,
-    $updatedAt: doc.$updatedAt,
-    teamId: doc.teamId,
-    createdBy: doc.createdBy
-  } as T;
+  throw new AppwriteUnavailableError(
+    err instanceof Error ? err.message : 'Appwrite request failed',
+  );
 }
 
-function createTable<T>(tableId: string) {
+export interface ListOptions {
+  queries?: string[];
+  limit?: number;
+  offset?: number;
+}
+
+function createTable<T>(tableId: CrmCollectionId) {
+  const appwriteTableId = tableId as AppwriteTableId;
+
   return {
-    async create(data: Omit<T, '$id' | '$createdAt' | '$updatedAt'>, teamId?: string) {
-      const db = getTablesDB();
-      const localId = (data as any).$id || 'doc-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7);
-      const now = new Date().toISOString();
-      const fallbackItem = {
-        ...data,
-        $id: localId,
-        $createdAt: now,
-        $updatedAt: now,
-        teamId: teamId || (data as any).teamId || 'laevos-crm'
-      } as unknown as T;
+    async create(
+      data: Omit<T, '$id' | '$createdAt' | '$updatedAt'>,
+      teamId?: string,
+      createdBy?: string,
+    ) {
+      const resolvedTeam = resolveTeamId(teamId, (data as any).teamId);
+      const payload = {
+        ...(data as Record<string, unknown>),
+        teamId: resolvedTeam,
+        ...(createdBy ? { createdBy } : {}),
+      };
+      const mapped = mapToAppwrite(appwriteTableId, payload as Record<string, any>);
+      const permissions = buildRowPermissions(appwriteTableId, resolvedTeam, payload);
+
+      if (allowDemoData()) {
+        const localId = `doc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+        const now = new Date().toISOString();
+        const fallbackItem = {
+          ...payload,
+          $id: localId,
+          $createdAt: now,
+          $updatedAt: now,
+        } as unknown as T;
+        try {
+          const db = getTablesDB();
+          const doc = await db.createDocument(
+            APPWRITE_DATABASE_ID_ENV,
+            tableId,
+            ID.unique(),
+            mapped,
+            permissions,
+          );
+          const created = mapFromAppwrite<T>(appwriteTableId, doc);
+          getLocalTable(tableId).set((created as any).$id, created);
+          return created;
+        } catch (err) {
+          getLocalTable(tableId).set(localId, fallbackItem);
+          return fallbackItem;
+        }
+      }
 
       try {
-        const permissions = teamId ? [
-          Permission.read(Role.team(teamId)),
-          Permission.write(Role.team(teamId))
-        ] : [
-          Permission.read(Role.any()),
-          Permission.write(Role.any())
-        ];
-        
-        const mapped = mapToAppwrite(data);
-        if (teamId) mapped.teamId = teamId;
-
+        const db = getTablesDB();
         const doc = await db.createDocument(
-          DATABASE_ID,
+          APPWRITE_DATABASE_ID_ENV,
           tableId,
           ID.unique(),
           mapped,
-          permissions
+          permissions,
         );
-        const created = mapFromAppwrite<T>(doc);
-        getLocalTable(tableId).set((created as any).$id, created);
-        return created;
-      } catch (err: any) {
-        if (err?.code === 404 || err?.message?.includes('could not be found')) {
-          await tryEnsureDatabase(db);
-        }
-        // Save to resilient local store
-        getLocalTable(tableId).set(localId, fallbackItem);
-        return fallbackItem;
+        return mapFromAppwrite<T>(appwriteTableId, doc);
+      } catch (err) {
+        handleDbError(err);
       }
     },
 
     async get(id: string) {
-      const db = getTablesDB();
-      try {
-        const doc = await db.getDocument(DATABASE_ID, tableId, id);
-        return mapFromAppwrite<T>(doc);
-      } catch {
-        const local = getLocalTable(tableId).get(id);
-        return (local as T) || null;
-      }
-    },
-
-    async list(queries: string[] = []) {
-      const db = getTablesDB();
-      try {
-        const response = await db.listDocuments(DATABASE_ID, tableId, [
-          ...queries,
-          Query.orderDesc('$createdAt')
-        ]);
-        const fetched = response.documents.map(mapFromAppwrite<T>);
-        // Update local cache with fetched items
-        fetched.forEach((item: any) => {
-          if (item.$id) getLocalTable(tableId).set(item.$id, item);
-        });
-        return fetched;
-      } catch (err: any) {
-        const isNotFound = err?.code === 404 || err?.message?.includes('could not be found');
-        if (isNotFound) {
-          if (!hasLoggedDbMissing) {
-            hasLoggedDbMissing = true;
-            console.log(`[Appwrite DB] Notice: Database '${DATABASE_ID}' not found on remote. Switching to resilient in-memory data store.`);
-            tryEnsureDatabase(db);
-          }
-        } else {
-          console.warn(`[Appwrite DB] Notice for collection ${tableId}:`, err?.message || err);
+      if (allowDemoData()) {
+        try {
+          const db = getTablesDB();
+          const doc = await db.getDocument(APPWRITE_DATABASE_ID_ENV, tableId, id);
+          return mapFromAppwrite<T>(appwriteTableId, doc);
+        } catch {
+          return (getLocalTable(tableId).get(id) as T) || null;
         }
-        // Return existing items from local store
-        return Array.from(getLocalTable(tableId).values()) as T[];
+      }
+      try {
+        const db = getTablesDB();
+        const doc = await db.getDocument(APPWRITE_DATABASE_ID_ENV, tableId, id);
+        return mapFromAppwrite<T>(appwriteTableId, doc);
+      } catch (err) {
+        handleDbError(err);
       }
     },
 
-    async listByTeam(teamId: string) {
-      const all = await this.list([Query.equal('teamId', [teamId])]);
-      if (all.length > 0) return all;
-      return (Array.from(getLocalTable(tableId).values()) as any[]).filter(
-        item => !item.teamId || item.teamId === teamId
-      ) as T[];
-    },
+    async list(options: ListOptions = {}) {
+      const queries = [...(options.queries ?? []), Query.orderDesc('$createdAt')];
+      if (options.limit) {
+        queries.push(Query.limit(options.limit));
+      }
+      if (options.offset) {
+        queries.push(Query.offset(options.offset));
+      }
 
-    async update(id: string, data: Partial<T>) {
-      const db = getTablesDB();
-      const existing = (await this.get(id)) as any;
-      const now = new Date().toISOString();
-      const updatedLocal = {
-        ...(existing || {}),
-        ...data,
-        $id: id,
-        $updatedAt: now
-      } as unknown as T;
+      if (allowDemoData()) {
+        try {
+          const db = getTablesDB();
+          const response = await db.listDocuments(APPWRITE_DATABASE_ID_ENV, tableId, queries);
+          return response.documents.map((doc) =>
+            mapFromAppwrite<T>(appwriteTableId, doc),
+          );
+        } catch {
+          return Array.from(getLocalTable(tableId).values()) as T[];
+        }
+      }
 
       try {
-        if (!existing) throw new Error('Not found');
+        const db = getTablesDB();
+        const response = await db.listDocuments(APPWRITE_DATABASE_ID_ENV, tableId, queries);
+        return response.documents.map((doc) =>
+          mapFromAppwrite<T>(appwriteTableId, doc),
+        );
+      } catch (err) {
+        handleDbError(err);
+      }
+    },
 
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { $id: _id, $createdAt: _c, $updatedAt: _u, createdBy: _cb, teamId: _t, ...updateData } = data as any;
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { $id: _eId, $createdAt: _eC, $updatedAt: _eU, createdBy: eCb, teamId: eTi, ...existingData } = existing;
-        const merged = { ...existingData, ...updateData, createdBy: eCb, teamId: eTi };
+    async listByTeam(teamId: string, options: ListOptions = {}) {
+      return this.list({
+        ...options,
+        queries: appendTeamIdQuery(teamId, options.queries ?? []),
+      });
+    },
 
-        const doc = await db.updateDocument(DATABASE_ID, tableId, id, mapToAppwrite(merged));
-        const res = mapFromAppwrite<T>(doc);
-        getLocalTable(tableId).set(id, res);
-        return res;
-      } catch {
-        getLocalTable(tableId).set(id, updatedLocal);
-        return updatedLocal;
+    async update(id: string, data: Partial<T>, teamId?: string) {
+      const existing = (await this.get(id)) as any;
+      if (!existing) {
+        throw new Error('Not found');
+      }
+      const resolvedTeam = teamId || existing.teamId;
+      if (!resolvedTeam) {
+        throw new Error('teamId is required');
+      }
+      const merged = { ...existing, ...data, teamId: resolvedTeam };
+      const mapped = mapToAppwrite(appwriteTableId, merged);
+
+      if (allowDemoData()) {
+        const now = new Date().toISOString();
+        const updatedLocal = { ...merged, $id: id, $updatedAt: now } as T;
+        try {
+          const db = getTablesDB();
+          const doc = await db.updateDocument(
+            APPWRITE_DATABASE_ID_ENV,
+            tableId,
+            id,
+            mapped,
+          );
+          const res = mapFromAppwrite<T>(appwriteTableId, doc);
+          getLocalTable(tableId).set(id, res);
+          return res;
+        } catch {
+          getLocalTable(tableId).set(id, updatedLocal);
+          return updatedLocal;
+        }
+      }
+
+      try {
+        const db = getTablesDB();
+        const doc = await db.updateDocument(
+          APPWRITE_DATABASE_ID_ENV,
+          tableId,
+          id,
+          mapped,
+        );
+        return mapFromAppwrite<T>(appwriteTableId, doc);
+      } catch (err) {
+        handleDbError(err);
       }
     },
 
     async delete(id: string) {
-      const db = getTablesDB();
-      try {
-        await db.deleteDocument(DATABASE_ID, tableId, id);
-      } catch {
-        // Ignored for resilient offline behavior
-      } finally {
+      if (allowDemoData()) {
+        try {
+          const db = getTablesDB();
+          await db.deleteDocument(APPWRITE_DATABASE_ID_ENV, tableId, id);
+        } catch {
+          // ignore
+        }
         getLocalTable(tableId).delete(id);
+        return;
+      }
+      try {
+        const db = getTablesDB();
+        await db.deleteDocument(APPWRITE_DATABASE_ID_ENV, tableId, id);
+      } catch (err) {
+        handleDbError(err);
       }
     },
   };
@@ -221,23 +239,16 @@ function createTable<T>(tableId: string) {
 
 export const db = {
   leads: createTable<any>('leads'),
-  contracts: createTable<any>('contracts'),
   contacts: createTable<any>('contacts'),
   tasks: createTable<any>('tasks'),
-  notifications: createTable<any>('notifications'),
-  chatMessages: createTable<any>('chatMessages'),
   notes: createTable<any>('notes'),
-  events: createTable<any>('events'),
+  notifications: createTable<any>('notifications'),
+  contracts: createTable<any>('contracts'),
   emails: createTable<any>('emails'),
-  workflows: createTable<any>('workflows'),
-  campaigns: createTable<any>('campaigns'),
-  sequences: createTable<any>('sequences'),
-  seedDefaults(tableId: string, items: any[]) {
-    const tableMap = getLocalTable(tableId);
-    items.forEach(item => {
-      if (item.$id && !tableMap.has(item.$id)) {
-        tableMap.set(item.$id, item);
-      }
-    });
-  }
+  events: createTable<any>('events'),
+  chatMessages: createTable<any>('chatMessages'),
+  email_workflows: createTable<any>('email_workflows'),
+  newsletter_subscribers: createTable<any>('newsletter_subscribers'),
 };
+
+export type DbCollectionKey = keyof typeof db;
